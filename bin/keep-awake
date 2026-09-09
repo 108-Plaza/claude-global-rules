@@ -1,0 +1,70 @@
+#!/bin/bash
+# keep-awake — กัน MacBook หลับตอนเสียบไฟ เพื่อให้งานตามตาราง (เช่น claude-rules-autopull) ได้รัน
+#
+#   keep-awake status   ดูสภาพจริงตอนนี้
+#   keep-awake on       เปิดตัวกันหลับระดับผู้ใช้ (caffeinate -s ผ่าน LaunchAgent — ไม่ต้อง sudo)
+#   keep-awake off      ปิดตัวกันหลับนั้น
+#
+# หมายเหตุ: ค่า pmset (sleep/displaysleep/disksleep/wakepoweron) ต้อง sudo ถึงจะแก้ได้
+# สคริปต์นี้จึงไม่แตะให้ แต่จะบอกคำสั่งที่ต้องรันเองใน status
+set -euo pipefail
+
+LABEL=com.108ting.keep-awake
+PLIST="$HOME/Library/LaunchAgents/$LABEL.plist"
+UID_="$(id -u)"
+
+ac() { pmset -g custom | sed -n '/AC Power/,/Battery Power/p' | awk -v k="$1" '$1==k{print $2; exit}'; }
+
+cmd_status() {
+  echo "ค่า pmset ตอนเสียบไฟ (AC):"
+  printf '  %-14s %-6s %s\n' "sleep"        "$(ac sleep)"        "$([ "$(ac sleep)" = 0 ] && echo '← ไม่หลับ ถูกแล้ว' || echo '🔴 เครื่องจะหลับ — ต้อง: sudo pmset -c sleep 0')"
+  printf '  %-14s %-6s %s\n' "disksleep"    "$(ac disksleep)"    ""
+  printf '  %-14s %-6s %s\n' "displaysleep" "$(ac displaysleep)" "(จอดับได้ ไม่เกี่ยวกับงานตามตาราง)"
+  echo "ตารางปลุก:"
+  pmset -g sched | sed 's/^/  /'
+  printf 'ตัวกันหลับระดับผู้ใช้ (%s): ' "$LABEL"
+  if launchctl print "gui/$UID_/$LABEL" >/dev/null 2>&1; then
+    echo "เปิดอยู่ (pid $(pgrep -f 'caffeinate -s' | head -1 || echo '-'))"
+  else
+    echo "ปิดอยู่ — เปิดด้วย: keep-awake on"
+  fi
+  echo "assertion ที่กันหลับอยู่จริงตอนนี้:"
+  pmset -g assertions | grep -E "PreventUserIdleSystemSleep +1|caffeinate" | sed 's/^/  /' | head -4 || echo "  (ไม่มี)"
+  echo
+  echo "⚠️ ปิดฝา = หลับเสมอ pmset กันไม่ได้ · เปิดฝาทิ้งไว้แล้วปล่อยให้จอดับพอ"
+}
+
+cmd_on() {
+  mkdir -p "$HOME/Library/LaunchAgents"
+  cat > "$PLIST" <<EOF
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key><string>$LABEL</string>
+  <key>ProgramArguments</key>
+  <array><string>/usr/bin/caffeinate</string><string>-s</string></array>
+  <key>RunAtLoad</key><true/>
+  <key>KeepAlive</key><true/>
+  <key>ProcessType</key><string>Background</string>
+</dict>
+</plist>
+EOF
+  launchctl bootout "gui/$UID_/$LABEL" 2>/dev/null || true
+  launchctl bootstrap "gui/$UID_" "$PLIST"
+  echo "เปิดแล้ว — caffeinate -s จะกันหลับ **เฉพาะตอนเสียบไฟ** (ใช้แบตอยู่ยังหลับตามปกติ)"
+}
+
+cmd_off() {
+  launchctl bootout "gui/$UID_/$LABEL" 2>/dev/null || true
+  rm -f "$PLIST"
+  echo "ปิดแล้ว — เครื่องกลับไปหลับตามค่า pmset"
+}
+
+case "${1:-status}" in
+  status) cmd_status ;;
+  on)     cmd_on; echo; cmd_status ;;
+  off)    cmd_off ;;
+  -h|--help|help) sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) echo "keep-awake: ไม่รู้จักคำสั่ง '$1' (status|on|off)" >&2; exit 1 ;;
+esac

@@ -25,6 +25,11 @@ claude-rules doctor   # ซ่อม symlink ที่ถูกเครื่�
 ⚠️ **ใช้ cron ไม่ได้** — `crontab` ผ่าน ssh บน macOS ตอบ `Operation not permitted`
 (ต้องให้ sshd มี Full Disk Access) จึงใช้ launchd แทน
 
+**MacBook หลับ = ไม่ดึง** ⇒ มี `bin/keep-awake` (`status|on|off`) ติดตั้งไว้ที่ `~/bin/keep-awake`
+· `on` กางตัวกันหลับระดับผู้ใช้ (`caffeinate -s` ใน LaunchAgent `com.108ting.keep-awake`,
+KeepAlive, **ไม่ต้อง sudo**) ซึ่งกันหลับเฉพาะตอนเสียบไฟ · ค่าที่ต้อง `sudo` (`pmset -c sleep 0` ฯลฯ)
+สคริปต์ไม่แตะให้ แต่ `status` จะบอกว่าค่าไหนยังไม่ถูก · **ปิดฝา = หลับเสมอ กันไม่ได้**
+
 ## ทำไมต้องมี repo นี้
 
 ก่อนหน้านี้ซิงก์ด้วย `scp` ไขว้กันสามเครื่อง · 2026-09-09 มีอย่างน้อย 3 เซสชันแก้ไฟล์นี้
