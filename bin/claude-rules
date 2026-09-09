@@ -82,11 +82,17 @@ cmd_push() {
   else
     local msg="${2:-rules: อัปเดตจาก $(hostname -s) $(date '+%Y-%m-%d %H:%M')}"
     g add CLAUDE.md
-    g -c user.name="${GIT_AUTHOR_NAME:-$(hostname -s)}" \
-      -c user.email="${GIT_AUTHOR_EMAIL:-support@ibrowe.com}" \
-      commit -q -m "$msg
+    # ใช้ identity ที่เครื่องตั้งไว้ · ถ้าเครื่องไหนไม่ได้ตั้ง ค่อยใส่ชื่อเครื่องกันไปแปะชื่อคนอื่น
+    if [ -n "$(git config --get user.name || true)" ]; then
+      g commit -q -m "$msg
 
 Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+    else
+      echo "⚠️ เครื่องนี้ไม่ได้ตั้ง git user.name — ใช้ชื่อเครื่องแทน (ตั้งด้วย git config --global user.name)"
+      g -c user.name="$(hostname -s)" -c user.email="support@ibrowe.com" commit -q -m "$msg
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+    fi
     echo "commit: $(g log --oneline -1)"
   fi
   g fetch -q origin main
