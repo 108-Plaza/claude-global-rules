@@ -32,16 +32,23 @@ link_it() {
 }
 
 cmd_status() {
-  g fetch -q origin main 2>/dev/null || echo "  ⚠️ fetch ไม่ได้ (ออฟไลน์?) — ตัวเลขข้างล่างเทียบกับของที่ดึงมาล่าสุด"
+  local fetched=1
+  g fetch -q origin main 2>/dev/null || fetched=0
   local behind ahead dirty
-  behind="$(g rev-list --count HEAD..origin/main 2>/dev/null || echo '?')"
-  ahead="$(g rev-list --count origin/main..HEAD 2>/dev/null || echo '?')"
+  if [ "$fetched" = 1 ]; then
+    behind="$(g rev-list --count HEAD..origin/main 2>/dev/null || echo '?') commit"
+    ahead="$(g rev-list --count origin/main..HEAD 2>/dev/null || echo '?') commit"
+  else
+    # origin ref ที่ถืออยู่เป็นของเก่า — ตัวเลข ahead/behind จะโกหก อย่าโชว์
+    behind="เทียบไม่ได้ (fetch ไม่ผ่าน — เครื่องนี้ยังต่อ GitHub ตรงไม่ได้)"
+    ahead="$behind"
+  fi
   dirty="$(g status --porcelain -- CLAUDE.md)"
   printf '%s\n' "เครื่อง: $(hostname -s)"
   printf '  %-22s %s\n' "md5 ที่ใช้อยู่:" "$(md5 -q "$SRC")"
   printf '  %-22s %s\n' "commit:" "$(g log --oneline -1)"
-  printf '  %-22s %s\n' "ตามหลัง origin:" "$behind commit"
-  printf '  %-22s %s\n' "นำหน้า origin:" "$ahead commit"
+  printf '  %-22s %s\n' "ตามหลัง origin:" "$behind"
+  printf '  %-22s %s\n' "นำหน้า origin:" "$ahead"
   if [ -n "$dirty" ]; then
     printf '  %-22s %s\n' "แก้ค้างยังไม่ commit:" "มี ($(g diff --shortstat -- CLAUDE.md | sed 's/^ *//'))"
   else
