@@ -14,6 +14,17 @@ claude-rules push     # ส่งกฎที่เพิ่งแก้ขึ�
 claude-rules doctor   # ซ่อม symlink ที่ถูกเครื่องมืออื่นเขียนทับเป็นไฟล์ธรรมดา
 ```
 
+## ดึงอัตโนมัติ
+
+ทั้งสามเครื่องมี LaunchAgent `com.108ting.claude-rules-autopull` (ทุก 15 นาที + ตอนล็อกอิน)
+เรียก `~/bin/claude-rules-autopull` ซึ่ง **fast-forward เท่านั้น** ไม่ rebase ไม่ stash ไม่ commit เอง
+· เครื่องที่มีของค้างหรือมี commit ยังไม่ push = ข้ามและเขียนเหตุผลลง `~/.claude/rules-sync.log`
+· ดูสถานะ: `launchctl print gui/$(id -u)/com.108ting.claude-rules-autopull`
+· สั่งให้รันเดี๋ยวนี้: `launchctl kickstart gui/$(id -u)/com.108ting.claude-rules-autopull`
+
+⚠️ **ใช้ cron ไม่ได้** — `crontab` ผ่าน ssh บน macOS ตอบ `Operation not permitted`
+(ต้องให้ sshd มี Full Disk Access) จึงใช้ launchd แทน
+
 ## ทำไมต้องมี repo นี้
 
 ก่อนหน้านี้ซิงก์ด้วย `scp` ไขว้กันสามเครื่อง · 2026-09-09 มีอย่างน้อย 3 เซสชันแก้ไฟล์นี้

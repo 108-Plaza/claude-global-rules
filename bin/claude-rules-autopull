@@ -1,0 +1,68 @@
+#!/bin/bash
+# claude-rules-autopull — ดึงกฎกลางล่าสุดแบบอัตโนมัติ (เรียกจาก cron)
+#
+# ปลอดภัยเป็นหลัก: **fast-forward เท่านั้น** ไม่ rebase ไม่ stash ไม่ commit อะไรเอง
+# เครื่องไหนมีของค้างหรือมี commit ที่ยังไม่ push = ข้ามและบันทึกเหตุผล ให้คนมาจัดการ
+PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+
+REPO="$HOME/.claude/rules-repo"
+LIVE="$HOME/.claude/CLAUDE.md"
+LOG="$HOME/.claude/rules-sync.log"
+LOCK="$HOME/.claude/.rules-sync.lock"
+
+log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG"; }
+
+# หมุน log เมื่อเกิน 1 MB
+if [ -f "$LOG" ] && [ "$(wc -c < "$LOG" | tr -d ' ')" -gt 1048576 ]; then
+  mv "$LOG" "$LOG.1"
+fi
+
+# กันรันซ้อน — mkdir เป็น atomic ทั้งบน APFS
+if ! mkdir "$LOCK" 2>/dev/null; then
+  # ล็อกค้างเกิน 30 นาที = รอบก่อนตายกลางคัน ปลดให้
+  if [ -n "$(find "$LOCK" -maxdepth 0 -mmin +30 2>/dev/null)" ]; then
+    rmdir "$LOCK" 2>/dev/null && log "ปลดล็อกค้างจากรอบก่อน"
+  fi
+  exit 0
+fi
+trap 'rmdir "$LOCK" 2>/dev/null' EXIT
+
+[ -d "$REPO/.git" ] || { log "ข้าม: ไม่พบ $REPO"; exit 0; }
+
+g() { git -C "$REPO" "$@"; }
+
+if [ -n "$(g status --porcelain)" ]; then
+  log "ข้าม: มีของค้างยังไม่ commit ในเวิร์กทรี (ให้คนตัดสินว่าจะ push หรือทิ้ง)"
+  exit 0
+fi
+
+if ! g fetch -q origin main 2>/dev/null; then
+  log "ข้าม: fetch ไม่ผ่าน (เน็ต/สิทธิ์)"
+  exit 0
+fi
+
+ahead="$(g rev-list --count origin/main..HEAD 2>/dev/null || echo 0)"
+behind="$(g rev-list --count HEAD..origin/main 2>/dev/null || echo 0)"
+
+if [ "$ahead" -gt 0 ]; then
+  log "ข้าม: เครื่องนี้มี $ahead commit ที่ยังไม่ push — รัน claude-rules push เอง"
+  exit 0
+fi
+
+if [ "$behind" -eq 0 ]; then
+  exit 0   # ตรงกันอยู่แล้ว ไม่ต้อง log ให้รก
+fi
+
+before="$(g rev-parse --short HEAD)"
+if g merge -q --ff-only origin/main 2>/dev/null; then
+  log "อัปเดต: $before -> $(g rev-parse --short HEAD) ($behind commit)"
+else
+  log "🔴 ff-only ไม่ผ่านทั้งที่ ahead=0 — ประวัติถูกเขียนใหม่? ต้องแก้ด้วยมือ: git -C $REPO reset --hard origin/main"
+  exit 0
+fi
+
+# symlink หลุด = เครื่องนี้เงียบ ๆ ไม่ได้ใช้กฎจาก repo แล้ว
+if [ ! -L "$LIVE" ] || [ "$(readlink "$LIVE")" != "$REPO/CLAUDE.md" ]; then
+  log "⚠️ $LIVE ไม่ใช่ symlink ของ repo แล้ว — รัน: claude-rules doctor"
+fi
