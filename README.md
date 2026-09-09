@@ -27,10 +27,12 @@ claude-rules doctor   # ซ่อม symlink ที่ถูกเครื่�
 |---|---|---|
 | MacBook Pro | `yongyutjantaboot` | ssh key ส่วนตัว (`yuthstyle88`) |
 | Mac Studio | `yuth` | ssh key ส่วนตัว (`yuthstyle88`) |
-| Mac mini | `yuth` | ⚠️ **ยังต่อ GitHub ตรงไม่ได้** — org `108-Plaza` ปิด deploy key (`deploy_keys_enabled_for_repositories=false`) และคีย์ ssh ของเครื่องนั้นเป็น deploy key ของ `pos108-core` ไม่ใช่ผู้ใช้ |
+| Mac mini | `yuth` | **deploy key ของ repo นี้** (`~/.ssh/claude_rules_deploy` · host alias `github-rules`) |
 
-**ท่าสำรองของ Mac mini (ใช้อยู่ตอนนี้):** สำเนาตั้งต้นมาจาก `git bundle` และตั้ง
-`receive.denyCurrentBranch=updateInstead` ⇒ MacBook/Studio ส่งกฎเข้าเครื่องนั้นได้ด้วย
-`git -C ~/.claude/rules-repo push mini main` (remote `mini` = `ssh://yuth@macmini/Users/yuth/.claude/rules-repo`)
-· working tree ของ mini อัปเดตตามเอง · **แต่ mini ยัง push กลับขึ้น origin เองไม่ได้**
-⇒ ถ้าเซสชันบน mini แก้กฎ ต้องให้เครื่องอื่นดึงไปส่งแทน หรือเปิด deploy key ที่ org
+Mac mini ใช้ deploy key เพราะคีย์ ssh เดิมของเครื่องนั้น (`id_ed25519`, `pos108_deploy`)
+authenticate เป็น deploy key ของ `pos108-core` ไม่ใช่ผู้ใช้ · เจ้าของเปิด
+`deploy_keys_enabled_for_repositories` ที่ org ให้เมื่อ 2026-09-09 คีย์นี้จึงเพิ่มได้
+· คีย์เขียนได้ และแตะได้เฉพาะ repo นี้ repo เดียว
+
+**ท่าสำรอง (ยังใช้ได้ ไม่ต้องพึ่ง GitHub):** mini ตั้ง `receive.denyCurrentBranch=updateInstead`
+⇒ เครื่องอื่นส่งเข้าไปตรง ๆ ได้ด้วย `git -C ~/.claude/rules-repo push mini main`
