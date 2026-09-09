@@ -915,13 +915,6 @@ Do not stop to ask for approval between in-scope steps (see Autonomous Execution
 
 - 🔴 **กฎแข็ง:** งาน implementation ทุกชิ้นต้องมาจาก `queue_next` — เริ่ม: `queue_status` → `queue_next(worker="claude/<session-id>", host)` · ทำเฉพาะใบที่ได้ · กฎเต็ม: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` (สำเนาระดับ workspace บน MacBook: `~/IdeaProjects/108-Ting-Ecosystem/AGENTS.md` 🎫 — Mac Studio/Mac mini ไม่มีไฟล์นี้ ใช้ไฟล์นี้แทน)
   · `empty`/`backpressure` = รอ 2 นาทีแล้ว `queue_next` ใหม่ (สแกนคิวทุก 2 นาที · ทั้งระบบพร้อมกันไม่เกิน 6 งาน) ห้ามไปหยิบงานนอกคิว · heartbeat ทุก ≤30 นาที · เปิด PR แล้ว `queue_transition → pr_open` พร้อม `pr_url`
-- 🔴 **ทางเข้าคิว = HTTP API ไม่ใช่ MCP `tq` อีกแล้ว — เจ้าของสั่ง 2026-09-09** (*"แจ้งทุก session สลับมาใช้ตัวใหม่"* · ใบ `108-Plaza/108-agent-queue#215`)
-  ⇒ เลิก `ssh Dell-server curl 127.0.0.1:8787/api/snapshot` และเลิกพึ่ง MCP `tq` เป็นทางหลัก · เครื่องที่ไม่มีคีย์ ssh เข้า Dell เคย**เข้าคิวไม่ได้ทั้งชุด** (หยิบใบ/heartbeat/แจ้ง `pr_open` ไม่ได้) — ทางใหม่ไม่ต้องมีคีย์
-  · **โทเค็น:** `. ~/.config/tq/env` แล้วใช้ `$TQ` / `$TQ_TOKEN` (ไฟล์ chmod 600 นอก repo) · 🔴 **ห้าม commit ค่าโทเค็น ห้ามพิมพ์ค่าลงคำสั่ง ลง log ลงข้อความหาเซสชันอื่น** — ขอค่าใหม่จากเจ้าของถ้าไฟล์หาย
-  · **ตารางเทียบ:** `queue_status`→`GET /v1/status` · `queue_lookup`→`GET /v1/ticket/{owner}/{repo}/{issue}` · `queue_next`→`POST /v1/next` · `queue_review_next`→`POST /v1/review/next` · `queue_heartbeat`→`POST /v1/heartbeat` · `queue_transition`→`POST /v1/transition` · `queue_enqueue`→`POST /v1/enqueue` · `queue_verdict`→`POST /v1/verdict` · **เพิ่มใหม่** `GET /v1/snapshot` (แทนหน้ามอนิเตอร์ 8787 ที่ใช้เฝ้างานตัวเอง) · body ของ `POST` = พารามิเตอร์ชุดเดียวกับ MCP tool ที่คู่กัน JSON รูปเดียวกัน
-  · 🔴 **อ่านรหัสตอบกลับให้ถูก:** `200` + `kind:ticket` = ได้ใบ · `200` + `empty`/`backpressure`/`denied` = ผลปกติ รอ 2 นาทีแล้วสแกนใหม่ · `400` = คำขอผิดรูป · `401` = ไม่มี/ผิดโทเค็น (ทุกเส้นทางใต้ `/v1/` และคำขอนั้นไม่แตะคิวเลย) · `409` = transition นอกตาราง · **`500` = ฝั่งคิวล้ม ห้ามตีความว่า "ไม่มีงาน" ให้แจ้งเจ้าของ**
-  · ⚠️ **`POST /v1/enqueue` ยังไม่มีด่านตรวจ repo** — ยัดใบจากรีโปไหนก็ได้เข้าคิว รวม `yuthstyle88/*-dev` (ยืนยันบน `main` sha `e67ad5e3e3d2`: `src/api.rs:282` ส่ง `p.repo` เข้า `src/sync.rs:2179` ตรง ๆ · ทั้งฟังก์ชันไม่อ้าง `config.repos` เลย) ⇒ **รายการ `repos` คุมแค่ทาง sync** · ใบแก้: `108-Plaza/108-agent-queue#218`
-  · กฎเดิมไม่เปลี่ยนสักข้อ: สแกนทุก 2 นาที · heartbeat ≤30 นาที · หนึ่ง worker ถือทีละใบ · `pr_open` ทันทีที่เปิด PR · ห้ามแตะไฟล์นอก `ขอบเขตไฟล์` · ห้าม merge เอง
 - 🔴 **ใบที่รับได้ต้องอยู่ฝั่ง org — เจ้าของสั่ง 2026-09-09** (*"แจ้งทุก session ให้รับงานไปทำที่ฝั่ง org"* · *"งาน issue จะรับได้ ต้องอยู่ org"*)
   ⇒ **หยิบเฉพาะใบใน `108-Plaza/*`** · ใบในมิเรอร์ส่วนตัว `yuthstyle88/*-dev` **ห้ามรับ** ไม่ว่าคิวจะยื่นมาให้หรือไม่
   · ได้ใบฝั่ง dev มาจาก `queue_next` ⇒ `queue_transition → ready` คืนใบทันที แล้วขอใบใหม่ · ถ้างานนั้นต้องทำจริง ให้เปิดใบใหม่ใน repo org แล้วอ้างถึงใบเดิม
@@ -1033,6 +1026,13 @@ curl -s -X POST -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: applicati
 `200` + `kind:ticket` = ได้ใบ · `200` + `empty`/`backpressure`/`denied` = **ผลปกติ** รอ 2 นาทีแล้วสแกนใหม่ ·
 `400` = คำขอผิดรูป (เนื้อ error บอกจุด) · `401` = token ผิด · `409` = transition นอกตาราง ·
 **`500` = ฝั่งคิวล้ม ห้ามตีความว่า "ไม่มีงาน" ให้แจ้งเจ้าของ**
+
+⚠️ **`POST /v1/enqueue` ยังไม่มีด่านตรวจ repo** — ยัดใบจากรีโปไหนก็ได้เข้าคิว รวม `yuthstyle88/*-dev`
+ที่กฎ org-only ข้างบนห้ามไว้ · ยืนยันบน `main` sha `e67ad5e3e3d2`: **สาม** call site
+(`src/api.rs:282` · `src/mcp.rs:684` · `src/cli.rs:429`) ส่ง repo ดิบเข้า `src/sync.rs:2179`
+และทั้งฟังก์ชันไม่อ้าง `config.repos` เลย ⇒ **รายการ `repos` คุมแค่ทาง sync** · แย่กว่านั้นมันเขียนกลับ
+เข้า repo ปลายทางจริง (`gh.add_labels` ที่ `src/sync.rs:2229`) ⇒ ใบผิดรีโปโดนติด label `ready`
+ค้างบน GitHub ก่อนใครจะทันตรวจ · ใบแก้: `108-Plaza/108-agent-queue#218`
 
 **กฎเดิมไม่เปลี่ยนสักข้อ:** สแกนทุก 2 นาที · heartbeat ≤30 นาที · หนึ่ง worker ถือทีละใบ ·
 `pr_open` ทันทีที่เปิด PR · ห้ามแตะไฟล์นอก `file_scope` · ห้าม merge เอง
