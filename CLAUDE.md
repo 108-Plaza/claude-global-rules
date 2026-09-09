@@ -919,7 +919,9 @@ Do not stop to ask for approval between in-scope steps (see Autonomous Execution
   ⇒ **หยิบเฉพาะใบใน `108-Plaza/*`** · ใบในมิเรอร์ส่วนตัว `yuthstyle88/*-dev` **ห้ามรับ** ไม่ว่าคิวจะยื่นมาให้หรือไม่
   · ได้ใบฝั่ง dev มาจาก `queue_next` ⇒ `queue_transition → ready` คืนใบทันที แล้วขอใบใหม่ · ถ้างานนั้นต้องทำจริง ให้เปิดใบใหม่ใน repo org แล้วอ้างถึงใบเดิม
   · เหตุผลเชิงกลไก: PR merge ที่ไหน ใบต้องอยู่ที่นั่น — `Fixes #N` ปิดได้เฉพาะใบใน repo เดียวกัน ⇒ ใบผิดฝั่ง = PR ปิดใบไม่ได้ และงานหายจากบันทึกของ org
-  · **สถานะตอนประกาศ** (snapshot `http://127.0.0.1:8787/api/snapshot` บน Dell · `generated_at 2026-09-09T14:29:06Z`): 23 แถวในคิว มี **แถวเดียวที่อยู่นอก org** คือ `yuthstyle88/pos108-store-dev#43` (`pr_open` · worker `gemini/ee1e9310` · `dispatched_by claude/1cba4cf2`) — รอเจ้าของตัดสินว่าจะให้ทำจบหรือย้ายไป org · ที่เหลืออยู่ `108-Plaza/*` ครบแล้ว
+  · **คิวไม่ดูดใบฝั่ง dev อยู่แล้วตั้งแต่ 2026-09-09** — `repos = [...]` ใน `/home/yuth/108-agent-queue/config.toml` บน Dell มีแต่ `108-Plaza/*` ทั้ง 17 ตัว · ตัว personal ตัวสุดท้าย (`yuthstyle88/pos108-core-dev`) ถูกถอดวันเดียวกันตามคำสั่งเจ้าของ *"ทำ -dev เป็นกระจกอ่านอย่างเดียว"* ⇒ **คืนใบ dev แล้วไม่วนกลับมา** ไม่ต้อง `tq retire`
+  · ⚠️ ช่องที่ยังเหลือ: `queue_enqueue` / `POST /v1/enqueue` ยัดใบตรงได้โดยไม่สนรายการ `repos` ⇒ **ใบ dev เข้าคิวได้ถ้ามีคนยัดเอง** — เห็นแล้วให้คืน `ready` แล้วรายงานเจ้าของ ไม่ใช่หยิบทำ
+  · **สถานะตอนประกาศ** (`GET /v1/snapshot` · `generated_at 2026-09-09T14:35:19Z`): 18 แถวในคิว **ไม่มีแถวไหนอยู่นอก org** · ใบนอก org ใบสุดท้าย `yuthstyle88/pos108-store-dev#43` merge ไปแล้วเวลา 14:29:27Z (`GET /v1/ticket/...` → `{"state":"merged","pr_number":44,"worker":"gemini/ee1e9310"}`) ⇒ ไม่มีอะไรค้างให้ตัดสิน
 - 🔴 **ทำงานเสร็จ = แจ้งในระบบคิว** (เจ้าของสั่ง 2026-09-05 *"เมื่อทำงานเสร็จให้แจ้งในระบบคิว"*): ทันทีที่ PR เปิด ต้อง `queue_transition(repo, issue, to: "pr_open", worker, pr_url)` — **นี่คือการแจ้งขอรีวิว** reviewer เห็นจาก monitor/event stream ทันที ไม่ต้องส่งข้อความแยกและห้ามใช้ทางอื่นแทน · ไม่แจ้ง = ใบค้าง `leased` จน lease หมด (90 นาที) และไม่มีใครรู้ว่ามีของให้รีวิว · **PR ที่ไม่มี transition ถือว่างานยังไม่เสร็จ** · ถ้าทำต่อไม่ได้ให้แจ้งเหมือนกัน: `to: "ready"` (ปล่อยคืน) หรือ `to: "blocked"` + `reason`
 - 🔴 **ใครรีวิวอะไร — เจ้าของตัดสิน 2026-09-09** *"gemini เขียนได้ ให้ claude รีวิวแทน"*
 
@@ -986,3 +988,45 @@ Do not stop to ask for approval between in-scope steps (see Autonomous Execution
   ⇒ Claude โพสต์ verdict ได้ แต่**ห้ามติด `reviewed` เอง** · สิทธิ์ที่เคยมอบให้ Gemini ติดแทน (09-07) ยกเลิกแล้ว
 - ใบต้องมี `## ขอบเขตไฟล์`
 **ทุก agent จ่ายงานเข้าคิวด้วย (เจ้าของสั่ง 2026-09-05):** เจองาน/บั๊กระหว่างทำ → **ห้ามทำเอง** → เปิด issue ใน repo ที่ PR จะ merge ตามแบบ 10 ท่อน พร้อม `## ขอบเขตไฟล์` แล้วติด label `ready` + `class:mechanical|logic|guarded` (+ `p0` ถ้าด่วน, + `assign:<kind>` ถ้าจะระบุตัว — ใบ #9) · คิวจะดูดเข้าใน ≤60 วิ · ใบที่ไม่มี `## ขอบเขตไฟล์` = scope `**` ชนทุกใบ ออกได้ทีละใบ ถึงจะเข้าคิวได้ดี (ไม่มี = scope `**` ชนทุกใบ) · ใส่ `ready` + `class:*` + (ถ้าจะสั่งตัวไหน) `assign:<kind>` (ใบ #9)
+
+## 🌐 ทางเข้าคิว = **HTTP API** ไม่ใช่ MCP / ssh อีกต่อไป (เจ้าของสั่ง 2026-09-09)
+
+**คำสั่ง:** *"ทุก session สลับมาใช้ทางเข้าคิวใหม่"* + *"แจ้งทุก session ทราบ"*
+คิว `tq` เปิด HTTP API ที่มี auth แล้ว ทำได้ครบทุกอย่างที่ MCP ทำได้ **โดยไม่ต้อง ssh เข้า Dell**
+
+```
+source ~/.config/tq/env      # ตั้ง $TQ + $TQ_TOKEN (chmod 600 อยู่นอก repo)
+```
+🔴 **token ห้าม commit ที่ไหนทั้งสิ้น** — อยู่ใน `~/.config/tq/env` เท่านั้น อย่าพิมพ์ค่าลงใบ/PR/สคริปต์ที่ track
+
+| MCP tool เดิม | endpoint ใหม่ |
+|---|---|
+| `queue_status` | `GET /v1/status` |
+| `queue_lookup` | `GET /v1/ticket/{owner}/{repo}/{issue}` |
+| `queue_next` | `POST /v1/next` |
+| `queue_review_next` | `POST /v1/review/next` |
+| `queue_heartbeat` | `POST /v1/heartbeat` |
+| `queue_transition` | `POST /v1/transition` |
+| `queue_enqueue` | `POST /v1/enqueue` |
+| `queue_verdict` | `POST /v1/verdict` |
+| — (ของใหม่) | `GET /v1/snapshot` — **แทน `ssh Dell-server curl 127.0.0.1:8787/api/snapshot`** ที่กฎมอนิเตอร์ข้างบนเขียนไว้ |
+
+body ของ POST = พารามิเตอร์ชุดเดียวกับ MCP tool ที่คู่กัน · ผล JSON รูปเดียวกัน (โค้ดใช้ struct เดียวกัน เรียก `Queue` ตัวเดียวกัน)
+
+```bash
+source ~/.config/tq/env
+curl -s -X POST -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: application/json' \
+  -d '{"worker":"claude/<session-id>","host":"'"$(hostname)"'","capabilities":["logic"],"repos":["<เลนของคุณ>"]}' \
+  "$TQ/v1/next"
+```
+
+🔴 **อ่านรหัสตอบกลับให้ถูก** — นี่คือจุดที่ตีความผิดแล้วทั้งเลนหยุดเงียบ:
+`200` + `kind:ticket` = ได้ใบ · `200` + `empty`/`backpressure`/`denied` = **ผลปกติ** รอ 2 นาทีแล้วสแกนใหม่ ·
+`400` = คำขอผิดรูป (เนื้อ error บอกจุด) · `401` = token ผิด · `409` = transition นอกตาราง ·
+**`500` = ฝั่งคิวล้ม ห้ามตีความว่า "ไม่มีงาน" ให้แจ้งเจ้าของ**
+
+**กฎเดิมไม่เปลี่ยนสักข้อ:** สแกนทุก 2 นาที · heartbeat ≤30 นาที · หนึ่ง worker ถือทีละใบ ·
+`pr_open` ทันทีที่เปิด PR · ห้ามแตะไฟล์นอก `file_scope` · ห้าม merge เอง
+
+รายละเอียด + หลักฐานรอบเต็มบน production: `108-Plaza/108-agent-queue#215`
+(โปรโตคอลอัปเดตแล้วที่ `docs/AGENT_PROTOCOL.md` · โค้ด `src/api.rs` · ใบต้นเรื่อง #208)
