@@ -915,6 +915,11 @@ Do not stop to ask for approval between in-scope steps (see Autonomous Execution
 
 - 🔴 **กฎแข็ง:** งาน implementation ทุกชิ้นต้องมาจาก `queue_next` — เริ่ม: `queue_status` → `queue_next(worker="claude/<session-id>", host)` · ทำเฉพาะใบที่ได้ · กฎเต็ม: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` (สำเนาระดับ workspace บน MacBook: `~/IdeaProjects/108-Ting-Ecosystem/AGENTS.md` 🎫 — Mac Studio/Mac mini ไม่มีไฟล์นี้ ใช้ไฟล์นี้แทน)
   · `empty`/`backpressure` = รอ 2 นาทีแล้ว `queue_next` ใหม่ (สแกนคิวทุก 2 นาที · ทั้งระบบพร้อมกันไม่เกิน 6 งาน) ห้ามไปหยิบงานนอกคิว · heartbeat ทุก ≤30 นาที · เปิด PR แล้ว `queue_transition → pr_open` พร้อม `pr_url`
+- 🔴 **ใบที่รับได้ต้องอยู่ฝั่ง org — เจ้าของสั่ง 2026-09-09** (*"แจ้งทุก session ให้รับงานไปทำที่ฝั่ง org"* · *"งาน issue จะรับได้ ต้องอยู่ org"*)
+  ⇒ **หยิบเฉพาะใบใน `108-Plaza/*`** · ใบในมิเรอร์ส่วนตัว `yuthstyle88/*-dev` **ห้ามรับ** ไม่ว่าคิวจะยื่นมาให้หรือไม่
+  · ได้ใบฝั่ง dev มาจาก `queue_next` ⇒ `queue_transition → ready` คืนใบทันที แล้วขอใบใหม่ · ถ้างานนั้นต้องทำจริง ให้เปิดใบใหม่ใน repo org แล้วอ้างถึงใบเดิม
+  · เหตุผลเชิงกลไก: PR merge ที่ไหน ใบต้องอยู่ที่นั่น — `Fixes #N` ปิดได้เฉพาะใบใน repo เดียวกัน ⇒ ใบผิดฝั่ง = PR ปิดใบไม่ได้ และงานหายจากบันทึกของ org
+  · **สถานะตอนประกาศ** (snapshot `http://127.0.0.1:8787/api/snapshot` บน Dell · `generated_at 2026-09-09T14:29:06Z`): 23 แถวในคิว มี **แถวเดียวที่อยู่นอก org** คือ `yuthstyle88/pos108-store-dev#43` (`pr_open` · worker `gemini/ee1e9310` · `dispatched_by claude/1cba4cf2`) — รอเจ้าของตัดสินว่าจะให้ทำจบหรือย้ายไป org · ที่เหลืออยู่ `108-Plaza/*` ครบแล้ว
 - 🔴 **ทำงานเสร็จ = แจ้งในระบบคิว** (เจ้าของสั่ง 2026-09-05 *"เมื่อทำงานเสร็จให้แจ้งในระบบคิว"*): ทันทีที่ PR เปิด ต้อง `queue_transition(repo, issue, to: "pr_open", worker, pr_url)` — **นี่คือการแจ้งขอรีวิว** reviewer เห็นจาก monitor/event stream ทันที ไม่ต้องส่งข้อความแยกและห้ามใช้ทางอื่นแทน · ไม่แจ้ง = ใบค้าง `leased` จน lease หมด (90 นาที) และไม่มีใครรู้ว่ามีของให้รีวิว · **PR ที่ไม่มี transition ถือว่างานยังไม่เสร็จ** · ถ้าทำต่อไม่ได้ให้แจ้งเหมือนกัน: `to: "ready"` (ปล่อยคืน) หรือ `to: "blocked"` + `reason`
 - 🔴 **ใครรีวิวอะไร — เจ้าของตัดสิน 2026-09-09** *"gemini เขียนได้ ให้ claude รีวิวแทน"*
 
