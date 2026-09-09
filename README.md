@@ -19,6 +19,9 @@ claude-rules doctor   # ซ่อม symlink ที่ถูกเครื่�
 ทั้งสามเครื่องมี LaunchAgent `com.108ting.claude-rules-autopull` (ทุก 15 นาที + ตอนล็อกอิน)
 เรียก `~/bin/claude-rules-autopull` ซึ่ง **fast-forward เท่านั้น** ไม่ rebase ไม่ stash ไม่ commit เอง
 · เครื่องที่มีของค้างหรือมี commit ยังไม่ push = ข้ามและเขียนเหตุผลลง `~/.claude/rules-sync.log`
+· **heartbeat วันละครั้ง** เมื่อไม่มีอะไรต้องดึง (`heartbeat: ตรงกับ origin (<sha>)`) ⇒ log เงียบ
+  = เอเยนต์ตาย ไม่ใช่ "ไม่มีอะไรเปลี่ยน" · เหตุผล "ข้าม" ที่ซ้ำ ๆ ถูกจำกัดไว้ 6 ชม./ครั้ง
+  ไม่งั้นเวิร์กทรีสกปรกค้างวันเดียวได้ 96 บรรทัด
 · ดูสถานะ: `launchctl print gui/$(id -u)/com.108ting.claude-rules-autopull`
 · สั่งให้รันเดี๋ยวนี้: `launchctl kickstart gui/$(id -u)/com.108ting.claude-rules-autopull`
 

@@ -13,6 +13,17 @@ LOCK="$HOME/.claude/.rules-sync.lock"
 
 log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG"; }
 
+# log_every <key> <นาที> <ข้อความ> — เขียนก็ต่อเมื่อคีย์นั้นเงียบมานานพอ
+# กันสองอย่าง: heartbeat ไม่ให้ถี่กว่าวันละครั้ง และเหตุผล "ข้าม" ไม่ให้ซ้ำทุก 15 นาที
+log_every() {
+  local stamp="$HOME/.claude/.rules-sync.stamp-$1" mins="$2" msg="$3"
+  if [ -f "$stamp" ] && [ -z "$(find "$stamp" -maxdepth 0 -mmin +"$mins" 2>/dev/null)" ]; then
+    return 0
+  fi
+  log "$msg"
+  : > "$stamp"
+}
+
 # หมุน log เมื่อเกิน 1 MB
 if [ -f "$LOG" ] && [ "$(wc -c < "$LOG" | tr -d ' ')" -gt 1048576 ]; then
   mv "$LOG" "$LOG.1"
@@ -33,12 +44,12 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 g() { git -C "$REPO" "$@"; }
 
 if [ -n "$(g status --porcelain)" ]; then
-  log "ข้าม: มีของค้างยังไม่ commit ในเวิร์กทรี (ให้คนตัดสินว่าจะ push หรือทิ้ง)"
+  log_every dirty 360 "ข้าม: มีของค้างยังไม่ commit ในเวิร์กทรี (ให้คนตัดสินว่าจะ push หรือทิ้ง)"
   exit 0
 fi
 
 if ! g fetch -q origin main 2>/dev/null; then
-  log "ข้าม: fetch ไม่ผ่าน (เน็ต/สิทธิ์)"
+  log_every fetchfail 360 "ข้าม: fetch ไม่ผ่าน (เน็ต/สิทธิ์)"
   exit 0
 fi
 
@@ -46,17 +57,20 @@ ahead="$(g rev-list --count origin/main..HEAD 2>/dev/null || echo 0)"
 behind="$(g rev-list --count HEAD..origin/main 2>/dev/null || echo 0)"
 
 if [ "$ahead" -gt 0 ]; then
-  log "ข้าม: เครื่องนี้มี $ahead commit ที่ยังไม่ push — รัน claude-rules push เอง"
+  log_every ahead 360 "ข้าม: เครื่องนี้มี $ahead commit ที่ยังไม่ push — รัน claude-rules push เอง"
   exit 0
 fi
 
 if [ "$behind" -eq 0 ]; then
-  exit 0   # ตรงกันอยู่แล้ว ไม่ต้อง log ให้รก
+  # ตรงกันอยู่แล้ว — เขียน heartbeat วันละครั้งพอ (1380 นาที = 23 ชม. กันเลื่อนจนข้ามวัน)
+  log_every heartbeat 1380 "heartbeat: ตรงกับ origin ($(g rev-parse --short HEAD)) — ไม่มีอะไรต้องดึง"
+  exit 0
 fi
 
 before="$(g rev-parse --short HEAD)"
 if g merge -q --ff-only origin/main 2>/dev/null; then
   log "อัปเดต: $before -> $(g rev-parse --short HEAD) ($behind commit)"
+  : > "$HOME/.claude/.rules-sync.stamp-heartbeat"
 else
   log "🔴 ff-only ไม่ผ่านทั้งที่ ahead=0 — ประวัติถูกเขียนใหม่? ต้องแก้ด้วยมือ: git -C $REPO reset --hard origin/main"
   exit 0
