@@ -1,0 +1,135 @@
+#!/usr/bin/env bash
+# claude-alt — เปิด Claude Desktop อีกบัญชีหนึ่งคู่ขนานกับตัวที่เปิดอยู่
+#
+# แต่ละโปรไฟล์ = data dir ของตัวเอง (คุกกี้/ล็อกอิน/MCP config แยกกัน)
+#   data dir : ~/Library/Application Support/Claude-<profile>
+#   config   : ใช้ ~/.claude ร่วมกัน (กฎกลาง + memory) เว้นแต่ใส่ --separate-config
+#
+# ใช้:  claude-alt work            เปิด/สลับไปโปรไฟล์ work
+#       claude-alt work --app      สร้างไอคอนใน ~/Applications ไว้กดจาก Dock
+#       claude-alt --list          ดูโปรไฟล์ที่มี + ตัวที่รันอยู่
+set -euo pipefail
+
+APP="/Applications/Claude.app"
+BIN="$APP/Contents/MacOS/Claude"
+SUPPORT="$HOME/Library/Application Support"
+MAIN_DATA="$SUPPORT/Claude"
+
+die() { printf 'claude-alt: %s\n' "$1" >&2; exit 1; }
+
+# pgrep บนเครื่องนี้มองไม่เห็นอินสแตนซ์ที่ผู้ใช้เปิดจาก Finder — ใช้ ps แทน (เทียบสตริงตรง ๆ ไม่ใช่ regex)
+pid_for_data_dir() {
+  # $2 == $BIN กันไม่ให้ awk เจอสตริงค้นหาในบรรทัดคำสั่งของตัวเอง
+  ps -Ao pid=,command= | awk -v b="$BIN" -v d="--user-data-dir=$1" '$2 == b && index($0, d) && !f { print $1; f = 1 }'
+}
+pid_main_account() {
+  ps -Ao pid=,command= | awk -v b="$BIN" '$2 == b && index($0, "--user-data-dir=") == 0 && !f { print $1; f = 1 }'
+}
+
+usage() {
+  sed -n '2,10p' "$0" | sed 's/^# \{0,1\}//'
+  exit "${1:-0}"
+}
+
+list_profiles() {
+  local found=0 d name pid
+  for d in "$SUPPORT"/Claude-*; do
+    [ -d "$d" ] || continue
+    found=1
+    name="${d##*/Claude-}"
+    pid="$(pid_for_data_dir "$d")"
+    if [ -n "$pid" ]; then
+      printf '  %-20s รันอยู่ (pid %s)\n' "$name" "$pid"
+    else
+      printf '  %-20s ปิดอยู่\n' "$name"
+    fi
+  done
+  pid="$(pid_main_account)"
+  printf '  %-20s %s   <- บัญชีหลัก\n' "(default)" \
+    "$([ -n "$pid" ] && echo "รันอยู่ (pid $pid)" || echo 'ปิดอยู่')"
+  [ "$found" = 1 ] || echo '  (ยังไม่มีโปรไฟล์เสริม — สร้างด้วย: claude-alt <ชื่อ>)'
+}
+
+make_app_bundle() {
+  local profile="$1"
+  local bundle="$HOME/Applications/Claude ($profile).app"
+  mkdir -p "$HOME/Applications"
+  rm -rf "$bundle"
+  osacompile -o "$bundle" -e "do shell script \"$HOME/bin/claude-alt $(printf %q "$profile")\"" \
+    || die "สร้าง .app ไม่สำเร็จ"
+  if [ -f "$APP/Contents/Resources/electron.icns" ]; then
+    cp "$APP/Contents/Resources/electron.icns" "$bundle/Contents/Resources/applet.icns"
+  fi
+  /usr/bin/defaults write "$bundle/Contents/Info" CFBundleName -string "Claude ($profile)" 2>/dev/null || true
+  /usr/bin/touch "$bundle"
+  echo "สร้างไอคอนแล้ว: $bundle"
+}
+
+[ $# -gt 0 ] || usage 1
+[ -x "$BIN" ] || die "ไม่พบ $BIN — Claude Desktop ติดตั้งอยู่ที่อื่น?"
+
+PROFILE=""
+MAKE_APP=0
+SEPARATE_CONFIG=0
+for arg in "$@"; do
+  case "$arg" in
+    --list|-l)          list_profiles; exit 0 ;;
+    --help|-h)          usage 0 ;;
+    --app)              MAKE_APP=1 ;;
+    --separate-config)  SEPARATE_CONFIG=1 ;;
+    -*)                 die "ไม่รู้จักตัวเลือก $arg (ดู --help)" ;;
+    *)                  [ -z "$PROFILE" ] || die "ระบุโปรไฟล์ได้ทีละหนึ่งชื่อ"
+                        PROFILE="$arg" ;;
+  esac
+done
+
+[ -n "$PROFILE" ] || die "ต้องระบุชื่อโปรไฟล์ เช่น: claude-alt work"
+case "$PROFILE" in
+  *[!A-Za-z0-9._-]*) die "ชื่อโปรไฟล์ใช้ได้แค่ A-Z a-z 0-9 . _ - (ได้มา: $PROFILE)" ;;
+  default)           die "ชื่อ 'default' สงวนไว้ให้บัญชีหลัก" ;;
+esac
+
+DATA_DIR="$SUPPORT/Claude-$PROFILE"
+
+# รันอยู่แล้ว -> ยกหน้าต่างขึ้นมา ไม่เปิดซ้ำ
+RUNNING="$(pid_for_data_dir "$DATA_DIR")"
+if [ -n "$RUNNING" ]; then
+  echo "โปรไฟล์ '$PROFILE' รันอยู่แล้ว (pid $RUNNING) — กำลังยกหน้าต่างขึ้น"
+  if [ -n "${SSH_CONNECTION:-}" ]; then
+    # ผ่าน ssh: osascript ค้างรอสิทธิ์ System Events ได้เป็นนาที — ข้ามไปเลย
+    echo "  (สั่งผ่าน ssh — ไปคลิกไอคอนบน Dock ของเครื่องนั้นเพื่อยกหน้าต่าง)"
+  else
+    osascript -e "tell application \"System Events\" to set frontmost of (first process whose unix id is $RUNNING) to true" \
+      2>/dev/null || echo "  (ยกหน้าต่างอัตโนมัติไม่ได้ — คลิกที่ Dock เอง)"
+  fi
+  if [ "$MAKE_APP" = 1 ]; then make_app_bundle "$PROFILE"; fi
+  exit 0
+fi
+
+# ครั้งแรก: สร้าง data dir แล้วยืม MCP config ของบัญชีหลักมาตั้งต้น
+FIRST_RUN=0
+if [ ! -d "$DATA_DIR" ]; then
+  FIRST_RUN=1
+  mkdir -p "$DATA_DIR"
+  if [ -f "$MAIN_DATA/claude_desktop_config.json" ]; then
+    cp "$MAIN_DATA/claude_desktop_config.json" "$DATA_DIR/"
+    echo "ก๊อป MCP config จากบัญชีหลักมาให้แล้ว"
+  fi
+fi
+
+# bash 3.2 (ที่มากับ macOS) ไม่ชอบ array ว่างใต้ set -u — แยกสองทางไปเลย
+if [ "$SEPARATE_CONFIG" = 1 ]; then
+  CFG="$HOME/.claude-$PROFILE"
+  mkdir -p "$CFG"
+  echo "แยก Claude Code config: $CFG (ไม่ใช้กฎกลาง/memory ร่วมกับบัญชีหลัก)"
+  nohup env CLAUDE_CONFIG_DIR="$CFG" "$BIN" --user-data-dir="$DATA_DIR" >/dev/null 2>&1 &
+else
+  nohup "$BIN" --user-data-dir="$DATA_DIR" >/dev/null 2>&1 &
+fi
+disown 2>/dev/null || true
+
+echo "เปิด Claude โปรไฟล์ '$PROFILE' แล้ว"
+if [ "$FIRST_RUN" = 1 ]; then echo "  ครั้งแรก: หน้าต่างจะขึ้นหน้า login — ใส่บัญชีที่สองได้เลย"; fi
+echo "  data dir: $DATA_DIR"
+if [ "$MAKE_APP" = 1 ]; then make_app_bundle "$PROFILE"; fi
+exit 0

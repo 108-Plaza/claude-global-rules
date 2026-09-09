@@ -1,0 +1,115 @@
+#!/usr/bin/env bash
+# claude-rules — ซิงก์ ~/.claude/CLAUDE.md ผ่าน repo 108-Plaza/claude-global-rules
+#
+#   claude-rules status   เทียบเครื่องนี้กับ origin/main
+#   claude-rules pull     ดึงกฎล่าสุดลงเครื่องนี้
+#   claude-rules push     ส่งกฎที่แก้ขึ้น origin (rebase ก่อนเสมอ)
+#   claude-rules doctor   ซ่อม symlink ที่ถูกเขียนทับเป็นไฟล์ธรรมดา
+#   claude-rules link     ติดตั้งครั้งแรก: สำรองไฟล์เดิมแล้วทำ symlink
+set -euo pipefail
+
+CLONE="$HOME/.claude/rules-repo"
+LIVE="$HOME/.claude/CLAUDE.md"
+SRC="$CLONE/CLAUDE.md"
+REMOTE_HINT="git@github.com:108-Plaza/claude-global-rules.git"
+
+die() { printf 'claude-rules: %s\n' "$1" >&2; exit 1; }
+g()   { git -C "$CLONE" "$@"; }
+
+[ -d "$CLONE/.git" ] || die "ยังไม่มีสำเนาที่ $CLONE — โคลนก่อน: git clone $REMOTE_HINT $CLONE"
+
+is_linked() { [ -L "$LIVE" ] && [ "$(readlink "$LIVE")" = "$SRC" ]; }
+
+link_it() {
+  if is_linked; then echo "symlink ถูกต้องอยู่แล้ว"; return 0; fi
+  if [ -e "$LIVE" ] && [ ! -L "$LIVE" ]; then
+    local bak="$LIVE.bak-$(date +%Y%m%d-%H%M%S)"
+    cp "$LIVE" "$bak"
+    echo "สำรองไฟล์เดิมไว้: $bak"
+  fi
+  ln -sfn "$SRC" "$LIVE"
+  echo "ทำ symlink แล้ว: $LIVE -> $SRC"
+}
+
+cmd_status() {
+  g fetch -q origin main 2>/dev/null || echo "  ⚠️ fetch ไม่ได้ (ออฟไลน์?) — ตัวเลขข้างล่างเทียบกับของที่ดึงมาล่าสุด"
+  local behind ahead dirty
+  behind="$(g rev-list --count HEAD..origin/main 2>/dev/null || echo '?')"
+  ahead="$(g rev-list --count origin/main..HEAD 2>/dev/null || echo '?')"
+  dirty="$(g status --porcelain -- CLAUDE.md)"
+  printf '%s\n' "เครื่อง: $(hostname -s)"
+  printf '  %-22s %s\n' "md5 ที่ใช้อยู่:" "$(md5 -q "$SRC")"
+  printf '  %-22s %s\n' "commit:" "$(g log --oneline -1)"
+  printf '  %-22s %s\n' "ตามหลัง origin:" "$behind commit"
+  printf '  %-22s %s\n' "นำหน้า origin:" "$ahead commit"
+  if [ -n "$dirty" ]; then
+    printf '  %-22s %s\n' "แก้ค้างยังไม่ commit:" "มี ($(g diff --shortstat -- CLAUDE.md | sed 's/^ *//'))"
+  else
+    printf '  %-22s %s\n' "แก้ค้างยังไม่ commit:" "ไม่มี"
+  fi
+  if is_linked; then
+    printf '  %-22s %s\n' "symlink:" "ปกติ"
+  else
+    printf '  %-22s %s\n' "symlink:" "🔴 ขาด — รัน: claude-rules doctor"
+  fi
+}
+
+cmd_pull() {
+  g fetch -q origin main
+  if [ -n "$(g status --porcelain -- CLAUDE.md)" ]; then
+    echo "มีกฎที่แก้ค้างอยู่บนเครื่องนี้ — เก็บไว้ชั่วคราวระหว่างดึง (autostash)"
+  fi
+  if g pull -q --rebase --autostash origin main; then
+    echo "ดึงแล้ว: $(g log --oneline -1)"
+  else
+    die "rebase ชนกัน — แก้ที่ $SRC แล้วรัน: git -C $CLONE rebase --continue"
+  fi
+  link_it >/dev/null
+  echo "md5 ตอนนี้: $(md5 -q "$SRC")"
+}
+
+cmd_push() {
+  is_linked || echo "⚠️ symlink ขาดอยู่ — จะ push เฉพาะสิ่งที่อยู่ใน $SRC (รัน doctor ก่อนถ้าไม่แน่ใจ)"
+  if [ -z "$(g status --porcelain -- CLAUDE.md)" ]; then
+    echo "ไม่มีอะไรเปลี่ยนใน CLAUDE.md"
+  else
+    local msg="${2:-rules: อัปเดตจาก $(hostname -s) $(date '+%Y-%m-%d %H:%M')}"
+    g add CLAUDE.md
+    g -c user.name="${GIT_AUTHOR_NAME:-$(hostname -s)}" \
+      -c user.email="${GIT_AUTHOR_EMAIL:-support@ibrowe.com}" \
+      commit -q -m "$msg
+
+Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
+    echo "commit: $(g log --oneline -1)"
+  fi
+  g fetch -q origin main
+  if ! g rebase -q origin/main; then
+    die "กฎบน origin เปลี่ยนและชนกับของเรา — แก้ที่ $SRC แล้ว: git -C $CLONE rebase --continue"
+  fi
+  g push -q origin HEAD:main
+  echo "ส่งขึ้น origin แล้ว: $(g log --oneline -1)"
+}
+
+cmd_doctor() {
+  if is_linked; then echo "symlink ปกติ — ไม่มีอะไรต้องซ่อม"; cmd_status; return 0; fi
+  if [ -f "$LIVE" ] && [ ! -L "$LIVE" ]; then
+    if cmp -s "$LIVE" "$SRC"; then
+      echo "ไฟล์จริงเนื้อหาเท่ากับใน repo — ทำ symlink กลับได้เลย"
+    else
+      echo "🔴 ไฟล์จริงต่างจาก repo — เครื่องมืออื่นเขียนทับ symlink ไปแล้ว"
+      cp "$LIVE" "$SRC"
+      echo "   ยกเนื้อหานั้นเข้า repo แล้ว (ยังไม่ commit) — ตรวจด้วย: git -C $CLONE diff"
+    fi
+  fi
+  link_it
+}
+
+case "${1:-status}" in
+  status) cmd_status ;;
+  pull)   cmd_pull ;;
+  push)   cmd_push "$@" ;;
+  doctor) cmd_doctor ;;
+  link)   link_it ;;
+  -h|--help|help) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
+  *) die "ไม่รู้จักคำสั่ง '$1' (ดู --help)" ;;
+esac
