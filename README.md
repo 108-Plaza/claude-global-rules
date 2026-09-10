@@ -47,6 +47,12 @@ KeepAlive, **ไม่ต้อง sudo**) ซึ่งกันหลับเ�
 | MacBook Pro | `yongyutjantaboot` | ssh key ส่วนตัว (`yuthstyle88`) |
 | Mac Studio | `yuth` | ssh key ส่วนตัว (`yuthstyle88`) |
 | Mac mini | `yuth` | **deploy key ของ repo นี้** (`~/.ssh/claude_rules_deploy` · host alias `github-rules`) |
+| Dell (`Dell-server`, Linux) | `yuth` | **HTTPS + `gh auth git-credential`** ตั้งไว้ใน config ของ clone เท่านั้น (ไม่แตะ global) |
+
+Dell ต่อเข้าระบบ 2026-09-11 — ก่อนหน้านั้นเป็นไฟล์ที่ก๊อปมาทีละรอบ จึงไม่ได้กฎใหม่เอง
+· ใช้ HTTPS เพราะ `~/.ssh/config` ของ Dell ผูก `github.com` ไว้กับ deploy key ของ `pos108-core`
+· Linux ใช้ **cron** ได้ปกติ (ข้อห้าม cron ข้างบนเป็นเรื่องของ macOS): `*/15` เรียก
+  `~/.claude/rules-repo/bin/claude-rules-autopull` ตรงจาก clone · สำรอง crontab เดิมไว้ที่ `~/crontab.bak-*`
 
 Mac mini ใช้ deploy key เพราะคีย์ ssh เดิมของเครื่องนั้น (`id_ed25519`, `pos108_deploy`)
 authenticate เป็น deploy key ของ `pos108-core` ไม่ใช่ผู้ใช้ · เจ้าของเปิด

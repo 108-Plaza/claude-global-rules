@@ -15,6 +15,8 @@ REMOTE_HINT="git@github.com:108-Plaza/claude-global-rules.git"
 
 die() { printf 'claude-rules: %s\n' "$1" >&2; exit 1; }
 g()   { git -C "$CLONE" "$@"; }
+# macOS มี md5 · Linux (Dell) มี md5sum
+md5_of() { if command -v md5 >/dev/null 2>&1; then md5 -q "$1"; else md5sum "$1" | cut -d' ' -f1; fi; }
 
 [ -d "$CLONE/.git" ] || die "ยังไม่มีสำเนาที่ $CLONE — โคลนก่อน: git clone $REMOTE_HINT $CLONE"
 
@@ -45,7 +47,7 @@ cmd_status() {
   fi
   dirty="$(g status --porcelain -- CLAUDE.md)"
   printf '%s\n' "เครื่อง: $(hostname -s)"
-  printf '  %-22s %s\n' "md5 ที่ใช้อยู่:" "$(md5 -q "$SRC")"
+  printf '  %-22s %s\n' "md5 ที่ใช้อยู่:" "$(md5_of "$SRC")"
   printf '  %-22s %s\n' "commit:" "$(g log --oneline -1)"
   printf '  %-22s %s\n' "ตามหลัง origin:" "$behind"
   printf '  %-22s %s\n' "นำหน้า origin:" "$ahead"
@@ -72,7 +74,7 @@ cmd_pull() {
     die "rebase ชนกัน — แก้ที่ $SRC แล้วรัน: git -C $CLONE rebase --continue"
   fi
   link_it >/dev/null
-  echo "md5 ตอนนี้: $(md5 -q "$SRC")"
+  echo "md5 ตอนนี้: $(md5_of "$SRC")"
 }
 
 cmd_push() {
