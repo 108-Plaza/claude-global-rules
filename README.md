@@ -14,6 +14,12 @@ claude-rules push     # ส่งกฎที่เพิ่งแก้ขึ�
 claude-rules doctor   # ซ่อม symlink ที่ถูกเครื่องมืออื่นเขียนทับเป็นไฟล์ธรรมดา
 ```
 
+**สคริปต์ใน `~/bin` ทุกเครื่องเป็น symlink เข้า `~/.claude/rules-repo/bin/`** (`claude-rules` ·
+`claude-rules-autopull` · `claude-alt` · `keep-awake` เท่าที่เครื่องนั้นใช้) ⇒ แก้สคริปต์ = แก้ใน repo แล้ว commit + push
+· **ห้ามก๊อปไปวางใน `~/bin`** — 2026-09-11 วัดได้ว่ามี `claude-rules` สามเวอร์ชันวิ่งพร้อมกัน: Mac Studio/Dell รันตัวที่มี
+push preflight แต่ไม่มี `md5_of` (`status` ตายบน Linux) · MacBook รันตัวที่เก่ากว่านั้น · repo มี `md5_of` แต่ไม่มี preflight
+· ติดตั้งเครื่องใหม่: `ln -sfn ~/.claude/rules-repo/bin/<ชื่อ> ~/bin/<ชื่อ>` ทีละตัว
+
 ## ดึงอัตโนมัติ
 
 ทั้งสามเครื่องมี LaunchAgent `com.108ting.claude-rules-autopull` (ทุก 15 นาที + ตอนล็อกอิน)
