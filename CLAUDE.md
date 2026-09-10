@@ -645,15 +645,15 @@ Linux runner ที่มีจริง (ยืนยัน 2026-09-09):
 - 🔴 **`git grep -l "<label>"` บอกแค่ว่าไฟล์มีสตริง ไม่ได้บอกว่าปักที่ `runs-on`** — ต้อง grep `runs-on:` ตรง ๆ
 - 🔴 **repo-level runner ไม่โผล่ใน `gh api orgs/.../actions/runners`** ต้องถาม `repos/<slug>/actions/runners` ด้วย
 - 🔴 **CI เร็วขึ้นไม่ใช่ข้ออนุญาตให้ push เดาแก้ผ่าน CI** — กฎ *Local verify to green* (ขั้น 6) ยังอยู่
-- 🔴 **`~/.claude/CLAUDE.md` บน Mac Studio · MacBook · Mac mini เป็น symlink เข้า `~/.claude/rules-repo`**
+- 🔴 **`~/.claude/CLAUDE.md` บน Mac Studio · MacBook · Mac mini · Dell เป็น symlink เข้า `~/.claude/rules-repo`**
   (repo `108-Plaza/claude-global-rules`) ⇒ ประกาศระดับฟลีต = **แก้ที่เดียว + commit + `claude-rules push`**
-  เครื่องอื่นดึงเองทุก 15 นาที (LaunchAgent `com.108ting.claude-rules-autopull`) · ห้ามก๊อป/scp ทีละเครื่อง
+  เครื่องอื่นดึงเองทุก 15 นาที (Mac: LaunchAgent `com.108ting.claude-rules-autopull` · Dell: cron `*/15`)
+  · ห้ามก๊อป/scp ทีละเครื่อง
   — ท่านั้นเคยทับหัวข้อกฎของเจ้าของหาย 32 บรรทัด (README ของ repo)
   · 🔴 **แก้แล้วไม่ commit = ฟลีตแตก** — autopull เป็น fast-forward อย่างเดียว เจอเวิร์กทรีสกปรกแล้ว**ข้ามทั้งเครื่อง**
   · เกิดจริง 2026-09-10→11: กฎวันที่ 10 ค้างไม่ commit บน Mac Studio และ MacBook ~14 ชม.
   ทั้งสองเครื่องเขียน `ข้าม: มีของค้างยังไม่ commit` ลง `~/.claude/rules-sync.log` ทุก 6 ชม. และไม่มีเครื่องไหนได้กฎใหม่
   · ต้นเหตุคือบรรทัดนี้เองที่เคยสั่งว่า *"คนละไฟล์ต่อเครื่อง — ต้องเขียนทุกเครื่อง"* (หัวข้อ 🌱)
-  · ⚠️ **Dell ยังไม่ต่อ repo** — `~/.claude/CLAUDE.md` บน Dell เป็นไฟล์ธรรมดา ต้องส่งด้วยมือจนกว่าจะต่อ
 
 ---
 

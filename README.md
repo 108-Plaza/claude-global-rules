@@ -47,10 +47,13 @@ KeepAlive, **ไม่ต้อง sudo**) ซึ่งกันหลับเ�
 | MacBook Pro | `yongyutjantaboot` | ssh key ส่วนตัว (`yuthstyle88`) |
 | Mac Studio | `yuth` | ssh key ส่วนตัว (`yuthstyle88`) |
 | Mac mini | `yuth` | **deploy key ของ repo นี้** (`~/.ssh/claude_rules_deploy` · host alias `github-rules`) |
-| Dell (`Dell-server`, Linux) | `yuth` | **HTTPS + `gh auth git-credential`** ตั้งไว้ใน config ของ clone เท่านั้น (ไม่แตะ global) |
+| Dell (`Dell-server`, Linux) | `yuth` | **deploy key ของ repo นี้** (`~/.ssh/claude_rules_deploy` · host alias `github-rules` → `ssh.github.com:443`) |
 
 Dell ต่อเข้าระบบ 2026-09-11 — ก่อนหน้านั้นเป็นไฟล์ที่ก๊อปมาทีละรอบ จึงไม่ได้กฎใหม่เอง
-· ใช้ HTTPS เพราะ `~/.ssh/config` ของ Dell ผูก `github.com` ไว้กับ deploy key ของ `pos108-core`
+· ใช้ deploy key แบบ Mac mini (เจ้าของเลือก 2026-09-11) — แตะได้เฉพาะ repo นี้ ไม่พึ่ง token ของ `gh`
+  · รอบแรกต่อด้วย HTTPS + `gh auth git-credential` แล้วสลับมาใช้ deploy key วันเดียวกัน
+· alias ต้องชี้ `ssh.github.com` พอร์ต `443` — Dell ตั้ง `Port 53987` เป็นค่าปริยายไว้ที่ `/etc/ssh/ssh_config:40`
+  และ `~/.ssh/config` ผูก `github.com` ไว้กับ deploy key ของ `pos108-core` ⇒ alias ที่ไม่ใส่ `Port` จะต่อ 53987 แล้ว timeout
 · Linux ใช้ **cron** ได้ปกติ (ข้อห้าม cron ข้างบนเป็นเรื่องของ macOS): `*/15` เรียก
   `~/.claude/rules-repo/bin/claude-rules-autopull` ตรงจาก clone · สำรอง crontab เดิมไว้ที่ `~/crontab.bak-*`
 
