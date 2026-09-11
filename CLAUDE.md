@@ -270,7 +270,7 @@ Anthropic-compatible ของ z.ai · คีย์อยู่ใน `~/.config
 
 🔴 **ห้ามถอด `assign:<kind>` ออกจากใบเพื่อ "ให้ใครก็หยิบได้"** — ทำให้แย่ลง ไม่ใช่ดีขึ้น ·
 `class:guarded` ที่**ไม่มี** assignment ถูกข้ามทุกใบ (`BlockedBy::Guarded`) · **assignment คือสิ่งเดียว
-ที่ปลดล็อก guarded** และยังข้ามด่าน capability ให้ด้วย (`guard_bypassed`)
+ที่ปลดล็อก guarded** — 🔴 **แต่ไม่ได้ข้ามด่าน capability** (แก้ 2026-09-11 · aq#240): `claim.lua:218-220` ยังเช็ค `caps['guarded']` หลังผ่าน assign ⇒ worker ที่จะรับใบ guarded ที่ถูก assign ให้ **ต้องส่ง `capabilities` ที่มี `guarded`** (`["mechanical","logic","guarded"]`) · ประกาศแล้วก็ไม่ได้ใบ guarded ที่ไม่มี assign · เกิดจริง: codex ส่งแค่ mechanical+logic ⇒ 4 ใบที่เจ้าของ assign ให้ค้าง
 · ประกาศเต็ม: `108-Plaza/108-agent-queue#227`
 
 
