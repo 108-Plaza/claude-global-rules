@@ -17,11 +17,12 @@
 2. **required checks เขียวครบ** ที่ head ปัจจุบัน (`gh pr checks`) และ `mergeStateStatus = CLEAN`
 3. **`git merge-base --is-ancestor origin/main <head>`** ผ่าน — `strict = false` ⇒ PR เขียวบนฐานเก่า merge แล้ว main แดงได้
 
-🔴 **สี่กรณีที่ยังต้องหยุดถามเหมือนเดิม** (เป็นข้อยกเว้นของกฎนี้ ไม่ได้ถูกยกเลิกไปด้วย):
+🔴 **ห้ากรณีที่ยังต้องหยุดถามเหมือนเดิม** (เป็นข้อยกเว้นของกฎนี้ ไม่ได้ถูกยกเลิกไปด้วย):
 - verdict เป็น **`FAIL`** หรือ `PASS` ที่มีรายการใน **"ต้องแก้ก่อน merge"**
 - PR มี **migration · schema change · data backfill · destructive op** (Data Risk เดิม)
 - PR แตะ **4 กลุ่ม BLOCK** (คีย์ crypto / store identity / ชื่อ object ที่รันอยู่ / ชื่อนอก repo)
 - PR **ไปโปรดักชั่น** (`deploy/*`, `release/prod`) หรือเปลี่ยน business rule ที่เจ้าของยังไม่ตัดสิน
+- PR ใน **`108-Plaza/CCTV-Platform`** — เจ้าของสงวน `reviewed` ไว้คนเดียว: **ห้ามติด `reviewed` และห้าม merge เอง** แม้ PASS + CI เขียว (เจ้าของสั่ง 2026-09-11 *"CCTV ให้เจ้าของติดได้คนเดียวเหมือนเดิม"* · label ของรีโปนั้นเขียนว่า *"มีแต่เจ้าของติดได้"* · รีโปที่ verdict ปลอมตามด้วย `reviewed` บน PR #16/#17 เมื่อ 2026-09-09)
 
 ⚠️ **`reviewed` = ปุ่ม merge ไม่ใช่ป้ายสถานะ** — วัดจริง 2026-09-10: ติด label บน `pos108-core#1661`
 แล้วขบวน `tq train` merge ให้ก่อนคำสั่ง `gh pr merge` ที่ตามมาจะทำงาน (ตอบ *"was already merged"*)
@@ -472,7 +473,7 @@ Claude ลงมือเขียนได้เมื่อ **เจ้าข�
 - **Verdict** หนึ่งใน `PASS` / `PASS พร้อม follow-up` / `FAIL` + รายการต้องแก้เรียงตามความสำคัญ
   ทุกข้อชี้ `file:line` — **คำว่า "ยังไม่ดี" ที่ไม่มีตำแหน่ง ไม่นับเป็น finding**
 - ส่ง verdict ให้เจ้าของเป็นผลลัพธ์หลัก · (**🔴 2026-09-09: ผู้โพสต์ verdict คือ Claude — เซสชันที่เปิดใบนั้น**) · **ใบที่อยู่ในคิว `tq` (ตั้งแต่ 2026-09-05): โพสต์ verdict ลง PR เป็นค่าปริยาย** ปิดท้าย `เสนอ merge` / `ส่งกลับ` — เจ้าของสั่งไว้แล้วในกฎ 🎫 ("รีวิวงานของตัวเองแล้วเสนอ merge") ไม่ต้องรอสั่งซ้ำรายใบ · งานนอกคิว: โพสต์ลง PR/issue เฉพาะเมื่อเจ้าของสั่งในรอบนั้น (กฎเดิม)
-- 🟢 **2026-09-10: verdict PASS + required checks เขียว ⇒ Claude ติด `reviewed` และ merge ได้เอง** (ดูบล็อกบนสุด รวมสี่ข้อยกเว้น) · ~~merge = เจ้าของเท่านั้น~~
+- 🟢 **2026-09-10: verdict PASS + required checks เขียว ⇒ Claude ติด `reviewed` และ merge ได้เอง** (ดูบล็อกบนสุด รวมห้าข้อยกเว้น) · ~~merge = เจ้าของเท่านั้น~~
 
 🔴 **ยกเลิกแล้ว 2026-09-09** — การมอบ review+merge ให้ Gemini เมื่อ 2026-09-07 สิ้นสุดลง
 เพราะเจ้าของสั่ง *"gemini เขียนได้ ให้ claude รีวิวแทน"* ⇒ Gemini กลับไปเขียนโค้ด
@@ -796,7 +797,7 @@ memory store อยู่ที่ `~/.claude/projects/<slug-ของ-cwd>/memo
 8. **Commit cleanly** — stage **เฉพาะไฟล์ของ task นี้**, commit message สื่อความหมาย (conventional style)
 9. **Push + open draft PR** — เปิดเป็น **draft** ระหว่างยัง iterate; squash WIP commits ก่อน ready; commit ที่เป็น doc/`.ai_context`/memory ล้วน ใส่ `[skip ci]`. PR body สรุป what/why + วิธี verify. รวม finding/การแก้ที่ related ใน crate เดียวกันไว้ PR เดียวเท่าที่ review รับไหว (1 PR ต่อ 1 finding ทำให้ CI รันเต็มชุดต่อ finding — เปลือง)
 10. **Mark ready → Monitor CI** — mark PR เป็น ready **เมื่อ tests บนเครื่องเขียวแล้วเท่านั้น**; CI จะรันรอบเดียวเพื่อยืนยัน. ถ้า CI แดงด้วยเหตุ CI-only (env ต่าง) ให้ reproduce + แก้บนเครื่องก่อน push ใหม่ ไม่ push เดาแก้ผ่าน CI
-11. **Merge เมื่อ PASS + เขียว** (แก้ 2026-09-10) — verdict PASS จากเซสชันอื่น + required checks เขียว + CLEAN ⇒ merge ได้เอง · สี่ข้อยกเว้นในบล็อกบนสุดยังต้องขออนุมัติ
+11. **Merge เมื่อ PASS + เขียว** (แก้ 2026-09-10) — verdict PASS จากเซสชันอื่น + required checks เขียว + CLEAN ⇒ merge ได้เอง · ห้าข้อยกเว้นในบล็อกบนสุดยังต้องขออนุมัติ
 12. **Close context** — หลัง merge แล้ว อัปเดต `.ai_context`/`HANDOFF.md`: บันทึกว่า task เสร็จ + ผลลัพธ์สุดท้าย, ล้าง Next steps/checkpoint ที่หมดอายุออก
 13. **Cleanup branch** — หลัง merge แล้ว ลบ feature branch ทั้ง local และ remote (`git branch -d`, `git push origin --delete` หรือ merge แบบ delete-branch) แล้ว `git fetch --prune`
 14. **Report final result** — summary + PR URL + test/CI status + ยืนยันว่า context ปิดและ branch ถูก cleanup แล้ว
