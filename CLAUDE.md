@@ -336,9 +336,9 @@ Gemini/Codex/GLM อ่านแต่ตัวใบ **ไม่เห็น co
 10. **หนึ่ง issue = หนึ่งผลลัพธ์** ที่รีวิวจบได้ในนั่งเดียว · งานใหญ่ให้ซอยเป็นใบย่อยที่ลำดับชัด
     (`blocked by #N`) · **ก่อนเปิดใบใหม่ให้ค้นซ้ำเสมอ** `gh issue list --state all --search "<keywords>"`
 
-🔴 **2026-09-07: label `gemini` และ `codex` เลิกใช้ทั้งคู่** (Gemini ย้ายไป review+merge · Codex ปลดออก) — ใบเขียนโค้ดติดได้แค่ `glm` (GLM) หรือปล่อยไม่ติด เพื่อให้ claude worker หยิบ · ใบเดิมที่ติดค้างถอดหมดแล้ววันเดียวกัน (คงเหลือแค่ agent-queue#22 ที่ gemini ยังถือ lease อยู่ รอเจ้าของว่าจะให้ทำจบหรือสั่งคืนใบ) · เดิม: ติด label **`gemini`** ที่ใบที่ส่งให้ Antigravity · **`codex`** ที่ใบที่ส่งให้ Codex · **`glm`** ที่ใบที่ส่งให้ GLM — **ใบละ label เดียว** (ดูหัวข้อ routing ข้างบน) ·
+🔴 **2026-09-07: label `gemini` และ `codex` เลิกใช้ทั้งคู่** (⚠️ **`codex` กลับมาใช้ได้ 2026-09-11** — เจ้าของคืนบท Codex · คำอธิบาย label `codex` อัปเดตครบ 90 repo แล้ววันเดียวกัน) (Gemini ย้ายไป review+merge · Codex ปลดออก) — ใบเขียนโค้ดติดได้แค่ `glm` (GLM) หรือปล่อยไม่ติด เพื่อให้ claude worker หยิบ · ใบเดิมที่ติดค้างถอดหมดแล้ววันเดียวกัน (คงเหลือแค่ agent-queue#22 ที่ gemini ยังถือ lease อยู่ รอเจ้าของว่าจะให้ทำจบหรือสั่งคืนใบ) · เดิม: ติด label **`gemini`** ที่ใบที่ส่งให้ Antigravity · **`codex`** ที่ใบที่ส่งให้ Codex · **`glm`** ที่ใบที่ส่งให้ GLM — **ใบละ label เดียว** (ดูหัวข้อ routing ข้างบน) ·
 ใบที่ PM ยิงให้ agent เฉพาะทางยังใช้ `pm-dispatch` เหมือนเดิม · label `codex` (สี `#0E8A16`) **มีครบแล้วใน `108-Plaza/*` ที่ไม่ archived และ `yuthstyle88/*-dev` ทุกตัว (2026-09-05)** · repo ใหม่ให้สร้างตอนตั้ง repo:
-`gh label create codex --repo <slug> --color 0E8A16 --description "ส่งให้ Codex เขียนโค้ด — Claude รีวิวหลังปิด"`
+`gh label create codex --repo <slug> --color 0E8A16 --force --description "ส่งให้ Codex เขียนโค้ด · Codex รับงาน/เขียน/รีวิวได้ (กลับมา 2026-09-11) · ใบละ implementer เดียว"`
 · label `glm` (สี `#7B4FE9`) **สร้างแล้วเฉพาะ 5 repo ที่คิวเฝ้า (2026-09-06)**: `108-agent-queue`,
 `108-platform-services`, `park108`, `pos108-core`, `yuthstyle88/pos108-core-dev` — repo อื่นยังไม่มี ต้องสร้างก่อนใช้:
 `gh label create glm --repo <slug> --color 7B4FE9 --description "ส่งให้ GLM (z.ai) เขียนโค้ด — ใบละ implementer เดียว"`
