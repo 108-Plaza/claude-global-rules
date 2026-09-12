@@ -690,6 +690,56 @@ Linux runner ที่มีจริง (ยืนยัน 2026-09-09):
 เหลือ **`#1612`** ยุบ fmt+clippy เข้า check+test · **`#1617`** ย้าย label · สองใบแตะ `ci.yml` ไฟล์เดียวกัน = ชนกัน
 · **อย่าเพิ่งหยิบใบไหนจนกว่าเจ้าของจะเลือก**)
 
+## 🖥 บิลด์ก้อนใหญ่ให้ไปทำที่ Mac Studio — เจ้าของสั่ง 2026-09-12
+
+**คำสั่ง:** *"ให้ไป build ที่ macstudio มันจะมีพื้นที่ สร้างกฏ ไว้ จะได้ไม่ลืม"* + *"แจ้งทุกเครื่องด้วย"*
+
+**เหตุผลที่วัดได้ (2026-09-12):** MacBook หน่วงเป็นช่วง ๆ เพราะบิลด์ Rust เย็นกินคอร์เต็มและเขียนดิสก์หนัก
+· `cargo test -p pos-terminal` รอบเดียวบน target เปล่าทำให้ load ขึ้นและ UI สะดุดราว 30 นาที
+
+| เครื่อง | คอร์ | แรม | ว่าง (หลังกวาด 09-12) |
+|---|---|---|---|
+| **Mac Studio** (`ssh macstudio`) | 20 | 128 GB | **827G** |
+| MacBook (เครื่องที่ใช้คุยงาน) | 16 | 128 GB | 453G |
+| Mac mini (`ssh macmini`) | 8 | 16 GB | 65G · **ไม่มี rustc** อย่าส่งงานบิลด์ไป |
+
+**กฎ:** งานที่คอมไพล์ทั้ง workspace — `cargo build/test/clippy` ของ `pos108-*`, `jh-api`, `park108`,
+`108-platform-services` — **ให้รันที่ Mac Studio** · งานเล็กที่ compile ไม่กี่ crate ทำบน MacBook ได้ตามเดิม
+
+```bash
+ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'
+```
+
+- 🔴 **ต้องใช้ login shell (`zsh -lc`)** — headless ssh ไม่มี `/opt/homebrew/bin` และ `~/.cargo/bin` ⇒ หา `cargo`/`gh`/`node` ไม่เจอ แล้วจะดูเหมือนของพัง
+- 🔴 **โครงโฟลเดอร์คนละแบบ ห้ามลอกพาธของ MacBook ไปใช้** — Studio ใช้
+  `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}` · `~/108-Ting-Ecosystem/JH-Platform/Api`
+  · `~/108-Ting-Ecosystem/parking/park108` ส่วน MacBook ใช้ `pos/` `heros/` `parking/` (ดู [[macbook-workspace-layout-and-the-real-mess]])
+- **เข้าทาง Tailscale** (`macstudio` → 100.84.133.23) · `macstudio-lan` (192.168.1.76) ใช้ได้เฉพาะวง LAN เดียวกัน
+  · รอบแรกหลังเครื่องรีสตาร์ตอาจต้องยืนยัน Tailscale SSH ในเบราว์เซอร์หนึ่งครั้ง
+
+### 🔴 ข้อควรระวังที่สำคัญกว่าเรื่องพื้นที่ — สามเครื่อง rustc คนละรุ่น
+
+วัดจริง 2026-09-12: **MacBook `1.97.0` · Mac Studio `1.99.0-nightly` · Dell (runner ของ CI) `1.98.1`**
+— **ไม่มีคู่ไหนตรงกันเลย**
+
+⇒ **"clippy เขียวบน Mac Studio" ไม่ใช่หลักฐานว่า CI จะเขียว** และ nightly ยิ่งต่างจาก stable ของ runner
+· เจอ lint/fmt ที่ขัดกันเมื่อไหร่ ให้ยึด **toolchain ของ runner (Dell `1.98.1`)** เป็นตัวตัดสิน
+· ประโยคใน memory เก่าที่ว่า "เครื่องนี้ rustc 1.98.0 = ตัวเดียวกับ runner" **ล้าสมัยแล้ว**
+· เทสต์ที่พึ่งเวลา/ฐานข้อมูลก็ย้ายเครื่องแล้วผลต่างได้ ([[clock-window-tests-look-flaky-but-are-not]])
+
+### กวาด target เป็นระยะ — มันโตกลับมาเสมอ
+
+09-12 กวาดที่ Mac Studio คืนมา **713G** (114G → 827G ว่าง) จาก `target/` ที่สะสมไว้ เช่น
+`IdeaProjects/api-108heros/target` 108G · `JH-Platform/Api/target` 82G · `pos108/terminal/target` 42G
+
+```bash
+ssh macstudio 'find ~/108-Ting-Ecosystem ~/IdeaProjects -maxdepth 6 -type d -name target -prune -print0 | xargs -0 rm -rf'
+```
+
+⚠️ **ก่อนกวาดทุกครั้ง เช็คว่าไม่มีบิลด์รันอยู่** (`pgrep -x cargo; pgrep -x rustc` — อย่าใช้ `pgrep -f cargo`
+เพราะมันไป match สตริง `.cargo/bin` ใน PATH ของโปรเซสอื่นแล้วได้ผลบวกลวง)
+· และ **ลบ `target/` = เซสชันถัดไปต้องบิลด์เย็น** ซึ่งกินเวลาและทำให้เครื่องนั้นหน่วงหนึ่งรอบ — จ่ายครั้งเดียวต่อ repo
+
 ## 🗂 บันทึกความจำแยกตามโฟลเดอร์ — อย่าคิดว่าที่จำได้มีอยู่ทุกที่
 
 memory store อยู่ที่ `~/.claude/projects/<slug-ของ-cwd>/memory/` และตอนนี้มี **54 scope**
