@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+# tq-wait — รอใบจากคิว tq โดย "ไม่เสียเทิร์นของโมเดล" แม้แต่เทิร์นเดียว
+#
+# ปัญหาที่แก้ (วัด 2026-09-12): worker ถามคิวว่ามีงานไหม 17,997 ครั้งใน 7 วัน
+# ทุกครั้งเป็นเทิร์นเต็มของโมเดล (ส่ง system prompt + ไฟล์กฎ + บทสนทนาทั้งก้อน)
+# เพื่อรับคำเดียวกลับมาว่า `empty` ⇒ โควต้าหมดโดยไม่ได้ผลิตอะไร
+#
+# วิธีใช้: ให้ "สคริปต์" เป็นคนถาม แล้วค่อยปลุกโมเดลเมื่อได้ใบจริง
+#
+#   tq-wait claude/$(hostname -s)-1                 # บล็อกจนได้ใบ แล้วพิมพ์ JSON ของใบ
+#   tq-wait --review claude/xxxx                     # รอใบรีวิวแทน
+#   t=$(tq-wait claude/xxxx) && claude "ทำใบนี้: $t" # ปลุกโมเดลเฉพาะตอนมีงาน
+#
+#   while :; do t=$(tq-wait claude/xxxx) && claude "ทำใบนี้: $t"; done
+#
+# ระหว่างรอ: 0 token · ใช้แค่ curl
+#
+# ตัวแปร:
+#   TQ_WAIT_INTERVAL  วินาทีระหว่างการถามแต่ละครั้ง (ปริยาย 120 = จังหวะเดิมในโปรโตคอล)
+#   TQ_WAIT_MAX       เลิกรอหลังกี่วินาที (ปริยาย 0 = รอไม่จำกัด) · หมดเวลาแล้ว exit 2
+#   TQ_WAIT_SECS      ส่ง wait_secs ให้เซิร์ฟเวอร์ long-poll (ต้องรอ aq#284 merge ก่อน
+#                     · ฟิลด์ที่เซิร์ฟเวอร์ยังไม่รู้จักจะถูกละทิ้ง ใส่ไว้ก่อนไม่พัง)
+set -euo pipefail
+
+die() { printf 'tq-wait: %s\n' "$1" >&2; exit 1; }
+
+REVIEW=0
+[ "${1:-}" = "--review" ] && { REVIEW=1; shift; }
+WORKER="${1:-}"
+[ -n "$WORKER" ] || die 'ใช้: tq-wait [--review] <worker> [capabilities-csv]'
+CAPS="${2:-mechanical,logic,guarded}"
+
+[ -r "$HOME/.config/tq/env" ] || die "ไม่มี ~/.config/tq/env"
+# shellcheck disable=SC1091
+. "$HOME/.config/tq/env"
+: "${TQ:?ไม่มี \$TQ ใน ~/.config/tq/env}" "${TQ_TOKEN:?ไม่มี \$TQ_TOKEN}"
+
+INTERVAL="${TQ_WAIT_INTERVAL:-120}"
+MAXWAIT="${TQ_WAIT_MAX:-0}"
+WAITSECS="${TQ_WAIT_SECS:-0}"
+HOSTN="$(hostname)"
+START=$(date +%s)
+
+if [ "$REVIEW" = 1 ]; then
+  EP="$TQ/v1/review/next"
+  BODY=$(printf '{"worker":"%s","host":"%s","wait_secs":%s}' "$WORKER" "$HOSTN" "$WAITSECS")
+else
+  EP="$TQ/v1/next"
+  CAPS_JSON=$(printf '%s' "$CAPS" | awk -F, '{for(i=1;i<=NF;i++){printf "%s\"%s\"", (i>1?",":""), $i}}')
+  # ไม่ส่ง repos — เจ้าของสั่ง 2026-09-10 "ปลดล็อกให้รับงานได้ทุกเลน"
+  BODY=$(printf '{"worker":"%s","host":"%s","capabilities":[%s],"wait_secs":%s}' \
+         "$WORKER" "$HOSTN" "$CAPS_JSON" "$WAITSECS")
+fi
+
+while :; do
+  code=$(curl -s -o /tmp/tq-wait.$$ -w '%{http_code}' -X POST \
+           -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: application/json' \
+           -d "$BODY" "$EP" || echo 000)
+  out=$(cat /tmp/tq-wait.$$ 2>/dev/null || true); rm -f /tmp/tq-wait.$$
+
+  case "$code" in
+    200) : ;;
+    401) die "token ผิด (401) — ดู ~/.config/tq/env" ;;
+    400) die "คำขอผิดรูป (400): $out" ;;
+    # 5xx / 000 = ฝั่งคิวล้มหรือเน็ตหลุด — ห้ามตีความว่า "ไม่มีงาน" (กฎกลาง หัวข้อ 🌐)
+    *)   printf 'tq-wait: คิวตอบ %s — ลองใหม่ใน %ss\n' "$code" "$INTERVAL" >&2 ;;
+  esac
+
+  if [ "$code" = 200 ] && printf '%s' "$out" | grep -q '"kind":"ticket"'; then
+    printf '%s\n' "$out"          # ได้ใบแล้ว — ตรงนี้เท่านั้นที่ควรปลุกโมเดล
+    exit 0
+  fi
+
+  if [ "$MAXWAIT" -gt 0 ] && [ $(( $(date +%s) - START )) -ge "$MAXWAIT" ]; then
+    exit 2                        # หมดเวลา ไม่มีใบ
+  fi
+  sleep "$INTERVAL"
+done
