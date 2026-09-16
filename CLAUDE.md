@@ -352,7 +352,14 @@ merge แล้ว แต่ไม่มีใครต่อครึ่งฝ�
 
 **เจ้าของสั่งเพิ่ม 2026-09-06:** *"เพิ่ม GLM เข้ากฎกลางเลย"* ⇒ **implementer มีสามตัว: Gemini · Codex · GLM**
 · GLM รันเป็น ACP agent ชื่อ `GLM` ใน JetBrains Air (ตัวรัน `~/.local/bin/glm-acp` ชี้ endpoint
-Anthropic-compatible ของ z.ai · คีย์อยู่ใน `~/.config/glm/env`) · พรอมป์เข้าคิวอยู่ที่ `~/.config/glm/queue-prompt.md`
+Anthropic-compatible ของ z.ai · คีย์อยู่ใน `~/.config/glm/env`)
+· 🔴 **2026-09-16 เจ้าของสั่งลบ `~/.config/glm/queue-prompt.md` บน Dell ทิ้งแล้ว** — มันสั่งให้ GLM poll คิวผ่าน
+MCP `queue_next` ที่ **ไม่มีใน config dir นั้น** (`.claude.json` ไม่มี `mcpServers` เลย) และระบุ host ผิดเป็น MacBook
+⇒ **อย่าอ้างไฟล์นี้อีก** · ท่าปัจจุบัน: **Claude จ่ายงานตรงด้วยการยิงข้อความ** (เจ้าของสั่ง 2026-09-16
+*"ผมต้องการให้ claude จ่ายงานให้ glm ได้ … โดยยิงข้อความตรงไปที่ glm"*):
+`scripts/glm-worker-up.sh` เปิด worker · `scripts/glm-dispatch.sh <owner/repo> <issue>` จ่ายใบ
+(ทั้งคู่อยู่ใน `108-Plaza/108-Ting-Ecosystem`) · บทบาทของ worker อยู่ที่ `/data/yuth/glm-work/BOOT.md` บน Dell
+· คู่มือเต็ม: `docs/AGENT_MESSAGING.md` ของรีโปเดียวกัน
 · ในหัวข้อนี้ **ทุกที่ที่เขียนว่า "Gemini" ให้อ่านว่า "Gemini หรือ Codex หรือ GLM"**
 — ข้อกำหนดของใบ (10 ท่อน · `[บังคับ]`/`[เสนอ]` · เกณฑ์ที่เครื่องตัดสิน) และขั้นรีวิวหลังปิดใบ ใช้กับสามตัวเท่ากัน
 
