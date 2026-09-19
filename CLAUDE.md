@@ -629,6 +629,28 @@ ssh macstudio 'find ~/108-Ting-Ecosystem ~/IdeaProjects -maxdepth 6 -type d -nam
 ```
 ก่อนกวาดเช็ค `pgrep -x cargo; pgrep -x rustc` (อย่าใช้ `pgrep -f cargo` — ติด `.cargo/bin` ใน PATH) · กวาดแล้วรอบถัดไปบิลด์เย็นหนึ่งรอบ
 
+## 💽 บน Dell: worktree และของหนักทุกชนิดอยู่ที่ `/data` ไม่ใช่ `/home`
+
+เจ้าของสั่ง 2026-09-19 *"ย้าย actions-runner ไป /data"* แล้ว *"ต่อไป worktrees ให้ ทำที่ /data"*
+
+| ของ | ที่ถูก |
+|---|---|
+| worktree ที่สร้างบน Dell | **`/data/yuth/worktrees/<slug>`** (สร้างไว้แล้ว เขียนได้ ไม่ต้อง sudo) |
+| `target/` ที่ตั้งใจเก็บข้ามรอบ | `/data/yuth/target-<slug>` (มีของเดิมวางรูปนี้อยู่แล้ว) |
+| `_work` ของ GitHub runner | `/data/actions-runners/<runner>` (ย้ายด้วย sudo + symlink กลับ `/home/yuth/<runner>`) |
+
+**ทำไม:** `/home` บน Dell คือ nvme **1.8 TB** ส่วน `/data` คือ **6 TB (ว่าง 3.7 TB)** · 2026-09-19 `/home` เต็ม 100% (เหลือ 14 GB)
+แล้ว CI แดงทั้งฟลีตด้วย `System.IO.IOException: No space left on device` — job ตายกลาง `cargo nextest run`
+และตายที่ขั้นเก็บกวาดของ `actions/checkout` (อาการหลังนี้โผล่เป็น `mergeStateStatus = UNSTABLE` บน PR ที่ไม่ได้ผิดอะไร)
+วัดวันนั้น: `target/` 148 โฟลเดอร์รวม **709 GB** · `scratch/` 275 GB · `worktrees/` 168 GB · `_work` ของ runner ~300 GB
+
+```bash
+ssh Dell-server 'df -h /home /data'        # ดูก่อนเสมอ
+git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # ไม่ใช่ ~/worktrees
+```
+🔴 **ห้ามลบของบนเครื่องนี้เองแม้ที่ว่างจะวิกฤต** — เป็นทรัพยากรร่วมของทั้งฟลีต · วัด แล้วรายงานเจ้าของพร้อมคำสั่งที่รันได้
+· `/home/koey` (260 GB) เป็นของผู้ใช้อื่น ไม่ใช่ของฟลีต
+
 ---
 
 # Autonomous Execution Policy
