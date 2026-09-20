@@ -621,6 +621,48 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 - 🔴 **แก้ conflict ห้ามเอาข้างเดียวทั้งก้อน** — อ่าน `git log -p <base>..origin/main -- <ไฟล์>` ให้รู้ว่าอีกฝั่งแก้อะไร**ทำไม**ก่อน
 - 🔴 **rebase แล้วผลรันเดิมใช้ไม่ได้** — รันใหม่และพิสูจน์สองอย่าง: เทสต์ของตัวเองยังแดงได้บนฐานใหม่ · เทสต์ของฝั่งที่ถูก rebase ทับยังเขียว
 
+## 🚀 เลน deploy — personal ออก staging · org ออก prod
+
+เจ้าของสั่ง 2026-09-21: *"ให้ git ฝั่ง personal deploy staging แล้วปรับ action โดยกอปปี้จาก org"* · *"ให้ org deploy prod"*
+
+| ฝั่ง | repo | เลนที่ push ได้ | ใครทำงานที่นั่น |
+|---|---|---|---|
+| **personal** `yuthstyle88/<repo>-dev` | กระจกของ org | **`deploy/staging` เท่านั้น** | นักพัฒนาที่ไม่ได้อยู่ใน org (เข้า repo org ไม่ได้) + งานที่ยังไม่ผ่านรีวิว |
+| **org** `108-Plaza/<repo>` | ของจริง | **`release/prod` เท่านั้น** | ฟลีต agent · PR/รีวิว/merge ทั้งหมด |
+
+- 🔴 **ห้าม push `release/prod` จากฝั่ง personal และห้าม push `deploy/staging` จากฝั่ง org** — เลนไขว้กันเมื่อไหร่
+  จะไม่มีใครตอบได้ว่าของที่รันอยู่มาจาก commit ไหน
+- 🔴 **`deploy` ยังสั่งได้คนเดียวคือเจ้าของ** (กฎเดิมไม่เปลี่ยน) — กฎนี้บอกว่า *push ที่ไหน* ไม่ได้บอกว่า *push เมื่อไหร่*
+
+**ทำไมถึงเปิดเลน staging ให้ฝั่ง personal** (เจ้าของ 2026-09-21): *"เพื่อให้ผู้พัฒนาฝั่ง personal deploy ขึ้น dell (staging) ได้"*
+— คนนอก org เปิด PR ฝั่ง org ไม่ได้และอ่าน repo private ของ org ไม่ได้ (วัด 2026-09-20: `koeylp` = `permission: none`
+บน `108-Plaza/108heros-flutter`) ⇒ ถ้ากระจกไม่มีเลน staging งานของเขาจะไปไม่ถึงเครื่องทดสอบเลย ·
+ปลายทางของเลนนี้คือ **k3s บน Dell (`ibrowe.com`) namespace `staging`** ซึ่งเป็นเครื่องเดียวกับที่ runner ทั้งฟลีตอยู่
+⚠️ เลน staging จากกระจกเคยมีตัวขวางระดับ infra (GHCR push ชนกันเมื่อบิลด์พร้อมกัน) — **deploy ทีละ repo ห้ามยิงขนาน**
+- ⚠️ **ชื่อเลน `prod` ไม่ได้แปลว่ามีโปรดักชันจริง** — สถานะจริงอยู่ที่ [`STATE.md`](STATE.md) (ยังไม่มีแอปไหนเป็นโปรดักชัน)
+
+### `.github/workflows/**` ฝั่ง personal = สำเนาจาก org
+
+**กลับทิศจากกฎเดิมที่เขียนว่า workflow สองฝั่ง "ตั้งใจไม่ sync"** — ของเดิมทำให้กระจกมี workflow น้อยกว่า
+และเก่ากว่า (วัด 2026-09-21: org `pos108-core` มี 13 ไฟล์ · `pos108-core-dev` มี 6 · ขาด `independent-review` ·
+`promote-staging` · `issue-link` · `supply-chain` เวอร์ชันใหม่) ⇒ ฝั่งที่คนนอก org ใช้จริงคือฝั่งที่ด่านน้อยที่สุด
+
+**ท่าที่ถูก:** คัดลอกไฟล์จาก org มาทั้งไฟล์ แล้วแก้**เฉพาะสองอย่าง**
+1. **ทริกเกอร์เลน** — `branches: [release/prod]` ⇒ `branches: [deploy/staging]` (กระจกไม่มีเลน prod)
+2. **`runs-on`** — ให้เป็น `[self-hosted, Linux, X64]` ตามมาตรฐาน (กระจกยังค้าง `[self-hosted, pos108-ci]` อยู่หลายไฟล์
+   — พูลเดียวกันแต่แคบกว่าโดยไม่จำเป็น)
+
+🔴 **ห้ามแก้ตรรกะอย่างอื่นตอนคัดลอก** — คัดลอกแล้วแก้ไปด้วยคือการสร้าง workflow ตัวที่สามที่ไม่มีใครรีวิว ·
+เห็นว่าของ org เองผิด ⇒ เปิดใบที่ฝั่ง org แล้วแก้ที่นั่น ให้กระจกรับสำเนาใหม่ตามไป
+- ไฟล์ที่ **ไม่คัดลอก**: workflow ที่ผูกกับของที่มีเฉพาะฝั่ง org (deploy ไป prod · secrets ที่กระจกไม่มี) —
+  เขียนเหตุผลไว้ใน PR ของรอบนั้น ห้ามเงียบ
+- **ก่อนเชื่อว่าไฟล์เหมือนกัน ให้เทียบจริง** ไม่ใช่เทียบจำนวนไฟล์:
+  ```bash
+  gh api "repos/108-Plaza/<repo>/contents/.github/workflows/<f>" -H "Accept: application/vnd.github.raw" > /tmp/org.yml
+  gh api "repos/yuthstyle88/<repo>-dev/contents/.github/workflows/<f>" -H "Accept: application/vnd.github.raw" > /tmp/dev.yml
+  diff /tmp/org.yml /tmp/dev.yml
+  ```
+
 ## ⚙️ CI runner
 
 - Linux runner **ทุกตัวอยู่เครื่องเดียว** (Dell `ibrowe.com`): `dell-org-108plaza` · `dell-org-ci-1..4` (org) · `ibrowe-pos108-2`
