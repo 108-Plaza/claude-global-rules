@@ -652,6 +652,23 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 2. **`runs-on`** — ให้เป็น `[self-hosted, Linux, X64]` ตามมาตรฐาน (กระจกยังค้าง `[self-hosted, pos108-ci]` อยู่หลายไฟล์
    — พูลเดียวกันแต่แคบกว่าโดยไม่จำเป็น)
 
+### 🔴 ทุก job รันบน self-hosted — GitHub-hosted คือความล้มเหลว ไม่ใช่ทางเลือกสำรอง
+
+เจ้าของสั่ง 2026-09-21: *"action ให้ใช้ self-host runner"* · ใช้กับ **ทุก workflow ทั้งสองฝั่ง** ไม่ใช่แค่ของใหม่
+
+- `runs-on: [self-hosted, Linux, X64]` (Linux) · `[self-hosted, macOS, ARM64]` (macOS) — **ห้าม `ubuntu-latest` ·
+  `windows-latest` · `macos-latest`** และห้ามปักป้ายเฉพาะทางเพิ่ม
+- 🔴 **hosted ไม่ได้แค่ "เสียเงิน" — ตอนนี้มันไม่รันเลย** วัด 2026-09-20: job บน `windows-latest` ตายใน 2 วินาที
+  ก่อนเริ่มสเต็ปแรก `The job was not started because recent account payments have failed or your spending limit
+  needs to be increased` ⇒ ด่านที่เขียนดีแค่ไหนก็ไม่เคยรัน และ PR อ่านเหมือนโค้ดพัง
+- **ของค้างที่วัดแล้ว 2026-09-21** (`gh api search/code -f q='"runs-on: ubuntu-latest" user:<owner> path:.github/workflows'`):
+  ฝั่ง personal **30 ไฟล์** ยัง `ubuntu-latest` (หนักสุด `Livechat-Platform-dev` 3 · `pos108-admin-dev` 3 ·
+  `pos108-orders-dev` 2 · `pos108-store-dev` 2) · ฝั่ง org เหลือ **4** (`jh-client` ×2 · `thai-geography` · `Livechat-sdk`)
+  · `windows-latest` org 2 · personal 1
+- **ข้อยกเว้นเดียวที่ยอมได้** = ระบบปฏิบัติการที่ฟลีตไม่มีเครื่อง (วันนี้คือ **Windows** — ไม่มี runner Windows สักตัว) ⇒
+  ต้องเขียนคอมเมนต์ `# hosted-ok: <เหตุผลที่ฟลีตไม่มีเครื่องนี้>` ไว้เหนือ `runs-on` นั้น **และรู้ว่ามันจะไม่รันจนกว่าบิลจะถูกปลด**
+  · อยากให้ด่านนั้นรันจริงต้องลงทะเบียน runner ของ OS นั้นเพิ่ม ซึ่งเป็นงานของเจ้าของ
+
 🔴 **ห้ามแก้ตรรกะอย่างอื่นตอนคัดลอก** — คัดลอกแล้วแก้ไปด้วยคือการสร้าง workflow ตัวที่สามที่ไม่มีใครรีวิว ·
 เห็นว่าของ org เองผิด ⇒ เปิดใบที่ฝั่ง org แล้วแก้ที่นั่น ให้กระจกรับสำเนาใหม่ตามไป
 - ไฟล์ที่ **ไม่คัดลอก**: workflow ที่ผูกกับของที่มีเฉพาะฝั่ง org (deploy ไป prod · secrets ที่กระจกไม่มี) —
