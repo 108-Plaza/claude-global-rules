@@ -55,7 +55,6 @@
 | ใคร | ทำ | ห้าม |
 |---|---|---|
 | **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — **ไม่เรียกคิวเอง** นั่งรอให้ Claude จ่ายใบ (เหมือน GLM · ดูข้างล่าง) | รีวิว · merge · เรียก `/v1/next` เอง |
-| **Codex** | implementer **และ** reviewer — หยิบใบเขียนได้ · สั่งตรงด้วย `assign:codex` · รีวิวผ่าน `POST /v1/review/next` (verdict รูปเดียวกับ Claude) · merge ได้ด้วยเงื่อนไขชุดเดียวกับ Claude · กฎฝั่ง Codex: `~/.codex/AGENTS.md` บน MacBook | รีวิว/merge งานที่ตัวเองเขียน · ถ้างานเขียนกินโควต้าจนรีวิวหาย (เคยวัดได้ 69% ตอน 09-12) ⇒ **รายงานเจ้าของ อย่าเปลี่ยนบทบาทเอง** |
 | **GLM** (`glm/<8ตัว>`) | implementer — รับเฉพาะใบที่ Claude จ่ายให้ (ไม่รับงานนอกใบ) · ถือใบอยู่ = ทำให้จบ (PR + `pr_open`) ก่อนรับใบใหม่ · จ่ายได้ทุกเลน | รีวิว · merge |
 | **Claude** | สำรวจ/หาต้นเหตุ → **เขียนใบ** → จ่าย → มอนิเตอร์ → **รีวิวทุก PR** (รวม `gemini/*`) → ติด `reviewed` + merge เมื่อครบเงื่อนไข · ดูแล docs/context | merge งานที่ตัวเองเขียน |
 | **เจ้าของ** | ตัดสิน business rule · อนุมัติกรณียกเว้นของการ merge (ข้างล่าง) | |
@@ -81,7 +80,10 @@
 ⚠️ **controller ไม่ใช่ตำแหน่งถาวร** — คือเซสชันที่คุมเลนนั้นตามตารางในหัวข้อ 📋 หรือที่เจ้าของสั่งตรงในรอบนั้น
 · ไม่แน่ใจว่าตัวเองเป็นหรือไม่ ⇒ **ถือว่าไม่ใช่**
 
-- ข้อที่เขียนถึง "implementer" ใช้กับ Gemini · Codex · GLM และ Claude ที่ถือใบเท่ากัน
+- ข้อที่เขียนถึง "implementer" ใช้กับ Gemini · GLM และ Claude ที่ถือใบเท่ากัน
+- 🔴 **ไม่มี Codex แล้ว** — เจ้าของเลิกใช้ 2026-09-22 *"เราไม่มี codex ผมเลิกใช้แล้ว มันทำงานมั่ว"* ·
+  ห้ามจ่ายใบให้ Codex · ห้ามติด `codex`/`assign:codex` · ห้ามรอ verdict จาก Codex (รีวิวเป็นของ Claude อย่างเดียว) ·
+  เจอใบที่ยังติดป้าย Codex ⇒ ถอดป้ายแล้วจ่ายใหม่ตามตารางเลน · `codex/*` ใน event log/ใบเก่า = ประวัติ ไม่ใช่ worker ที่ยังอยู่
 - **GLM** รันเป็น ACP agent `GLM` ใน JetBrains Air (`~/.local/bin/glm-acp` → z.ai · คีย์ `~/.config/glm/env`) ·
   Claude จ่ายงานด้วยการยิงข้อความตรง (สั่ง 2026-09-16): `scripts/glm-worker-up.sh` เปิด worker ·
   `scripts/glm-dispatch.sh <owner/repo> <issue>` จ่ายใบ (ใน `108-Plaza/108-Ting-Ecosystem` · คู่มือ `docs/AGENT_MESSAGING.md`)
@@ -377,13 +379,11 @@ endpoint ที่ถูกเรียกเป็นรอบอัตโน�
 - **หนึ่งใบ = implementer เดียว** · implementer ไม่เห็นงานของกัน ⇒ ใบที่แตะไฟล์เดียวกันต้องอยู่กับตัวเดียวกันหรือเขียน `blocked by #N`
 - 🔴 **ห้ามถอด `assign:<kind>` เพื่อ "ให้ใครก็หยิบได้"** — `class:guarded` ที่ไม่มี assignment ถูกข้ามทุกใบ · assignment ปลดล็อก guarded
   แต่ไม่ข้ามด่าน capability ⇒ worker ต้องส่ง `capabilities` ที่มี `guarded` ด้วย (`claim.lua:218-220` · aq#240)
-- **label ชนิด worker:** `gemini` · `codex` (`#0E8A16` มีทุก repo org + `*-dev`) · `glm` (`#7B4FE9` มีไม่ครบทุก repo) ·
+- **label ชนิด worker:** `gemini` · `glm` (`#7B4FE9` มีไม่ครบทุก repo) · (`codex` ยังค้างอยู่ทุก repo แต่ไม่มีคนรับ — ห้ามใช้) ·
   repo ที่ไม่มีให้สร้างก่อนใช้ · PM ยิงให้ agent เฉพาะทางใช้ `pm-dispatch`
   ```bash
   gh label create glm   --repo <slug> --color 7B4FE9 --force --description "ส่งให้ GLM (z.ai) เขียนโค้ด — ใบละ implementer เดียว"
-  gh label create codex --repo <slug> --color 0E8A16 --force --description "ส่งให้ Codex เขียนโค้ด — ใบละ implementer เดียว"
   ```
-  (คำอธิบาย `codex` ที่ยังเขียนว่า "เลิกใช้/รีวิวอย่างเดียว" = ค้างจาก 09-12 ให้รันบรรทัดล่างแก้)
 
 ### รับใบ (implementer)
 
@@ -467,7 +467,7 @@ tests/a_test.rs
 (เหตุ `pos108-store#256`: สองเซสชันออก FAIL → PASS → FAIL ใน 3 นาที)
 - ผู้เปิดใบตาย / เงียบเกิน 60 นาทีหลัง `pr_open` / ใบไม่มี `dispatched-by` / ผู้เปิดใบเป็นคนเขียน PR เอง (รีวิวงานตัวเองไม่ได้) ⇒ เซสชันอื่นรับแทนได้ แต่ต้อง**คอมเมนต์เคลมบน PR ก่อน**
   (`reviewing as <worker> — ผู้เปิดใบเงียบ N นาที`) แล้วรอ ≥1 นาที · เห็นคนเคลมแล้ว = คอมเมนต์เสริมแทน
-- ใบที่ Gemini/Codex/GLM เปิดเข้าคิว ⇒ `dispatched-by` = Claude ที่สั่งให้เปิด · ไม่มี = Claude เซสชันแรกที่เห็นรับไป
+- ใบที่ Gemini/GLM เปิดเข้าคิว ⇒ `dispatched-by` = Claude ที่สั่งให้เปิด · ไม่มี = Claude เซสชันแรกที่เห็นรับไป
 - 🔴 verdict ที่ขัดกันห้ามปล่อยค้าง — ผู้เปิดใบสรุปในเธรดว่ายึดอันไหนเพราะอะไร
 - เจ้าของสั่งตรงให้เซสชันไหนรีวิวใบไหน = ตามนั้น
 
