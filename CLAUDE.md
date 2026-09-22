@@ -54,7 +54,7 @@
 
 | ใคร | ทำ | ห้าม |
 |---|---|---|
-| **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — หยิบใบจากคิวตามปกติ · สั่งตรงด้วย `assign:gemini` | รีวิว · merge |
+| **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — **ไม่เรียกคิวเอง** นั่งรอให้ Claude จ่ายใบ (เหมือน GLM · ดูข้างล่าง) | รีวิว · merge · เรียก `/v1/next` เอง |
 | **Codex** | implementer **และ** reviewer — หยิบใบเขียนได้ · สั่งตรงด้วย `assign:codex` · รีวิวผ่าน `POST /v1/review/next` (verdict รูปเดียวกับ Claude) · merge ได้ด้วยเงื่อนไขชุดเดียวกับ Claude · กฎฝั่ง Codex: `~/.codex/AGENTS.md` บน MacBook | รีวิว/merge งานที่ตัวเองเขียน · ถ้างานเขียนกินโควต้าจนรีวิวหาย (เคยวัดได้ 69% ตอน 09-12) ⇒ **รายงานเจ้าของ อย่าเปลี่ยนบทบาทเอง** |
 | **GLM** (`glm/<8ตัว>`) | implementer — รับเฉพาะใบที่ Claude จ่ายให้ (ไม่รับงานนอกใบ) · ถือใบอยู่ = ทำให้จบ (PR + `pr_open`) ก่อนรับใบใหม่ · จ่ายได้ทุกเลน | รีวิว · merge |
 | **Claude** | สำรวจ/หาต้นเหตุ → **เขียนใบ** → จ่าย → มอนิเตอร์ → **รีวิวทุก PR** (รวม `gemini/*`) → ติด `reviewed` + merge เมื่อครบเงื่อนไข · ดูแล docs/context | merge งานที่ตัวเองเขียน |
@@ -86,6 +86,13 @@
   Claude จ่ายงานด้วยการยิงข้อความตรง (สั่ง 2026-09-16): `scripts/glm-worker-up.sh` เปิด worker ·
   `scripts/glm-dispatch.sh <owner/repo> <issue>` จ่ายใบ (ใน `108-Plaza/108-Ting-Ecosystem` · คู่มือ `docs/AGENT_MESSAGING.md`)
   · บทบาท worker `/data/yuth/glm-work/BOOT.md` บน Dell · **อย่าอ้าง `~/.config/glm/queue-prompt.md` — ลบแล้ว**
+- **Gemini** รอจ่ายใบ ไม่เรียกคิวเอง — เจ้าของสั่ง 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
+  เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · worker รันบน Dell ใน tmux `gemini-1`…`gemini-4`
+  (id `gemini/pool-N` · `agy --dangerously-skip-permissions -i` · cwd `/data/yuth/worktrees` · **เจ้าของเปิดเอง** —
+  Claude เปิด agy แบบ skip-permissions ไม่ได้ และหน้าถาม trust โฟลเดอร์ครั้งแรกเจ้าของต้องกดเอง) ·
+  จ่ายใบ: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<ข้อความ>"; tmux send-keys -t gemini-N Enter'`
+  ดูผล `tmux capture-pane -p -t gemini-N` · ข้อความจ่ายต้องมี repo#issue · worker id · ที่ clone `/data/yuth/worktrees/<slug>` ·
+  คอมเมนต์รับงาน · ขอบเขตไฟล์ · PR body `> worker:` · ห้ามรีวิว/merge · ติดแล้วคอมเมนต์ลงใบแล้วหยุด
 
 ## Claude เขียนโค้ดได้เมื่อไหร่
 
