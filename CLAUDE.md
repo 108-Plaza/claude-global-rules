@@ -561,7 +561,7 @@ Verify ที่รันเอง: <คำสั่ง> → <ผล>
 - 🔴 **เปิด PR ⇒ `transition → pr_open` พร้อม `pr_url` ทันที = การขอรีวิว** (ทางเดียว ห้ามใช้ทางอื่นแทน) · PR ที่ไม่มี transition ถือว่ายังไม่เสร็จ ·
   ทำต่อไม่ได้ ⇒ `ready` (คืนใบ) หรือ `blocked` + `reason` · 🔴 **ใบ `blocked` ต้องคง label `ready` ไว้** — คิวติด `blocked` เพิ่มเองและตั้งใจไม่ถอด `ready` (108-agent-queue #300) ·
   ถอด `ready` ⇒ sync ไม่อ่านใบนั้นอีกเลย (`gh issue list --label ready`) แก้เนื้อใบ/ขอบเขตไม่ถึงคิว และถอด `blocked` ภายหลังก็ไม่ปลด ·
-  **ปลดใบ = ถอด `blocked` อย่างเดียว** · ใบที่ถูก block เพราะมีคนถอด `ready` (reason `label ready removed` · ไม่มีป้าย `blocked`) ⇒ ปลดด้วยการติด `ready` คืน · รายละเอียด 108-agent-queue #713
+  **ปลดใบ = ถอด `blocked`** (ใบที่ยังมี `ready`) · ใบที่ถูก block เพราะมีคนถอด `ready` (reason `label ready removed`) คิว**ติด `blocked` ให้ด้วย** (#523) ⇒ ปลด = **ติด `ready` คืนก่อน แล้วถอด `blocked`** · รายละเอียด 108-agent-queue #713
 - 🔴 **รับเฉพาะใบใน `108-Plaza/*`** (สั่ง 2026-09-09) — ใบ `yuthstyle88/*-dev` ⇒ `transition → ready` คืนทันทีแล้วรายงานเจ้าของ (คิว sync เฉพาะ org แล้ว ⇒ เห็นใบ dev = มีคนยัดเข้ามาเอง) ·
   งานนั้นต้องทำจริงให้เปิดใบใหม่ฝั่ง org อ้างใบเดิม (PR merge ที่ไหน ใบต้องอยู่ที่นั่น)
 
