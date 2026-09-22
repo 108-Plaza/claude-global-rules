@@ -54,7 +54,7 @@
 
 | ใคร | ทำ | ห้าม |
 |---|---|---|
-| **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — **ไม่เรียกคิวเอง** นั่งรอให้ Claude จ่ายใบ (เหมือน GLM · ดูข้างล่าง) | รีวิว · merge · เรียก `/v1/next` เอง |
+| **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — มีสองแบบ: **เซสชัน Gemini (tmux บน Dell) ไม่เรียกคิวเอง** นั่งรอให้ Claude จ่ายใบ · **ฟลีต autopilot** (`gemini/auto-*` บน MacBook/Mac Studio) ดึงคิวเองตามปกติ (ดูข้างล่าง) | รีวิว · merge · เซสชัน tmux เรียก `/v1/next` เอง |
 | **GLM** (`glm/<8ตัว>`) | implementer — รับเฉพาะใบที่ Claude จ่ายให้ (ไม่รับงานนอกใบ) · ถือใบอยู่ = ทำให้จบ (PR + `pr_open`) ก่อนรับใบใหม่ · จ่ายได้ทุกเลน | รีวิว · merge |
 | **Claude** | สำรวจ/หาต้นเหตุ → **ออกแบบ class diagram จาก requirement ของเจ้าของ** (หัวข้อ 📐) → **เขียนใบ** → จ่าย → มอนิเตอร์ → **รีวิวทุก PR** (รวม `gemini/*`) → ติด `reviewed` + merge เมื่อครบเงื่อนไข · ดูแล docs/context | merge งานที่ตัวเองเขียน |
 | **เจ้าของ** | ตัดสิน business rule · อนุมัติกรณียกเว้นของการ merge (ข้างล่าง) | |
@@ -88,13 +88,16 @@
   Claude จ่ายงานด้วยการยิงข้อความตรง (สั่ง 2026-09-16): `scripts/glm-worker-up.sh` เปิด worker ·
   `scripts/glm-dispatch.sh <owner/repo> <issue>` จ่ายใบ (ใน `108-Plaza/108-Ting-Ecosystem` · คู่มือ `docs/AGENT_MESSAGING.md`)
   · บทบาท worker `/data/yuth/glm-work/BOOT.md` บน Dell · **อย่าอ้าง `~/.config/glm/queue-prompt.md` — ลบแล้ว**
-- **Gemini** รอจ่ายใบ ไม่เรียกคิวเอง — เจ้าของสั่ง 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
+- **เซสชัน Gemini** รอจ่ายใบ ไม่เรียกคิวเอง — เจ้าของสั่ง 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
   เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · worker รันบน Dell ใน tmux `gemini-1`…`gemini-4`
   (id `gemini/pool-N` · `agy --dangerously-skip-permissions -i` · cwd `/data/yuth/worktrees` · **เจ้าของเปิดเอง** —
   Claude เปิด agy แบบ skip-permissions ไม่ได้ และหน้าถาม trust โฟลเดอร์ครั้งแรกเจ้าของต้องกดเอง) ·
   จ่ายใบ: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<ข้อความ>"; tmux send-keys -t gemini-N Enter'`
   ดูผล `tmux capture-pane -p -t gemini-N` · ข้อความจ่ายต้องมี repo#issue · worker id · ที่ clone `/data/yuth/worktrees/<slug>` ·
   คอมเมนต์รับงาน · ขอบเขตไฟล์ · PR body `> worker:` · ห้ามรีวิว/merge · ติดแล้วคอมเมนต์ลงใบแล้วหยุด
+  🔴 **ยกเว้นฟลีต autopilot** (เจ้าของเลือก 2026-09-22 ว่ากฎข้อนี้ใช้กับเซสชันเท่านั้น): LaunchAgent
+  `com.108plaza.tq-autopilot.gemini` บน MacBook (`gemini/auto-macbook01-04`) และ Mac Studio (`gemini/auto-studio01-08`)
+  ดึงคิว `/v1/next` เองตามออกแบบ · **ห้ามหยุด/แก้ LaunchAgent เอง** — เป็นของเจ้าของ
 
 ## Claude เขียนโค้ดได้เมื่อไหร่
 
@@ -556,7 +559,9 @@ Verify ที่รันเอง: <คำสั่ง> → <ผล>
 - `empty`/`backpressure` ⇒ รอ 2 นาทีแล้วขอใหม่ ห้ามไปหยิบงานนอกคิว · ทั้งระบบพร้อมกันไม่เกิน 6 งาน · หนึ่ง worker ถือทีละใบ
 - heartbeat ทุก ≤30 นาที (lease 90 นาที) · ได้ `revoked` ⇒ หยุดทันที · ห้ามแตะไฟล์นอก `file_scope`
 - 🔴 **เปิด PR ⇒ `transition → pr_open` พร้อม `pr_url` ทันที = การขอรีวิว** (ทางเดียว ห้ามใช้ทางอื่นแทน) · PR ที่ไม่มี transition ถือว่ายังไม่เสร็จ ·
-  ทำต่อไม่ได้ ⇒ `ready` (คืนใบ) หรือ `blocked` + `reason` · จอดใบด้วย `blocked` ต้อง**ถอด label `ready`** ด้วย ไม่งั้น sync ดึงกลับใน ~3 นาที
+  ทำต่อไม่ได้ ⇒ `ready` (คืนใบ) หรือ `blocked` + `reason` · 🔴 **ใบ `blocked` ต้องคง label `ready` ไว้** — คิวติด `blocked` เพิ่มเองและตั้งใจไม่ถอด `ready` (108-agent-queue #300) ·
+  ถอด `ready` ⇒ sync ไม่อ่านใบนั้นอีกเลย (`gh issue list --label ready`) แก้เนื้อใบ/ขอบเขตไม่ถึงคิว และถอด `blocked` ภายหลังก็ไม่ปลด ·
+  **ปลดใบ = ถอด `blocked` อย่างเดียว** · ใบที่ถูก block เพราะมีคนถอด `ready` (reason `label ready removed` · ไม่มีป้าย `blocked`) ⇒ ปลดด้วยการติด `ready` คืน · รายละเอียด 108-agent-queue #713
 - 🔴 **รับเฉพาะใบใน `108-Plaza/*`** (สั่ง 2026-09-09) — ใบ `yuthstyle88/*-dev` ⇒ `transition → ready` คืนทันทีแล้วรายงานเจ้าของ (คิว sync เฉพาะ org แล้ว ⇒ เห็นใบ dev = มีคนยัดเข้ามาเอง) ·
   งานนั้นต้องทำจริงให้เปิดใบใหม่ฝั่ง org อ้างใบเดิม (PR merge ที่ไหน ใบต้องอยู่ที่นั่น)
 
