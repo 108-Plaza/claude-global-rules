@@ -889,8 +889,17 @@ git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # ไ�
 6. **Local verify to green** — typecheck/lint/tests ของ crate ที่แก้**บนเครื่อง**ให้เขียวก่อน push · CI ไม่ใช่ test runner
 7. **Fix** สิ่งที่ verify เจอ (บนเครื่อง)
 8. **Commit** เฉพาะไฟล์ของ task · conventional message
-9. **Push + draft PR** — squash WIP ก่อน ready · commit doc/`.ai_context` ล้วนใส่ `[skip ci]` · body สรุป what/why + วิธี verify ·
+9. **Push + draft PR** — squash WIP ก่อน ready · body สรุป what/why + วิธี verify ·
    รวม finding ที่ related ใน crate เดียวกันไว้ PR เดียวเท่าที่รีวิวรับไหว
+   - 🔴 **ห้ามใส่ `[skip ci]` ที่ไหนในข้อความคอมมิตเลย** (อยู่ในเนื้อก็นับ ไม่ใช่แค่บรรทัดหัวเรื่อง) —
+     GitHub ระงับทั้ง workflow **ก่อนสร้าง job** ⇒ ด่านที่บังคับไม่เคยได้รายงาน ⇒ `mergeStateStatus = BLOCKED`
+     ถาวร โดยไม่มีด่านไหนแดงให้ดู ⇒ **ข้อ 11 เป็นไปไม่ได้** · วัด 2026-09-23: 8 ใน 10 รีโปที่กวาดมี
+     required checks บน `main` (2–6 ด่าน) · เกิดจริงที่ `park108#943` — `claude-global-rules#2`
+     ```bash
+     gh api repos/<slug>/branches/main/protection --jq '.required_status_checks.contexts'
+     ```
+     **การประหยัด CI ของ PR doc-only เป็นงานของ workflow ไม่ใช่ของข้อความคอมมิต** — ให้ workflow มีทางฐาน
+     doc-only ที่รายงานด่านบังคับว่าเขียวโดยไม่บิลด์ (ตัวอย่างที่ทำแล้ว: `park108/.github/workflows/ci.yml`)
 10. **Ready → CI** เมื่อบนเครื่องเขียวแล้วเท่านั้น · CI แดงเพราะ env ต่าง ⇒ reproduce + แก้บนเครื่องก่อน push ใหม่
 11. **Merge** ตามหัวข้อ 🟢 (verdict PASS จากเซสชันอื่น + checks เขียว + CLEAN) · กรณียกเว้นต้องขออนุมัติ
 12. **Close context** — `.ai_context`/`HANDOFF.md` บันทึกผล ล้าง Next steps ที่หมดอายุ
