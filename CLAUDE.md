@@ -826,11 +826,12 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 ## 🖥 บิลด์ก้อนใหญ่ไปทำที่ Mac Studio
 
 เจ้าของสั่ง 2026-09-12 — `cargo build/test/clippy` ทั้ง workspace ของ `pos108-*` · `jh-api` · `park108` · `108-platform-services`
-**รันที่ Mac Studio** (20 core · 128 GB) · งานไม่กี่ crate ทำบน MacBook ได้ · **Mac mini ไม่มี rustc อย่าส่งไป**
+**รันที่ Mac Studio** (20 core · 128 GB) · งานไม่กี่ crate ทำบน MacBook ได้ · **Mac mini มี rustc/cargo 1.98.1 แล้ว** (วัด 2026-09-23 · `ssh 100.100.204.107 'rustc --version'`) — บรรทัดเดิมที่เขียนว่าไม่มีทำให้เกือบข้ามเครื่องเดียวที่วัด park108#942 ได้
 ```bash
 ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'
 ```
 - 🔴 ต้อง `zsh -lc` — headless ssh ไม่มี `/opt/homebrew/bin` และ `~/.cargo/bin`
+- 🔴 **งานวัดโมเดล `park108` ต้องรันบน Mac mini (`Mac-mini-khxng-ai-01` · 100.100.204.107) เท่านั้น** — โมเดล (`~/data/det_*.onnx` · `finetuned.onnx` · `park108-province-model/`) และคลังภาพป้าย 244 ใบ (`~/data/108Park-plates/`) อยู่ที่นั่น และ `README.md` ของคลังสั่งว่า **ห้าม commit เข้า repo ไหนทั้งสิ้น** (PDPA) ⇒ ห้ามคัดลอกภาพออกจากเครื่อง · ทำใน worktree ใต้ `~/park108-src/.worktrees/` แล้วลบทิ้งเมื่อจบ
 - 🔴 โครงโฟลเดอร์ต่างกัน ห้ามลอกพาธข้ามเครื่อง: Studio ใช้ `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}` · `JH-Platform/Api` · `parking/park108` · MacBook ใช้ `pos/` `heros/` `parking/`
 - เข้าทาง Tailscale `macstudio` (100.84.133.23) · `macstudio-lan` ใช้ได้เฉพาะ LAN เดียวกัน · หลังรีสตาร์ตอาจต้องยืนยัน Tailscale SSH ในเบราว์เซอร์หนึ่งครั้ง
 
