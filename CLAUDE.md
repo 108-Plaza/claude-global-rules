@@ -54,7 +54,7 @@
 
 | ใคร | ทำ | ห้าม |
 |---|---|---|
-| **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — มีสองแบบ: **เซสชัน Gemini (tmux บน Dell) ไม่เรียกคิวเอง** นั่งรอให้ Claude จ่ายใบ · **ฟลีต autopilot** (`gemini/auto-*` บน MacBook/Mac Studio) ดึงคิวเองตามปกติ (ดูข้างล่าง) | รีวิว · merge · เซสชัน tmux เรียก `/v1/next` เอง |
+| **Gemini** (`gemini/*` และ `antigravity/*` = ตัวเดียวกัน — เจ้าของรันผ่าน IDE ชื่อ Antigravity · พับสองชื่อก่อนนับ) | implementer — มีสองแบบ: **เซสชัน Gemini (tmux บน Dell) ไม่เรียกคิวเอง** นั่งรอให้ Claude จ่ายใบ · **ฟลีต autopilot** (`gemini/auto-*` บน MacBook/Mac Studio) ดึงคิวเองตามปกติ (ดูข้างล่าง) | รีวิว · merge · เซสชัน tmux เรียก `/v1/next` เพื่อหาใบเอง (claim ใบที่ผู้คุมเลนสั่งได้ — ดูข้างล่าง) |
 | **GLM** (`glm/<8ตัว>`) | implementer — รับเฉพาะใบที่ Claude จ่ายให้ (ไม่รับงานนอกใบ) · ถือใบอยู่ = ทำให้จบ (PR + `pr_open`) ก่อนรับใบใหม่ · จ่ายได้ทุกเลน | รีวิว · merge |
 | **Claude** | สำรวจ/หาต้นเหตุ → **ออกแบบ class diagram จาก requirement ของเจ้าของ** (หัวข้อ 📐) → **เขียนใบ** → จ่าย → มอนิเตอร์ → **รีวิวทุก PR** (รวม `gemini/*`) → ติด `reviewed` + merge เมื่อครบเงื่อนไข · ดูแล docs/context | merge งานที่ตัวเองเขียน |
 | **เจ้าของ** | ตัดสิน business rule · อนุมัติกรณียกเว้นของการ merge (ข้างล่าง) | |
@@ -97,6 +97,11 @@
   จ่ายใบ: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<ข้อความ>"; tmux send-keys -t gemini-N Enter'`
   ดูผล `tmux capture-pane -p -t gemini-N` · ข้อความจ่ายต้องมี repo#issue · worker id · ที่ clone `/data/yuth/worktrees/<slug>` ·
   คอมเมนต์รับงาน · ขอบเขตไฟล์ · PR body `> worker:` · ห้ามรีวิว/merge · ติดแล้วคอมเมนต์ลงใบแล้วหยุด
+  🔴 **ข้อความจ่ายต้องสั่ง claim ผ่านคิวหนึ่งครั้งก่อนแตะโค้ด** (เจ้าของเลือก 2026-09-24): ติด `assign:gemini/pool-N` ก่อน ⇒
+  สั่งให้ยิง `POST $TQ/v1/next` `{"worker":"gemini/pool-N","host":…,"capabilities":["mechanical","logic","guarded"]}`
+  ได้ `kind=ticket` ของใบนั้นแล้วจึงเริ่ม · และสั่ง `POST $TQ/v1/heartbeat` ทุก ≤30 นาทีระหว่างทำ · **นี่ไม่ใช่การดึงคิวเอง**
+  (Gemini ยังไม่เลือกใบ ผู้คุมเลนเป็นคนสั่ง) — มีไว้ให้คิวถือ lease + **ล็อกไฟล์** ของใบ · ไม่ claim = ใบค้าง `ready`
+  ไม่มีล็อก ⇒ ใบอื่นที่แตะไฟล์เดียวกันถูกจ่ายซ้อนได้ (เกิดจริง jh-api#774 และ park108#557 วันเดียวกัน)
   🔴 **ยกเว้นฟลีต autopilot** (เจ้าของเลือก 2026-09-22 ว่ากฎข้อนี้ใช้กับเซสชันเท่านั้น): LaunchAgent
   `com.108plaza.tq-autopilot.gemini` บน MacBook (`gemini/auto-macbook01-04`) และ Mac Studio (`gemini/auto-studio01-08`)
   ดึงคิว `/v1/next` เองตามออกแบบ · **ห้ามหยุด/แก้ LaunchAgent เอง** — เป็นของเจ้าของ
