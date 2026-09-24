@@ -267,7 +267,8 @@ transition (เช่น → rework)  ล้าง `reviewer` เป็น None
 
 CI ตัวเต็มของ PR รันเฉพาะ PR ที่มีป้าย `ci:go` · PR อื่นแดงเร็วที่สเต็ป `Wait for merge turn (ci:go)` ⇒ ไม่แย่งช่อง
 · **ขั้นตอนถึงคิว:** ติด `ci:go` ให้ PR ที่ถึงคิว (ครั้งละใบ) **ก่อน** event ที่จะยิง run (update-branch / push ของผู้เขียน)
-· PR ไม่ตามหลัง main (`behind=0`) ⇒ ไม่มี update-branch ให้กด ⇒ ขอผู้เขียน push commit ว่าง (อย่าปิด-เปิด PR — sync ของคิวอาจเห็นว่าปิด)
+· PR ไม่ตามหลัง main (`behind=0`) ⇒ ไม่มี update-branch ให้กด ⇒ ผู้คุมเลน `gh pr close` + `gh pr reopen` ทันทีติดกัน (event `reopened` มีป้าย) · ใช้แล้ว 4 ครั้ง 2026-09-24 (PR 841 · 846 · 849 · 852) — **ตรวจ `GET /v1/ticket` หลังทุกครั้ง: state/`pr_number`/`pr_head`/reviewer คงเดิมทุกครั้ง** (sync รอบ 60 วิ ไม่ทันเห็นช่วงปิดไม่กี่วินาที) · ผู้เขียนเป็นคน ⇒ ขอ push commit ว่างก็ได้ · autopilot ⇒ ใช้ close/reopen
+· **PR ที่ผู้คุมเลนเปิดเอง (docs) และเป็นใบเดียวในเลน** ⇒ `gh pr create --label ci:go` ตั้งแต่ต้น ⇒ ไม่มี run แรกที่แดงค้างบนหน้า PR (`gh pr checks` แสดงผลล่าสุดต่อชื่อ check ⇒ ช่วงที่ run ที่มีป้ายยังคิว หน้า PR โชว์แดงทั้งที่ไม่ได้รันอะไร — ผู้รีวิว PR 852 ชี้)
 · rerun ใช้ payload เดิม ⇒ **ติดป้ายทีหลังแล้ว rerun ยังแดง**
 · FAIL ⇒ ถอด `ci:go` · PR ที่ส่งกลับ rework แล้วจะให้ push ถัดไปรันเต็มทันที ⇒ ติด `ci:go` ไว้ล่วงหน้าได้
 · ช่วงเปลี่ยนผ่าน: PR ที่หัวยังมี `ci.yml` เก่ายังเข้ากลุ่มเดิมและแย่งช่องได้จนกว่าจะ merge main
