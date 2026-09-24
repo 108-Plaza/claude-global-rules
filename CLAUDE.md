@@ -92,7 +92,7 @@
   · บทบาท worker `/data/yuth/glm-work/BOOT.md` บน Dell · **อย่าอ้าง `~/.config/glm/queue-prompt.md` — ลบแล้ว**
 - **เซสชัน Gemini** รอจ่ายใบ ไม่เรียกคิวเอง — เจ้าของสั่ง 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
   เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · worker รันบน Dell ใน tmux `gemini-1`…`gemini-4`
-  (id `gemini/pool-N` · `agy --dangerously-skip-permissions -i` · cwd `/data/yuth/worktrees` · **เจ้าของเปิดเอง** —
+  (id `gemini/pool-N` · `agy --dangerously-skip-permissions` **ไม่มี `-i`** — agy 1.2.9 ให้ `-i` = `--prompt-interactive` ที่ต้องมีข้อความตาม ใส่เปล่า ๆ agy ปิดตัวทันทีและ session หาย (2026-09-24) · cwd `/data/yuth/worktrees` · **เจ้าของเปิดเอง** —
   Claude เปิด agy แบบ skip-permissions ไม่ได้ และหน้าถาม trust โฟลเดอร์ครั้งแรกเจ้าของต้องกดเอง) ·
   จ่ายใบ: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<ข้อความ>"; tmux send-keys -t gemini-N Enter'`
   ดูผล `tmux capture-pane -p -t gemini-N` · ข้อความจ่ายต้องมี repo#issue · worker id · ที่ clone `/data/yuth/worktrees/<slug>` ·
