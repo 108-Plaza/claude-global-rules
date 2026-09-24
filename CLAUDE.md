@@ -845,6 +845,27 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"`
 - CI เร็วขึ้นไม่ใช่ข้ออนุญาตให้ push เดาแก้ — ยังต้อง local verify ให้เขียวก่อน
 
+
+### 🧹 CI ค้างเกิน 3 = รวบยอดรันที่เดียว
+
+เจ้าของสั่ง 2026-09-24 *"ถ้างาน ci ค้างเกิน 3 ให้รวบยอดรันที่เดียว"* · ใช้กับ**ทุกรีโป ทุกเซสชันที่เห็น** ไม่ต้องขอซ้ำ
+
+**นับ:** run ที่ `status=queued` ของรีโปเดียว · **เกิน 3 ⇒ ยกเลิกทิ้งให้เหลือตัวเดียว** — เก็บตัวที่ใกล้ merge ที่สุด
+(PR ที่ PASS แล้ว / ใบ p0) ไม่มีก็เก็บตัวใหม่สุด · PR ที่ถูกยกเลิกค่อย re-run/update-branch ตอนถึงคิว merge ของมัน
+
+🔴 **ห้ามยกเลิก:** run ที่ `in_progress` · run บน `main`/`master` (เป็นบันทึกว่า main เขียวไหม — `pos108-core#1733`) ·
+deploy/release/promote (`release-image` · `Promote to staging` · `deploy/*`) · `workflow_dispatch` ที่เจ้าของกดเอง ·
+ด่านเบา `independent-review` / `Issue link` **ยกเลิกได้เฉพาะตัวซ้ำของ PR เดียวกัน** (เก็บตัวใหม่สุดต่อ PR) — ทุก PR ต้องมีหนึ่งตัว ไม่งั้นด่านค้าง
+```bash
+gh api "repos/108-Plaza/<repo>/actions/runs?status=queued&per_page=100" \
+  --jq '.workflow_runs[]|"\(.id) \(.name) \(.event) \(.head_branch) \(.created_at)"'
+gh api -X POST repos/108-Plaza/<repo>/actions/runs/<id>/cancel
+```
+- ทางถาวรคือ `concurrency` กลุ่มเดียวต่อรีโปสำหรับ run จาก PR (`…-pr` + `cancel-in-progress: false` ⇒ 1 รัน + 1 รอ) —
+  วาง 2026-09-24 ที่ `pos108-core#2192` · `108-agent-queue#809` · `pos108-terminal#720` · `jh-api` ตามหลัง `#797`
+  · กฎนี้คือตัวกวาดสำหรับสิ่งที่ concurrency ไม่ครอบ (workflow อื่น · รีโปที่ยังไม่แก้)
+- รีโปคิวเดียว ⇒ **merge ทีละ PR และ re-run เฉพาะตอนกลุ่มว่าง** — re-run หลายใบพร้อมกัน = แย่งช่องรอกันเอง
+- ⚠️ ด่านเบาต่อคิวหลัง `cargo` เพราะใช้ runner ตัวเดียวกัน (วัด 04:56Z: รอ 46 · เป็นด่านเบา 29 · build จริง 7) — แยก runner ให้ด่านเบาต้องเพิ่ม label = งานเจ้าของ
 ## 🖥 บิลด์ก้อนใหญ่ไปทำที่ Mac Studio
 
 เจ้าของสั่ง 2026-09-12 — `cargo build/test/clippy` ทั้ง workspace ของ `pos108-*` · `jh-api` · `park108` · `108-platform-services`
