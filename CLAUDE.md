@@ -121,7 +121,12 @@
 1. verdict `PASS` / `PASS + follow-up` จาก**เซสชันที่ไม่ได้เขียน PR** โพสต์ลง PR แล้ว
    (`> reviewer:` + `> head:` ตรง head ปัจจุบัน · เทียบ acceptance criteria ทีละข้อ · รัน verify เอง)
 2. required checks เขียวครบที่ head ปัจจุบัน (`gh pr checks`) และ `mergeStateStatus = CLEAN`
-3. `git merge-base --is-ancestor origin/main <head>` ผ่าน — `strict = false` ⇒ PR เขียวบนฐานเก่า merge แล้ว main แดงได้
+3. `git merge-base --is-ancestor origin/main <head>` ผ่าน — **`strict` ต่างกันรายรีโป ห้ามเดา ให้ดูก่อน:**
+   `gh api repos/<slug>/branches/main/protection --jq .required_status_checks.strict`
+   - `false` ⇒ GitHub **ยอมให้ merge PR ที่เขียวบนฐานเก่า** แล้ว main แดงได้ ⇒ ข้อนี้คือด่านเดียวที่กันไว้
+   - `true` ⇒ GitHub **บังคับเองแล้ว** (ฐานเก่า = `BEHIND` merge ไม่ได้) ⇒ `update-branch` สร้าง head ใหม่ ⇒ **ต้องมี verdict ใหม่ที่ head นั้น**
+     ⇒ PR ในรีโปนี้ต้องผูก verdict ซ้ำได้หลายรอบเมื่อ main ขยับบ่อย (เกิดจริง `jh-api#747` 3 รอบ) · merge ให้เร็วหลัง PASS
+   - วัด 2026-09-24T01:33Z: `true` = `park108` · `jh-api` · `108-agent-queue` · `false` = `pos108-core` · `pos108-store` · `pos108-admin` · `pos108-orders` · `108-sell` (`claude-global-rules#3`)
 
 🔴 **ยังต้องหยุดถามเจ้าของ:**
 - verdict `FAIL` หรือ `PASS` ที่มีรายการ "ต้องแก้ก่อน merge"
@@ -741,7 +746,7 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 ## 🔀 หลายสายทำงานพร้อมกัน — เคลมไม่พอ ต้องกันตอน merge
 
 เคลมใบกันชนไม่ได้เพราะ**ใบคนละใบแตะไฟล์เดียวกันได้** (เหตุ `core#1209` กลายเป็น CONFLICTING เพราะ `#1213` merge บนไฟล์เดียวกันใน ~20 นาที)
-- 🔴 **rebase บน `origin/main` ทั้งตอนเปิด PR และก่อน merge** (`strict = false`)
+- 🔴 **rebase บน `origin/main` ทั้งตอนเปิด PR และก่อน merge** — จำเป็นทั้งสองแบบ: รีโป `strict = false` เพราะ GitHub ไม่กันให้ · รีโป `strict = true` เพราะ GitHub ไม่ให้ merge จนกว่าจะตามทัน (ดู `strict` ของรีโปตามหัวข้อ 🟢 ข้อ 3)
 - 🔴 **แก้ conflict ห้ามเอาข้างเดียวทั้งก้อน** — อ่าน `git log -p <base>..origin/main -- <ไฟล์>` ให้รู้ว่าอีกฝั่งแก้อะไร**ทำไม**ก่อน
 - 🔴 **rebase แล้วผลรันเดิมใช้ไม่ได้** — รันใหม่และพิสูจน์สองอย่าง: เทสต์ของตัวเองยังแดงได้บนฐานใหม่ · เทสต์ของฝั่งที่ถูก rebase ทับยังเขียว
 
