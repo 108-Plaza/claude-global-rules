@@ -783,7 +783,8 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 - 🔴 **org ไม่มี staging** — เจ้าของกำหนดใหม่ 2026-09-25 *"org deploy to prod ไม่มี staging"* ·
   ห้ามพึ่ง "ห้าม push" อย่างเดียว (วัด 09-25: `deploy/staging` ฝั่ง org ยังถูกใช้ใน 7 รีโป ล่าสุด core วันเดียวกัน) ⇒
   workflow ต้องตัดสินเลนด้วยคู่ **(repository, branch)** ไม่ใช่ branch อย่างเดียว — ไฟล์เดียวทั้งสองฝั่ง
-  (บริดจ์ sync ไฟล์นี้ ⇒ ลบ job staging ฝั่ง org = staging ฝั่งกระจกพังตาม) · ท่าอ้างอิง `jh-api#830`:
+  (บริดจ์**ไม่** sync `.github/` · กระจกได้สำเนาจาก org ด้วยมือตามหัวข้อข้างล่าง ⇒ guard ในไฟล์เดียวทำให้
+  สำเนาเดียวกันใช้ได้ทั้งสองฝั่ง · **แก้ฝั่ง org แล้วต้องเปิด PR คัดลอกไปกระจกด้วยเสมอ** ไม่งั้นกระจกไม่มี guard) · ท่าอ้างอิง `jh-api#830`:
   ขั้น lane guard ใน job แรกยอมแค่ `108-Plaza/<repo>:release/prod` กับ `yuthstyle88/<repo>-dev:deploy/staging`
   ที่เหลือแดงก่อนบิลด์ + job deploy แต่ละตัวเช็ก `github.repository` · สาขา `deploy/staging` ฝั่ง org ลบได้
   หลังรีโปนั้นมี guard แล้ว (ติด `backup/*` ก่อนถ้ามีคอมมิตที่ main ไม่มี)
