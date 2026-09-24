@@ -780,6 +780,13 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 
 - 🔴 **ห้าม push `release/prod` จากฝั่ง personal และห้าม push `deploy/staging` จากฝั่ง org** — เลนไขว้กันเมื่อไหร่
   จะไม่มีใครตอบได้ว่าของที่รันอยู่มาจาก commit ไหน
+- 🔴 **org ไม่มี staging** — เจ้าของกำหนดใหม่ 2026-09-25 *"org deploy to prod ไม่มี staging"* ·
+  ห้ามพึ่ง "ห้าม push" อย่างเดียว (วัด 09-25: `deploy/staging` ฝั่ง org ยังถูกใช้ใน 7 รีโป ล่าสุด core วันเดียวกัน) ⇒
+  workflow ต้องตัดสินเลนด้วยคู่ **(repository, branch)** ไม่ใช่ branch อย่างเดียว — ไฟล์เดียวทั้งสองฝั่ง
+  (บริดจ์ sync ไฟล์นี้ ⇒ ลบ job staging ฝั่ง org = staging ฝั่งกระจกพังตาม) · ท่าอ้างอิง `jh-api#830`:
+  ขั้น lane guard ใน job แรกยอมแค่ `108-Plaza/<repo>:release/prod` กับ `yuthstyle88/<repo>-dev:deploy/staging`
+  ที่เหลือแดงก่อนบิลด์ + job deploy แต่ละตัวเช็ก `github.repository` · สาขา `deploy/staging` ฝั่ง org ลบได้
+  หลังรีโปนั้นมี guard แล้ว (ติด `backup/*` ก่อนถ้ามีคอมมิตที่ main ไม่มี)
 - 🔴 **`deploy` ยังสั่งได้คนเดียวคือเจ้าของ** (กฎเดิมไม่เปลี่ยน) — กฎนี้บอกว่า *push ที่ไหน* ไม่ได้บอกว่า *push เมื่อไหร่*
 
 **ทำไมถึงเปิดเลน staging ให้ฝั่ง personal** (เจ้าของ 2026-09-21): *"เพื่อให้ผู้พัฒนาฝั่ง personal deploy ขึ้น dell (staging) ได้"*
