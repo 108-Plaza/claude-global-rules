@@ -61,6 +61,30 @@
 
 ---
 
+## 🖥 เครื่อง worker ในฟลีต (ไม่ใช่เครื่องโปรดักชัน)
+
+### Lenovo — `DESKTOP-ENCHS4F` (Windows) · เครื่อง Windows เครื่องเดียวของฟลีต
+
+**เจ้าของเพิ่มเข้าฟลีต 2026-09-25** · เครื่องนี้คนนอกทีมดูแล (Tailscale อยู่ใต้ tailnet ของคนอื่น)
+
+| | |
+|---|---|
+| **เข้าถึง** | ssh ได้เฉพาะ `ssh macstudio` → `ssh pos108-lenovo` (ผู้ใช้ `pos108-lenovo` · admin) · MacBook ไม่มี alias ตรง · ส่งไฟล์ใช้ `scp -O` |
+| **worker id** | `claude/ef4dae` · `host=DESKTOP-ENCHS4F` · capabilities `mechanical` `logic` · รับใบที่ controller ส่งตรงเท่านั้น (📨) — เซสชัน "Coding worker" บน Remote Control |
+| **เซสชันอื่นบนเครื่อง** | "Agent controller" · "Review worker" (Remote Control) |
+| **พิสูจน์ครบวงแล้ว** | `pos108-terminal#691` → PR #766 merged 2026-09-25: claim → push → PR → `pr_open` → CI เขียว (job Windows รันบน runner ของเครื่องนี้เอง) → PASS จากเซสชันอื่น |
+| **ใช้ทำอะไรได้ที่เครื่องอื่นทำไม่ได้** | รันเทสต์/สคริปต์บน Windows จริง (PowerShell 5.1 · MSVC · rustc 1.98.1) · ใบ Windows ของ `pos108-terminal` |
+| **CI runner บนเครื่อง** | `lenovo-org-win-1` (org) · `lenovo-win-terminal-dev` (mirror) · ป้าย `self-hosted, X64, Windows` · รันผ่าน `run.cmd` ไม่ใช่ service ⇒ รีบูต/ล็อกเอาต์ = runner หาย |
+| **กฎกลาง** | ไม่ดึงจาก GitHub เอง — Mac Studio ส่งให้ทุก 15 นาที (`bin/claude-rules-mirror` · ดู README) ⇒ Mac Studio หลับ = เครื่องนี้ไม่ได้กฎใหม่ |
+| **credential ที่อยู่บนเครื่อง** | `gh` ล็อกอิน `yuthstyle88` (scope `repo` `workflow` `read:org` — เขียนได้ทุก repo ของ org) · `~/.config/tq/env` มีแค่ `TQ` + `TQ_TOKEN` |
+
+⚠️ **กับดักที่วัดแล้ว 2026-09-25:**
+- `gh` ใช้ได้เฉพาะในเซสชันเดสก์ท็อป — ผ่าน ssh ขึ้น token invalid/401 ⇒ อย่าสรุปว่าล็อกอินพังจากการเช็คทาง ssh
+- ลงเครื่องมือใหม่ / เปลี่ยน `CLAUDE.md` หรือ skill ⇒ **ต้องปิดเปิดแอป Claude บนเครื่อง** เซสชันที่เปิดค้างไม่เห็น PATH/ไฟล์ใหม่
+- Git for Windows ตั้ง `core.autocrlf=true` ⇒ ใบที่แตะไบต์ของไฟล์ต้องสั่งให้ clone ด้วย `core.autocrlf=false`
+
+---
+
 ## วิธีอัปเดตไฟล์นี้
 
 **เจ้าของเท่านั้นที่ประกาศว่าอะไรขึ้นโปรดักชัน** — agent ห้ามเปลี่ยนสถานะเอง แม้จะเห็นว่า deploy ไปแล้ว
@@ -78,4 +102,4 @@ claude-rules push
 
 ---
 
-_อัปเดตล่าสุด: 2026-09-20 — เจ้าของสั่งให้บันทึกไว้ทุกเครื่อง · บันทึกโดย `claude/a9e417`_
+_อัปเดตล่าสุด: 2026-09-25 — เพิ่มเครื่อง worker Lenovo (เจ้าของสั่ง) · บันทึกโดย `claude/1c19f5` · ก่อนหน้า 2026-09-20 สถานะรวม บันทึกโดย `claude/a9e417`_
