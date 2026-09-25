@@ -1,0 +1,91 @@
+#!/bin/bash
+# claude-rules-mirror <ssh-host> <windows-repo-path (ใช้ / เช่น C:/Users/x/.claude/rules-repo)> — ส่งกฎกลางไปเครื่องที่ไม่มีสิทธิ์อ่าน GitHub
+#
+# ใช้กับเครื่องที่เราไม่ใส่ credential ของ GitHub ไว้ (วันนี้คือ Lenovo `pos108-lenovo` ·
+# เครื่องที่คนนอกทีมดูแล — เจ้าของเลือก 2026-09-25 ให้ Mac Studio ส่งไปแทนการใส่ deploy key)
+# เรียกจาก LaunchAgent `com.108ting.claude-rules-mirror-<host>` บน Mac Studio ทุก 15 นาที
+#
+# ส่งเฉพาะ origin/main ที่ publish แล้ว (ไม่ใช่ HEAD ของเครื่องนี้) · ปลายทาง fast-forward เท่านั้น ·
+# ปลายทางมีของค้างในเวิร์กทรี = ข้ามและบันทึกเหตุผล เหมือน claude-rules-autopull
+# ปลายทางเป็น Windows (cmd เป็น shell ของ OpenSSH) ⇒ ส่งเป็น git bundle ผ่าน scp แทน git push
+# เพราะ git push ข้าม ssh ไป cmd ติดเรื่องเครื่องหมายคำพูดของ git-receive-pack
+PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
+export PATH
+
+HOST="${1:?ใช้: claude-rules-mirror <ssh-host> <windows-repo-path>}"
+DEST="${2:?ใช้: claude-rules-mirror <ssh-host> <windows-repo-path>}"
+REPO="$HOME/.claude/rules-repo"
+LOG="$HOME/.claude/rules-mirror-$HOST.log"
+LOCK="$HOME/.claude/.rules-mirror-$HOST.lock"
+BUNDLE="$HOME/.claude/.rules-mirror-$HOST.bundle"
+SSH=(ssh -o BatchMode=yes -o ConnectTimeout=15 "$HOST")
+
+log() { printf '%s  %s\n' "$(date '+%Y-%m-%d %H:%M:%S')" "$1" >> "$LOG"; }
+
+log_every() {
+  local stamp="$HOME/.claude/.rules-mirror-$HOST.stamp-$1" mins="$2" msg="$3"
+  if [ -f "$stamp" ] && [ -z "$(find "$stamp" -maxdepth 0 -mmin +"$mins" 2>/dev/null)" ]; then
+    return 0
+  fi
+  log "$msg"
+  : > "$stamp"
+}
+
+if [ -f "$LOG" ] && [ "$(wc -c < "$LOG" | tr -d ' ')" -gt 1048576 ]; then
+  mv "$LOG" "$LOG.1"
+fi
+
+if ! mkdir "$LOCK" 2>/dev/null; then
+  if [ -n "$(find "$LOCK" -maxdepth 0 -mmin +30 2>/dev/null)" ]; then
+    rmdir "$LOCK" 2>/dev/null && log "ปลดล็อกค้างจากรอบก่อน"
+  fi
+  exit 0
+fi
+trap 'rmdir "$LOCK" 2>/dev/null; rm -f "$BUNDLE"' EXIT
+
+g() { git -C "$REPO" "$@"; }
+
+if ! g fetch -q origin main 2>/dev/null; then
+  log_every fetchfail 360 "ข้าม: fetch origin ไม่ผ่านบนเครื่องต้นทาง"
+  exit 0
+fi
+want="$(g rev-parse origin/main)"
+
+have="$("${SSH[@]}" "git -C $DEST rev-parse HEAD" 2>/dev/null </dev/null | tr -d '\r')"
+if [ -z "$have" ]; then
+  log_every unreachable 360 "ข้าม: ต่อ $HOST ไม่ได้ หรือไม่พบ repo ที่ $DEST"
+  exit 0
+fi
+
+if [ "$have" = "$want" ]; then
+  log_every heartbeat 1380 "heartbeat: $HOST ตรงกับ origin (${want:0:7}) — ไม่มีอะไรต้องส่ง"
+  exit 0
+fi
+
+if ! g merge-base --is-ancestor "$have" "$want" 2>/dev/null; then
+  log_every diverged 360 "🔴 ข้าม: $HOST อยู่ที่ ${have:0:7} ซึ่งไม่ใช่บรรพบุรุษของ origin/main — มีคอมมิตที่นั่นเอง? ต้องแก้ด้วยมือ"
+  exit 0
+fi
+
+# bundle จาก ref ชั่วคราวที่ชี้ origin/main — ไม่พึ่ง main ของเครื่องนี้ (อาจมีคอมมิตที่ยังไม่ push)
+g update-ref refs/mirror/main "$want"
+if ! g bundle create -q "$BUNDLE" refs/mirror/main 2>/dev/null; then
+  log "🔴 สร้าง bundle ไม่ผ่าน"
+  exit 0
+fi
+
+if ! scp -O -q -o BatchMode=yes "$BUNDLE" "$HOST:${DEST%/*}/rules-mirror.bundle" </dev/null; then
+  log_every scpfail 360 "ข้าม: scp ไป $HOST ไม่ผ่าน"
+  exit 0
+fi
+
+# diff --quiet HEAD = มีของค้างในเวิร์กทรี/index ⇒ ไม่แตะ (เหมือน autopull)
+out="$("${SSH[@]}" "cd /d $DEST && git diff --quiet HEAD && git fetch -q ..\\rules-mirror.bundle refs/mirror/main:refs/remotes/origin/main && git merge -q --ff-only origin/main && git rev-parse HEAD & del ..\\rules-mirror.bundle" 2>&1 </dev/null | tr -d '\r')"
+got="$(printf '%s\n' "$out" | grep -E '^[0-9a-f]{40}$' | tail -1)"
+
+if [ "$got" = "$want" ]; then
+  log "อัปเดต $HOST: ${have:0:7} -> ${want:0:7} ($(g rev-list --count "$have..$want") commit)"
+  : > "$HOME/.claude/.rules-mirror-$HOST.stamp-heartbeat"
+else
+  log_every applyfail 360 "ข้าม: $HOST ไม่ได้ขยับ (มีของค้างในเวิร์กทรี หรือ ff ไม่ผ่าน) — $(printf '%s' "$out" | tr '\n' ' ' | cut -c1-200)"
+fi
