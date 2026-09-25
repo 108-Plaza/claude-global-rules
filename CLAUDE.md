@@ -106,9 +106,27 @@
   `com.108plaza.tq-autopilot.gemini` บน MacBook (`gemini/auto-macbook01-04`) และ Mac Studio (`gemini/auto-studio01-08`)
   ดึงคิว `/v1/next` เองตามออกแบบ · **ห้ามหยุด/แก้ LaunchAgent เอง** — เป็นของเจ้าของ
 
+### 📨 controller วนจ่ายงาน · worker ไม่วนดึงคิว
+
+เจ้าของสั่ง 2026-09-25 *"สร้างกฏใหม่ ให้ agent controller ส่ง สั่งงานโดยตรง เพื่อไม่ให้ worker วนลูปไปดึงในคิว"* ·
+*"โดย agent controller จะเป็นคนวนลูปจ่ายงานแทน"* — ขยายกฎเซสชัน Gemini ข้างบนไปถึง **worker ที่เป็นเซสชันทุกชนิด**
+(Claude · Gemini · GLM) ทั้งงานเขียนโค้ดและงานรีวิว
+
+| ใคร | ทำ | ห้าม |
+|---|---|---|
+| **controller** | วนรอบเอง: snapshot → เลือกใบที่จ่ายได้ → ปัก `assign:<kind>/<id>` → รอ `assigned_to` sync → **ส่งข้อความสั่งตรง** (`SendMessage` · tmux · `glm-dispatch.sh`) → ตามผลจนจบ → ส่งใบถัดไป | ปล่อย worker ว่างโดยไม่บอกเหตุผล |
+| **worker (เซสชัน)** | รอข้อความจาก controller · ได้ใบแล้ว claim **ครั้งเดียว** (`/v1/next` + `"wait_secs":0` หรือ `/v1/review/next` แบบระบุใบ) ให้คิวถือ lease + ล็อกไฟล์ · จบ (`pr_open` / verdict) ⇒ แจ้ง controller แล้วรอ | ยิง `/v1/next` / `/v1/review/next` วนหาใบเอง · หยิบใบที่ไม่ได้ถูกสั่ง |
+
+- claim ได้ `empty` ⇒ **ห้ามยิงซ้ำ** — คอมเมนต์ค่า `ready_blocked_by` ลงใบ + แจ้ง controller แล้วรอ · controller เป็นคนปลด
+  (เกิดจริง 2026-09-25 park108#935: `other_authors_pr_open` เพราะ PR เก่าที่ได้ FAIL ยังเปิด — ยิงซ้ำกี่รอบก็ไม่ได้ ต้องมีคนตัดสินปิด PR)
+- **ทำไม:** worker มองไม่เห็นว่าทำไมได้ `empty` — คอขวดมักเป็นใบที่ถือล็อกและต้องมีคนตัดสิน ซึ่งการวนยิงไม่ช่วย
+  และทำให้ event log เต็มไปด้วย `claim:empty` (วัด 2026-09-25T00:5xZ: 3000 event ล่าสุดมี conflict จาก park108#935 ตัวเดียว 237 ครั้ง)
+- controller ไม่อยู่ / ไม่รู้ว่าใครคุม ⇒ worker แจ้งเจ้าของ **ไม่ใช่กลับไปวนคิว**
+- ฟลีต autopilot (LaunchAgent ข้างบน) ยังดึงเองตามเดิมจนกว่าเจ้าของสั่งเปลี่ยน — กฎนี้ใช้กับเซสชัน
+
 ## Claude เขียนโค้ดได้เมื่อไหร่
 
-1. **ใบที่ได้จากคิว** — heartbeat + `pr_open` เหมือน implementer อื่น
+1. **ใบที่ controller จ่ายให้** (claim ผ่านคิวครั้งเดียวตามหัวข้อ 📨) — heartbeat + `pr_open` เหมือน implementer อื่น
 2. **เจ้าของส่งงานมาให้เซสชันนี้ตรง ๆ** (พิมพ์สั่ง/วางลิงก์ issue) ⇒ รับทำเองถึงจบ ไม่ต้องจ่ายต่อ —
    รวม repo ที่ไม่มีเจ้าของเลน (การส่งมา = อนุมัติแล้ว) · เดิน workflow เต็ม (worktree → tests เขียว → PR → รายงาน)
 3. **เจ้าของสั่งในรอบนั้นให้ทำเอง** — ครั้งเดียว ไม่ต่ออายุข้ามงาน
@@ -622,7 +640,7 @@ Verify ที่รันเอง: <คำสั่ง> → <ผล>
 โปรโตคอลเต็ม: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` · คิวรันบน Dell (Redis `:6381`)
 
 - 🔴 **งาน implementation ทุกชิ้นมาจากคิว** (หรือเจ้าของส่งตรง) · worker id `<kind>/<session-id>`
-- `empty`/`backpressure` ⇒ รอ 2 นาทีแล้วขอใหม่ ห้ามไปหยิบงานนอกคิว · ทั้งระบบพร้อมกันไม่เกิน 6 งาน · หนึ่ง worker ถือทีละใบ
+- `empty`/`backpressure` ⇒ เซสชัน: แจ้ง controller แล้วรอ ห้ามวนยิง (หัวข้อ 📨) · autopilot: รอ 2 นาทีแล้วขอใหม่ · ห้ามไปหยิบงานนอกคิว · ทั้งระบบพร้อมกันไม่เกิน 6 งาน · หนึ่ง worker ถือทีละใบ
 - heartbeat ทุก ≤30 นาที (lease 90 นาที) · ได้ `revoked` ⇒ หยุดทันที · ห้ามแตะไฟล์นอก `file_scope`
 - 🔴 **เปิด PR ⇒ `transition → pr_open` พร้อม `pr_url` ทันที = การขอรีวิว** (ทางเดียว ห้ามใช้ทางอื่นแทน) · PR ที่ไม่มี transition ถือว่ายังไม่เสร็จ ·
   ทำต่อไม่ได้ ⇒ `ready` (คืนใบ) หรือ `blocked` + `reason` · 🔴 **ใบ `blocked` ต้องคง label `ready` ไว้** — คิวติด `blocked` เพิ่มเองและตั้งใจไม่ถอด `ready` (108-agent-queue #300) ·
@@ -650,7 +668,7 @@ curl -s -X POST -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: applicati
 | ssh + `curl 127.0.0.1:8787/api/snapshot` | `GET /v1/snapshot` |
 
 body ของ POST ส่วนใหญ่ = พารามิเตอร์ชุดเดียวกับ MCP tool **ยกเว้น** `/v1/review/next` ไม่รับ `capabilities` · `/v1/verdict` ใช้ `worker`/`outcome`/`pr_head` · 🔴 **อ่านรหัสให้ถูก:** `200` + `kind:ticket` = ได้ใบ ·
-`200` + `empty`/`backpressure`/`denied` = ปกติ รอ 2 นาที · `400` คำขอผิดรูป · `401` token ผิด · `409` transition นอกตาราง ·
+`200` + `empty`/`backpressure`/`denied` = ปกติ (เซสชัน: แจ้ง controller แล้วรอ · autopilot: รอ 2 นาที) · `400` คำขอผิดรูป · `401` token ผิด · `409` transition นอกตาราง ·
 **`500` = คิวล้ม ห้ามตีความว่าไม่มีงาน ให้แจ้งเจ้าของ**
 
 ### มอนิเตอร์งานของตัวเอง (สั่ง 2026-09-06)
