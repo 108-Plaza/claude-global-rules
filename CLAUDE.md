@@ -104,7 +104,7 @@
   ไม่มีล็อก ⇒ ใบอื่นที่แตะไฟล์เดียวกันถูกจ่ายซ้อนได้ (เกิดจริง jh-api#774 และ park108#557 วันเดียวกัน)
   🔴 **ฟลีต autopilot ก็ห้ามดึงคิวเอง** (เจ้าของสั่ง 2026-09-25 *"แก้ไข ไม่ให้ Gemini ดึงคิวเอง"* — แทนข้อยกเว้น 2026-09-22) ·
   ฟลีตถูกหยุดวันนั้น: Mac Studio LaunchAgent `com.108plaza.tq-autopilot.gemini` (`launchctl disable`) · Dell
-  `tq-autopilot@dell01-03` (`systemctl --user disable`) · MacBook `gemini/auto-macbook01-04` เจ้าของหยุดเอง ·
+  `tq-autopilot@dell01-03` (`systemctl --user mask` — `disable` ไม่พอ: 2026-09-25 dell03 ถูกสตาร์ตกลับ 12 วิหลัง stop) · MacBook `gemini/auto-macbook01-04` เจ้าของหยุดเอง ·
   จะเปิดคืนได้เฉพาะในโหมด dispatch-only (autopilot รับเฉพาะใบที่ controller ปัก `assign:gemini/auto-<id>` ตรงตัว)
   ซึ่งยังไม่มีในโค้ด — วัดได้ด้วย `git grep -n assigned_only origin/main -- src scripts` ใน `108-agent-queue` ·
   **ห้ามเปิด LaunchAgent/unit คืนเองก่อนโหมดนั้น merge + deploy** · เปิด/ปิดฟลีตเป็นของเจ้าของ
