@@ -117,7 +117,7 @@
 
 | ใคร | ทำ | ห้าม |
 |---|---|---|
-| **controller** | วนรอบเอง: snapshot → เลือกใบที่จ่ายได้ → ปัก `assign:<kind>/<id>` (**ถอด `assign:<kind>` ระดับชนิดที่ Jev ติดไว้ออกด้วย** — ป้ายทั้งสองรวมกันใน `assigned_to` แล้ว claim ที่ไม่มี `assigned_only` ของ worker ชนิดเดียวกันตัวไหนก็ได้ใบนี้ · `src/lua/claim/gate_assigned.lua` `assigned_matches`) → รอ `assigned_to` sync → **ส่งข้อความสั่งตรง** (`SendMessage` · tmux · `glm-dispatch.sh`) → ตามผลจนจบ → ส่งใบถัดไป | ปล่อย worker ว่างโดยไม่บอกเหตุผล |
+| **controller** | วนรอบเอง: snapshot → เลือกใบที่จ่ายได้ → ปัก `assign:<kind>/<id>` (**ถอด `assign:<kind>` ระดับชนิดที่ Jev ติดไว้ออกด้วย** — ป้ายทั้งสองรวมกันใน `assigned_to` แล้ว claim ที่ไม่มี `assigned_only` ของ worker ชนิดเดียวกันตัวไหนก็ได้ใบนี้ · `src/lua/claim/gate_assigned.lua` `assigned_matches`) → รอ `assigned_to` sync (🔴 **ถอดป้าย `assign:` ตัวสุดท้ายไม่ล้างค่า** — ค่าเดิมค้างตั้งใจ #89 · ล้างต้องติด `assign:none`) → **ส่งข้อความสั่งตรง** (`SendMessage` · tmux · `glm-dispatch.sh`) → ตามผลจนจบ → ส่งใบถัดไป | ปล่อย worker ว่างโดยไม่บอกเหตุผล |
 | **worker (เซสชัน)** | รอข้อความจาก controller · ได้ใบแล้ว claim **ครั้งเดียว** (`/v1/next` + `"wait_secs":0` + `"assigned_only":true` หรือ `/v1/review/next` แบบระบุใบ) ให้คิวถือ lease + ล็อกไฟล์ · จบ (`pr_open` / verdict) ⇒ แจ้ง controller แล้วรอ | ยิง `/v1/next` / `/v1/review/next` วนหาใบเอง · หยิบใบที่ไม่ได้ถูกสั่ง |
 
 - claim ได้ `empty` ⇒ **ห้ามยิงซ้ำ** — คอมเมนต์ค่า `ready_blocked_by` ลงใบ + แจ้ง controller แล้วรอ · controller เป็นคนปลด
