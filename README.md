@@ -54,6 +54,7 @@ KeepAlive, **ไม่ต้อง sudo**) ซึ่งกันหลับเ�
 | Mac Studio | `yuth` | ssh key ส่วนตัว (`yuthstyle88`) |
 | Mac mini | `yuth` | **deploy key ของ repo นี้** (`~/.ssh/claude_rules_deploy` · host alias `github-rules`) |
 | Dell (`Dell-server`, Linux) | `yuth` | **deploy key ของ repo นี้** (`~/.ssh/claude_rules_deploy` · host alias `github-rules` → `ssh.github.com:443`) |
+| Lenovo (`pos108-lenovo` · DESKTOP-ENCHS4F, Windows) | `pos108-lenovo` | **ไม่มีสิทธิ์ GitHub** — Mac Studio ส่งให้ทุก 15 นาทีด้วย `bin/claude-rules-mirror` (LaunchAgent `com.108ting.claude-rules-mirror-pos108-lenovo` · log `~/.claude/rules-mirror-pos108-lenovo.log` บน Mac Studio) · `CLAUDE.md` = symlink · `skills\queue-controller` = junction |
 
 Dell ต่อเข้าระบบ 2026-09-11 — ก่อนหน้านั้นเป็นไฟล์ที่ก๊อปมาทีละรอบ จึงไม่ได้กฎใหม่เอง
 · ใช้ deploy key แบบ Mac mini (เจ้าของเลือก 2026-09-11) — แตะได้เฉพาะ repo นี้ ไม่พึ่ง token ของ `gh`
@@ -70,3 +71,9 @@ authenticate เป็น deploy key ของ `pos108-core` ไม่ใช่�
 
 **ท่าสำรอง (ยังใช้ได้ ไม่ต้องพึ่ง GitHub):** mini ตั้ง `receive.denyCurrentBranch=updateInstead`
 ⇒ เครื่องอื่นส่งเข้าไปตรง ๆ ได้ด้วย `git -C ~/.claude/rules-repo push mini main`
+
+**Lenovo ไม่ดึงเอง** — เครื่องนี้คนนอกทีมดูแล เจ้าของเลือก 2026-09-25 ไม่ใส่ credential ของ GitHub ไว้ ⇒
+Mac Studio ส่ง `origin/main` เป็น git bundle ผ่าน scp แล้ว fast-forward ที่ปลายทาง (ไม่ใช้ `git push`
+เพราะ shell ของ OpenSSH บน Windows คือ cmd ซึ่งทำให้ `git-receive-pack` ติดเครื่องหมายคำพูด) ·
+Mac Studio ดับ/หลับ = Lenovo ไม่ได้กฎใหม่ · สั่งรันเดี๋ยวนี้บน Mac Studio:
+`launchctl kickstart gui/$(id -u)/com.108ting.claude-rules-mirror-pos108-lenovo`
