@@ -102,9 +102,12 @@
   ได้ `kind=ticket` ของใบนั้นแล้วจึงเริ่ม · และสั่ง `POST $TQ/v1/heartbeat` ทุก ≤30 นาทีระหว่างทำ · **นี่ไม่ใช่การดึงคิวเอง**
   (Gemini ยังไม่เลือกใบ ผู้คุมเลนเป็นคนสั่ง) — มีไว้ให้คิวถือ lease + **ล็อกไฟล์** ของใบ · ไม่ claim = ใบค้าง `ready`
   ไม่มีล็อก ⇒ ใบอื่นที่แตะไฟล์เดียวกันถูกจ่ายซ้อนได้ (เกิดจริง jh-api#774 และ park108#557 วันเดียวกัน)
-  🔴 **ยกเว้นฟลีต autopilot** (เจ้าของเลือก 2026-09-22 ว่ากฎข้อนี้ใช้กับเซสชันเท่านั้น): LaunchAgent
-  `com.108plaza.tq-autopilot.gemini` บน MacBook (`gemini/auto-macbook01-04`) และ Mac Studio (`gemini/auto-studio01-08`)
-  ดึงคิว `/v1/next` เองตามออกแบบ · **ห้ามหยุด/แก้ LaunchAgent เอง** — เป็นของเจ้าของ
+  🔴 **ฟลีต autopilot ก็ห้ามดึงคิวเอง** (เจ้าของสั่ง 2026-09-25 *"แก้ไข ไม่ให้ Gemini ดึงคิวเอง"* — แทนข้อยกเว้น 2026-09-22) ·
+  ฟลีตถูกหยุดวันนั้น: Mac Studio LaunchAgent `com.108plaza.tq-autopilot.gemini` (`launchctl disable`) · Dell
+  `tq-autopilot@dell01-03` (`systemctl --user disable`) · MacBook `gemini/auto-macbook01-04` เจ้าของหยุดเอง ·
+  จะเปิดคืนได้เฉพาะในโหมด dispatch-only (autopilot รับเฉพาะใบที่ controller ปัก `assign:gemini/auto-<id>` ตรงตัว)
+  ซึ่งยังไม่มีในโค้ด — วัดได้ด้วย `git grep -n assigned_only origin/main -- src scripts` ใน `108-agent-queue` ·
+  **ห้ามเปิด LaunchAgent/unit คืนเองก่อนโหมดนั้น merge + deploy** · เปิด/ปิดฟลีตเป็นของเจ้าของ
 
 ### 📨 controller วนจ่ายงาน · worker ไม่วนดึงคิว
 
@@ -122,7 +125,7 @@
 - **ทำไม:** worker มองไม่เห็นว่าทำไมได้ `empty` — คอขวดมักเป็นใบที่ถือล็อกและต้องมีคนตัดสิน ซึ่งการวนยิงไม่ช่วย
   และทำให้ event log เต็มไปด้วย `claim:empty` (วัด 2026-09-25T00:5xZ: 3000 event ล่าสุดมี conflict จาก park108#935 ตัวเดียว 237 ครั้ง)
 - controller ไม่อยู่ / ไม่รู้ว่าใครคุม ⇒ worker แจ้งเจ้าของ **ไม่ใช่กลับไปวนคิว**
-- ฟลีต autopilot (LaunchAgent ข้างบน) ยังดึงเองตามเดิมจนกว่าเจ้าของสั่งเปลี่ยน — กฎนี้ใช้กับเซสชัน
+- ใช้กับฟลีต autopilot ด้วย (เจ้าของสั่ง 2026-09-25) — ดูข้อ "ฟลีต autopilot ก็ห้ามดึงคิวเอง" ข้างบน
 
 ## Claude เขียนโค้ดได้เมื่อไหร่
 
@@ -640,7 +643,7 @@ Verify ที่รันเอง: <คำสั่ง> → <ผล>
 โปรโตคอลเต็ม: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` · คิวรันบน Dell (Redis `:6381`)
 
 - 🔴 **งาน implementation ทุกชิ้นมาจากคิว** (หรือเจ้าของส่งตรง) · worker id `<kind>/<session-id>`
-- `empty`/`backpressure` ⇒ เซสชัน: แจ้ง controller แล้วรอ ห้ามวนยิง (หัวข้อ 📨) · autopilot: รอ 2 นาทีแล้วขอใหม่ · ห้ามไปหยิบงานนอกคิว · ทั้งระบบพร้อมกันไม่เกิน 6 งาน · หนึ่ง worker ถือทีละใบ
+- `empty`/`backpressure` ⇒ แจ้ง controller แล้วรอ ห้ามวนยิง (หัวข้อ 📨) · ห้ามไปหยิบงานนอกคิว · ทั้งระบบพร้อมกันไม่เกิน 6 งาน · หนึ่ง worker ถือทีละใบ
 - heartbeat ทุก ≤30 นาที (lease 90 นาที) · ได้ `revoked` ⇒ หยุดทันที · ห้ามแตะไฟล์นอก `file_scope`
 - 🔴 **เปิด PR ⇒ `transition → pr_open` พร้อม `pr_url` ทันที = การขอรีวิว** (ทางเดียว ห้ามใช้ทางอื่นแทน) · PR ที่ไม่มี transition ถือว่ายังไม่เสร็จ ·
   ทำต่อไม่ได้ ⇒ `ready` (คืนใบ) หรือ `blocked` + `reason` · 🔴 **ใบ `blocked` ต้องคง label `ready` ไว้** — คิวติด `blocked` เพิ่มเองและตั้งใจไม่ถอด `ready` (108-agent-queue #300) ·
@@ -668,7 +671,7 @@ curl -s -X POST -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: applicati
 | ssh + `curl 127.0.0.1:8787/api/snapshot` | `GET /v1/snapshot` |
 
 body ของ POST ส่วนใหญ่ = พารามิเตอร์ชุดเดียวกับ MCP tool **ยกเว้น** `/v1/review/next` ไม่รับ `capabilities` · `/v1/verdict` ใช้ `worker`/`outcome`/`pr_head` · 🔴 **อ่านรหัสให้ถูก:** `200` + `kind:ticket` = ได้ใบ ·
-`200` + `empty`/`backpressure`/`denied` = ปกติ (เซสชัน: แจ้ง controller แล้วรอ · autopilot: รอ 2 นาที) · `400` คำขอผิดรูป · `401` token ผิด · `409` transition นอกตาราง ·
+`200` + `empty`/`backpressure`/`denied` = ปกติ (แจ้ง controller แล้วรอ ห้ามวนยิง) · `400` คำขอผิดรูป · `401` token ผิด · `409` transition นอกตาราง ·
 **`500` = คิวล้ม ห้ามตีความว่าไม่มีงาน ให้แจ้งเจ้าของ**
 
 ### มอนิเตอร์งานของตัวเอง (สั่ง 2026-09-06)
