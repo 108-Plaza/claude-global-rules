@@ -7,8 +7,8 @@
 #
 # ส่งเฉพาะ origin/main ที่ publish แล้ว (ไม่ใช่ HEAD ของเครื่องนี้) · ปลายทาง fast-forward เท่านั้น ·
 # ปลายทางมีของค้างในเวิร์กทรี = ข้ามและบันทึกเหตุผล เหมือน claude-rules-autopull
-# ปลายทางเป็น Windows (cmd เป็น shell ของ OpenSSH) ⇒ ส่งเป็น git bundle ผ่าน scp แทน git push
-# เพราะ git push ข้าม ssh ไป cmd ติดเรื่องเครื่องหมายคำพูดของ git-receive-pack
+# ปลายทางเป็น Windows (cmd เป็น shell ของ OpenSSH) ⇒ ส่งเป็น git bundle ผ่าน scp
+# (ไม่ได้ลอง git push ตรง ๆ — bundle ไม่ต้องตั้ง receive.denyCurrentBranch หรือ PATH ที่ปลายทาง)
 PATH=/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin
 export PATH
 

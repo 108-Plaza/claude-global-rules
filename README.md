@@ -73,7 +73,7 @@ authenticate เป็น deploy key ของ `pos108-core` ไม่ใช่�
 ⇒ เครื่องอื่นส่งเข้าไปตรง ๆ ได้ด้วย `git -C ~/.claude/rules-repo push mini main`
 
 **Lenovo ไม่ดึงเอง** — เครื่องนี้คนนอกทีมดูแล เจ้าของเลือก 2026-09-25 ไม่ใส่ credential ของ GitHub ไว้ ⇒
-Mac Studio ส่ง `origin/main` เป็น git bundle ผ่าน scp แล้ว fast-forward ที่ปลายทาง (ไม่ใช้ `git push`
-เพราะ shell ของ OpenSSH บน Windows คือ cmd ซึ่งทำให้ `git-receive-pack` ติดเครื่องหมายคำพูด) ·
+Mac Studio ส่ง `origin/main` เป็น git bundle ผ่าน scp แล้ว fast-forward ที่ปลายทาง (ไม่ได้ลอง `git push`
+ตรง ๆ — shell ของ OpenSSH บน Windows คือ cmd และ bundle ไม่ต้องตั้งอะไรที่ปลายทาง) ·
 Mac Studio ดับ/หลับ = Lenovo ไม่ได้กฎใหม่ · สั่งรันเดี๋ยวนี้บน Mac Studio:
 `launchctl kickstart gui/$(id -u)/com.108ting.claude-rules-mirror-pos108-lenovo`
