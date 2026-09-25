@@ -98,15 +98,15 @@
   ดูผล `tmux capture-pane -p -t gemini-N` · ข้อความจ่ายต้องมี repo#issue · worker id · ที่ clone `/data/yuth/worktrees/<slug>` ·
   คอมเมนต์รับงาน · ขอบเขตไฟล์ · PR body `> worker:` · ห้ามรีวิว/merge · ติดแล้วคอมเมนต์ลงใบแล้วหยุด
   🔴 **ข้อความจ่ายต้องสั่ง claim ผ่านคิวหนึ่งครั้งก่อนแตะโค้ด** (เจ้าของเลือก 2026-09-24): ติด `assign:gemini/pool-N` ก่อน ⇒
-  สั่งให้ยิง `POST $TQ/v1/next` `{"worker":"gemini/pool-N","host":…,"capabilities":["mechanical","logic","guarded"]}`
-  ได้ `kind=ticket` ของใบนั้นแล้วจึงเริ่ม · และสั่ง `POST $TQ/v1/heartbeat` ทุก ≤30 นาทีระหว่างทำ · **นี่ไม่ใช่การดึงคิวเอง**
+  สั่งให้ยิง `POST $TQ/v1/next` `{"worker":"gemini/pool-N","host":…,"capabilities":["mechanical","logic","guarded"],"wait_secs":0,"assigned_only":true}`
+  ได้ `kind=ticket` ของใบนั้นแล้วจึงเริ่ม · 🔴 **ต้องมี `"assigned_only":true`** — ไม่ใส่ ⇒ คิวยื่นใบ priority สูงกว่าที่ป้ายระดับชนิด (`assign:gemini` ที่ Jev ติด) ตรงกับ worker แทนใบที่ปักไว้ (เกิดจริง 2026-09-25: จ่าย `pos108-core#2223` แต่ worker ได้ `jh-api#863`) · และสั่ง `POST $TQ/v1/heartbeat` ทุก ≤30 นาทีระหว่างทำ · **นี่ไม่ใช่การดึงคิวเอง**
   (Gemini ยังไม่เลือกใบ ผู้คุมเลนเป็นคนสั่ง) — มีไว้ให้คิวถือ lease + **ล็อกไฟล์** ของใบ · ไม่ claim = ใบค้าง `ready`
   ไม่มีล็อก ⇒ ใบอื่นที่แตะไฟล์เดียวกันถูกจ่ายซ้อนได้ (เกิดจริง jh-api#774 และ park108#557 วันเดียวกัน)
   🔴 **ฟลีต autopilot ก็ห้ามดึงคิวเอง** (เจ้าของสั่ง 2026-09-25 *"แก้ไข ไม่ให้ Gemini ดึงคิวเอง"* — แทนข้อยกเว้น 2026-09-22) ·
   ฟลีตถูกหยุดวันนั้น: Mac Studio LaunchAgent `com.108plaza.tq-autopilot.gemini` (`launchctl disable`) · Dell
   `tq-autopilot@dell01-03` (`systemctl --user mask` — `disable` ไม่พอ: 2026-09-25 dell03 ถูกสตาร์ตกลับ 12 วิหลัง stop) · MacBook `gemini/auto-macbook01-04` เจ้าของหยุดเอง ·
   จะเปิดคืนได้เฉพาะในโหมด dispatch-only (autopilot รับเฉพาะใบที่ controller ปัก `assign:gemini/auto-<id>` ตรงตัว)
-  ซึ่งยังไม่มีในโค้ด — วัดได้ด้วย `git grep -n assigned_only origin/main -- src scripts` ใน `108-agent-queue` ·
+  ฝั่งคิว (`assigned_only`) merge ที่ `108-agent-queue` `9766ada` · ฝั่งสคริปต์ autopilot วัดได้ด้วย `git grep -n assigned_only origin/main -- scripts` ·
   **ห้ามเปิด LaunchAgent/unit คืนเองก่อนโหมดนั้น merge + deploy** · เปิด/ปิดฟลีตเป็นของเจ้าของ
 
 ### 📨 controller วนจ่ายงาน · worker ไม่วนดึงคิว
@@ -118,7 +118,7 @@
 | ใคร | ทำ | ห้าม |
 |---|---|---|
 | **controller** | วนรอบเอง: snapshot → เลือกใบที่จ่ายได้ → ปัก `assign:<kind>/<id>` → รอ `assigned_to` sync → **ส่งข้อความสั่งตรง** (`SendMessage` · tmux · `glm-dispatch.sh`) → ตามผลจนจบ → ส่งใบถัดไป | ปล่อย worker ว่างโดยไม่บอกเหตุผล |
-| **worker (เซสชัน)** | รอข้อความจาก controller · ได้ใบแล้ว claim **ครั้งเดียว** (`/v1/next` + `"wait_secs":0` หรือ `/v1/review/next` แบบระบุใบ) ให้คิวถือ lease + ล็อกไฟล์ · จบ (`pr_open` / verdict) ⇒ แจ้ง controller แล้วรอ | ยิง `/v1/next` / `/v1/review/next` วนหาใบเอง · หยิบใบที่ไม่ได้ถูกสั่ง |
+| **worker (เซสชัน)** | รอข้อความจาก controller · ได้ใบแล้ว claim **ครั้งเดียว** (`/v1/next` + `"wait_secs":0` + `"assigned_only":true` หรือ `/v1/review/next` แบบระบุใบ) ให้คิวถือ lease + ล็อกไฟล์ · จบ (`pr_open` / verdict) ⇒ แจ้ง controller แล้วรอ | ยิง `/v1/next` / `/v1/review/next` วนหาใบเอง · หยิบใบที่ไม่ได้ถูกสั่ง |
 
 - claim ได้ `empty` ⇒ **ห้ามยิงซ้ำ** — คอมเมนต์ค่า `ready_blocked_by` ลงใบ + แจ้ง controller แล้วรอ · controller เป็นคนปลด
   (เกิดจริง 2026-09-25 park108#935: `other_authors_pr_open` เพราะ PR เก่าที่ได้ FAIL ยังเปิด — ยิงซ้ำกี่รอบก็ไม่ได้ ต้องมีคนตัดสินปิด PR)
