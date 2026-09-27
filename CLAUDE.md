@@ -523,6 +523,8 @@ implementer อ่านแต่ตัวใบ ไม่เห็นบทส�
 - Edge case ทุกข้อต้องมีเทสต์ในเกณฑ์ว่าจบ หรือเขียนว่า *"ยังไม่มีเทสต์ — ตั้งใจ เพราะ …"*
 - ไม่รู้ให้เขียนว่า **"รอ #N"** / **"ต้องถามเจ้าของ — ห้ามเดา"** · ใบหกท่อนที่จริงทุกท่อน ดีกว่าสิบท่อนที่สี่ท่อนเป็นการเดา
 - **หนึ่งใบ = หนึ่งผลลัพธ์**ที่รีวิวจบในนั่งเดียว · งานใหญ่ซอยใบย่อยเรียงด้วย `blocked by #N`
+- ⚠️ **ราคาของกฎนี้:** ใบยาวขึ้นและเขียนนานขึ้น · **เดาโครงสร้างผิด = พา implementer ผิดตามไปด้วย** ⇒ สองข้อแรก
+  (อ้าง `file:line` ของจริง · แยก `[บังคับ]`/`[เสนอ]`) คือสิ่งที่กันราคานั้นไม่ให้เกิด **ห้ามข้าม**
 
 ### 1ก. "รัดกุมชัดเจน"
 
@@ -1058,6 +1060,8 @@ frontend พึ่ง backend ⇒ ตรวจ contract/DTO/API client/permissio
   branch ที่ checkout ใน worktree ใด ๆ · branch ที่มี open PR
 - **มีเงื่อนไข:** `prod` `production` `staging` `sync/*` — ลบได้ถ้าไม่มี workflow อ้าง (`git grep -n -A3 'branches:' origin/main -- .github/workflows`)
 - ข้าม: repo archived (`Notification-Platform` · `Loyalty-Platform`) · upstream ของคนอื่น · ระวัง alias จาก redirect — canonicalize ด้วย `gh api repos/<slug> -q .full_name` ก่อนนับ/ลบ
+  · alias ที่วัดแล้ว: `108-Plaza/api-108jobs`→`jh-api` · `yuthstyle88/fast-work-new`→`jh-api-dev` ·
+  `yuthstyle88/108jobs-clean`→`108jobs-web-dev` · `yuthstyle88/108jobs-flutter`→`108heros-flutter-dev`
 
 # Context Handoff / Continuity
 
