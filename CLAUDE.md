@@ -172,11 +172,13 @@
 ไม่งั้น PR ค้าง · `tq report` เป็นรายงานอ่านอย่างเดียว (ข้อความ `--apply` ใน `--help` ค้างสมัย) ·
 cron เดิมบน Dell สำรองที่ `~/108mon/crontab.backup.20260915-tqtrain.txt`
 
-**repo ใหม่ สร้าง label มาตรฐาน** (รันซ้ำได้ · **ห้ามรันกับ CCTV-Platform** — ต้องคงคำอธิบาย *"มีแต่เจ้าของติดได้"*):
+**label ทั้งหมดเป็นภาษาอังกฤษ ชุดเดียวทั้งองค์กร** — เจ้าของสั่ง 2026-09-27 *"ภาษา ให้เป็น อังกฤษ จะได้ ทำงานร่วมกับ เพื่อน ต่างชาติได้"* ·
+แหล่งเดียวคือ `108-Plaza/108-agent-queue` → `scripts/create-labels.sh` (ชื่อ · สี · คำอธิบายอังกฤษ) · **repo ใหม่ = รันสคริปต์นี้ ห้าม `gh label create` พิมพ์เอง**
+(รันซ้ำได้ · คงคำอธิบาย owner-only ของ `reviewed` ใน CCTV-Platform ให้เอง · exit 3 = ยังมี label ภาษาไทยหลงอยู่):
 ```bash
-gh label create reviewed --repo <slug> --color 5319e7 --force --description "รีวิวผ่านแล้ว — ติดเมื่อ PASS จากเซสชันอื่น + CI เขียว แล้ว merge เอง · ขบวน tq ถูกลบแล้ว"
+bash scripts/create-labels.sh [--dry-run] 108-Plaza/<repo>     # ใน clone ของ 108-agent-queue
 ```
-⚠️ คำอธิบาย label จำกัด 100 อักขระ (ข้างบน 89) — แก้ข้อความเมื่อไหร่ต้องนับก่อน
+label ใหม่ที่ต้องใช้ทั้งฟลีต ⇒ เพิ่มในสคริปต์ผ่าน PR ไม่ใช่สร้างมือ · คำอธิบายจำกัด 100 อักขระ (สคริปต์ตรวจให้)
 
 ## 🧮 ทุกงานรันบน Opus 5.5 — งานรีวิวเพิ่มเงื่อนไข effort `medium`
 
@@ -486,14 +488,11 @@ endpoint ที่ถูกเรียกเป็นรอบอัตโน�
 - 🔴 **ห้ามถอด `assign:<kind>` เพื่อ "ให้ใครก็หยิบได้"** — `class:guarded` ที่ไม่มี assignment ถูกข้ามทุกใบ · assignment ปลดล็อก guarded
   แต่ไม่ข้ามด่าน capability ⇒ worker ต้องส่ง `capabilities` ที่มี `guarded` ด้วย (`claim.lua:218-220` · aq#240)
 - **label ชนิด worker:** `gemini` · `glm` (`#7B4FE9` มีไม่ครบทุก repo) · (`codex` ยังค้างอยู่ทุก repo แต่ไม่มีคนรับ — ห้ามใช้) ·
-  repo ที่ไม่มีให้สร้างก่อนใช้ · PM ยิงให้ agent เฉพาะทางใช้ `pm-dispatch`
-  ```bash
-  gh label create glm   --repo <slug> --color 7B4FE9 --force --description "ส่งให้ GLM (z.ai) เขียนโค้ด — ใบละ implementer เดียว"
-  ```
+  repo ที่ไม่มีให้รัน `scripts/create-labels.sh` (ข้างบน) · PM ยิงให้ agent เฉพาะทางใช้ `pm-dispatch`
 
 ### รับใบ (implementer)
 
-ก่อนแตะโค้ดบรรทัดแรก: ปัก label ชนิดตัวเอง + `กำลังทำอยู่` + คอมเมนต์ `รับงานแล้ว — worker <kind>/<id>` พร้อมไฟล์ที่จะแตะ ·
+ก่อนแตะโค้ดบรรทัดแรก: ปัก label ชนิดตัวเอง + `in-progress` (เดิม `กำลังทำอยู่` · คิวถอดเองเมื่อเปิด PR/ใบจบ) + คอมเมนต์ `รับงานแล้ว — worker <kind>/<id>` พร้อมไฟล์ที่จะแตะ ·
 ตรวจ `origin/main` ว่าถูกแก้ไปแล้วหรือยัง (`git log -p origin/main -- <ไฟล์>` — ใบเปิดค้าง ≠ ยังไม่มีใครทำ) ·
 เช็ค `gh pr list --json files` ว่าชน PR ที่เปิดอยู่ไหม · clone ที่หลายเซสชันใช้ร่วม ⇒ ทำใน worktree ของตัวเอง ·
 คืนใบ/`blocked` = ปลดป้ายด้วย · PR body บรรทัดแรก `> worker: <kind>/<id>`
