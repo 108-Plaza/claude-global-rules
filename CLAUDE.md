@@ -904,12 +904,23 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
   🔴 **ยังไม่ทนรีบูต** — WSL นี้ไม่มี systemd ⇒ รันด้วย `nohup ./run.sh` · log `~/runner-lenovo-{1,2}.log` · ตายเมื่อ Windows รีสตาร์ต/WSL shutdown
   ⇒ ทำให้ถาวรต้องเปิด systemd ใน WSL (`[boot] systemd=true` ใน `/etc/wsl.conf` + `wsl --shutdown` ฝั่ง Windows) ซึ่ง**ต้องรหัสผ่านและมือของเจ้าของ**
   · สตาร์ตใหม่หลังเครื่องรีบูต: `ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'cd ~/actions-runner-lenovo-1 && nohup ./run.sh > ~/runner-lenovo-1.log 2>&1 &'`
-- Linux runner ฝั่ง Dell `ibrowe.com`: `dell-org-108plaza` · `dell-org-ci-1..4` (org) · `ibrowe-pos108-2`
-  (ระดับ repo ของ `pos108-core` — ไม่โผล่ใน `orgs/.../actions/runners` ต้องถาม `repos/<slug>/actions/runners`) · ทุกตัวถือ `self-hosted Linux X64 pos108-ci`
-  · macOS/ARM64 = `108-Ting-Ecosystem-R2`
+- **พูล org ทั้งหมด วัด 2026-09-27T08:23Z** (`gh api orgs/108-Plaza/actions/runners --jq '.runners[] | "\(.name)\t\([.labels[].name]|join(","))"'`):
+
+  | พูล | ตัว | label |
+  |---|---|---|
+  | Linux — Dell `ibrowe.com` | `dell-org-108plaza` · `dell-org-ci-1..4` | `self-hosted,Linux,X64,pos108-ci` (+`dell-org-ci` บน ci-1..4) |
+  | Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
+  | macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
+  | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
+
+  · `ibrowe-pos108-2` เป็น runner **ระดับ repo** ของ `pos108-core` — ไม่โผล่ใน `orgs/.../actions/runners` ต้องถาม `repos/<slug>/actions/runners`
+- 🔴 **job ที่ปัก `pos108-ci` ลง Lenovo ไม่ได้** — label นั้นมีเฉพาะบน Dell ⇒ งานเหล่านั้นยังกองที่ Dell เครื่องเดียวแม้พูลจะโตขึ้น ·
+  ที่ยังปักอยู่ (วัด 09-14 · ต้องวัดซ้ำก่อนอ้าง): `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`
+  ⇒ **อยากให้งานพวกนี้กระจายจริง ต้องถอด `pos108-ci` ออกจาก `runs-on` ให้เหลือ `[self-hosted, Linux, X64]`** (เป็นการแก้ workflow ไม่ใช่แก้ label ของ runner)
 - workflow/ใบใหม่ใช้ `runs-on: [self-hosted, Linux, X64]` **ห้ามปักป้ายเฉพาะทางเพิ่ม**
-- **ย้าย `runs-on` ยังไม่ใช่การกระจายโหลด** — ทุกตัวถือ label ชุดเดียวกัน (`self-hosted,Linux,X64`) ⇒ GitHub เลือกเองว่าจะลงเครื่องไหน
-  การแก้ `runs-on` จึงไม่ได้ย้ายงาน · **วิธีกระจายโหลดคือเพิ่มเครื่องในพูล** (แบบที่ทำกับ Lenovo 2026-09-27) ไม่ใช่แก้ workflow
+- **`runs-on` ที่กว้างที่สุด (`[self-hosted, Linux, X64]`) = GitHub เลือกเครื่องให้เอง** ⇒ การกระจายโหลดทำได้สองทางเท่านั้น:
+  **เพิ่มเครื่องในพูล** (แบบที่ทำกับ Lenovo 2026-09-27) และ **ถอด label เฉพาะทางออกจาก `runs-on` ของ job ที่ปักไว้แคบ** (ข้อบน)
+  · การย้าย `runs-on` จากพูลกว้างไปพูลกว้างไม่ได้ย้ายอะไร
   · **ห้ามแตะ label ของ runner** (shared resource — เจ้าของเท่านั้น) · Dell เคยวัด load 61/64 core · 2026-09-27T07:46Z วัดได้ **load 129 บน 64 thread**
 - job ที่ยังปัก `pos108-ci` (วัด 09-14: `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`) ไม่แคบกว่าพูลรวมแล้ว · หาด้วย `grep -n "runs-on:"` ไม่ใช่ `git grep -l <label>` (สตริงในคอมเมนต์ก็ติด) · เลขบรรทัดเลื่อนทุก PR — วัดใหม่ก่อนอ้าง:
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"`
