@@ -167,7 +167,11 @@
 **ครบสามข้อ = merge ได้ทันที ไม่ต้องขออนุมัติ ไม่ต้องหยุดถาม:**
 1. verdict `PASS` / `PASS + follow-up` จาก**เซสชันที่ไม่ได้เขียน PR** โพสต์ลง PR แล้ว
    (`> reviewer:` + `> head:` ตรง head ปัจจุบัน · เทียบ acceptance criteria ทีละข้อ · รัน verify เอง)
-2. required checks เขียวครบที่ head ปัจจุบัน (`gh pr checks`) และ `mergeStateStatus = CLEAN`
+2. required checks เขียวครบที่ head ปัจจุบัน (`gh pr checks --required`) และ `mergeStateStatus = CLEAN`
+   — **หรือ `UNSTABLE` ที่เกิดจาก job ไม่บังคับ (advisory) ล้วน ๆ** ที่ยัง pending/แดงอยู่ merge ได้เลย ไม่ต้องถาม
+   (เจ้าของสั่ง 2026-09-27 *"ได้ ตั้งเป็นกฎถาวร"* · เหตุ: เทสต์ Windows advisory ของ `pos108-terminal` มีเครื่องเดียว ค้างคิวเป็นชั่วโมง ·
+   job `lenovo-org-ci-*` ที่ไม่บังคับแดงเพราะเครื่อง) · ต้องพิสูจน์ก่อนว่า**ทุกตัวที่บังคับเขียว** และตัวที่ค้าง/แดง**ไม่อยู่ในรายการบังคับ**:
+   `gh api repos/<slug>/branches/<default>/protection --jq '.required_status_checks.contexts'` · `BLOCKED` ยังห้าม merge เหมือนเดิม
 3. `git merge-base --is-ancestor origin/main <head>` ผ่าน — **`strict` ต่างกันรายรีโป ห้ามเดา ให้ดูก่อน:**
    `gh api repos/<slug>/branches/main/protection --jq .required_status_checks.strict`
    - `false` ⇒ GitHub **ยอมให้ merge PR ที่เขียวบนฐานเก่า** แล้ว main แดงได้ ⇒ ข้อนี้คือด่านเดียวที่กันไว้
