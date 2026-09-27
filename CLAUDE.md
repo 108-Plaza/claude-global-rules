@@ -871,7 +871,7 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
   ฝั่ง personal **30 ไฟล์** ยัง `ubuntu-latest` (หนักสุด `Livechat-Platform-dev` 3 · `pos108-admin-dev` 3 ·
   `pos108-orders-dev` 2 · `pos108-store-dev` 2) · ฝั่ง org เหลือ **4** (`jh-client` ×2 · `thai-geography` · `Livechat-sdk`)
   · `windows-latest` org 2 · personal 1
-- **ข้อยกเว้นเดียวที่ยอมได้** = ระบบปฏิบัติการที่ฟลีตไม่มีเครื่อง (วันนี้คือ **Windows** — ไม่มี runner Windows สักตัว) ⇒
+- **ข้อยกเว้นเดียวที่ยอมได้** = ระบบปฏิบัติการที่ฟลีตไม่มีเครื่อง · ⚠️ **Windows ไม่ใช่ข้อยกเว้นนั้นอีกแล้ว** — วัด 2026-09-27T08:19Z: `lenovo-org-win-1` (`self-hosted,X64,Windows`) `status=online` อยู่ใน org ⇒ ก่อนอ้างว่าไม่มีเครื่อง ให้ `gh api orgs/108-Plaza/actions/runners` ดูก่อน ⇒
   ต้องเขียนคอมเมนต์ `# hosted-ok: <เหตุผลที่ฟลีตไม่มีเครื่องนี้>` ไว้เหนือ `runs-on` นั้น **และรู้ว่ามันจะไม่รันจนกว่าบิลจะถูกปลด**
   · อยากให้ด่านนั้นรันจริงต้องลงทะเบียน runner ของ OS นั้นเพิ่ม ซึ่งเป็นงานของเจ้าของ
 
@@ -898,12 +898,19 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 
 ## ⚙️ CI runner
 
-- Linux runner **ทุกตัวอยู่เครื่องเดียว** (Dell `ibrowe.com`): `dell-org-108plaza` · `dell-org-ci-1..4` (org) · `ibrowe-pos108-2`
+- 🔴 **ไม่จริงอีกแล้วว่า Linux runner อยู่เครื่องเดียว** — เจ้าของสั่ง 2026-09-27 *"เพิ่ม Runners lenovo ด้วย"* ⇒ ลงทะเบียน
+  **`lenovo-org-ci-1` · `lenovo-org-ci-2`** ที่ระดับ org (runner 2.337.0 · label `self-hosted,Linux,X64` · `/home/worker/actions-runner-lenovo-{1,2}`)
+  ยืนยัน 2026-09-27T08:19Z: ทั้งคู่ `status=online` และรับ job ภายใน 4 วินาทีหลังสตาร์ต (คิวอดอยู่จริง) ·
+  🔴 **ยังไม่ทนรีบูต** — WSL นี้ไม่มี systemd ⇒ รันด้วย `nohup ./run.sh` · log `~/runner-lenovo-{1,2}.log` · ตายเมื่อ Windows รีสตาร์ต/WSL shutdown
+  ⇒ ทำให้ถาวรต้องเปิด systemd ใน WSL (`[boot] systemd=true` ใน `/etc/wsl.conf` + `wsl --shutdown` ฝั่ง Windows) ซึ่ง**ต้องรหัสผ่านและมือของเจ้าของ**
+  · สตาร์ตใหม่หลังเครื่องรีบูต: `ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'cd ~/actions-runner-lenovo-1 && nohup ./run.sh > ~/runner-lenovo-1.log 2>&1 &'`
+- Linux runner ฝั่ง Dell `ibrowe.com`: `dell-org-108plaza` · `dell-org-ci-1..4` (org) · `ibrowe-pos108-2`
   (ระดับ repo ของ `pos108-core` — ไม่โผล่ใน `orgs/.../actions/runners` ต้องถาม `repos/<slug>/actions/runners`) · ทุกตัวถือ `self-hosted Linux X64 pos108-ci`
   · macOS/ARM64 = `108-Ting-Ecosystem-R2`
 - workflow/ใบใหม่ใช้ `runs-on: [self-hosted, Linux, X64]` **ห้ามปักป้ายเฉพาะทางเพิ่ม**
-- 🔴 **ย้าย `runs-on` ≠ กระจายโหลด** — ไม่มีเครื่องอื่น · เครื่องตึงอยู่แล้ว (เคยวัด load 61/64 core · แรมเหลือ 1.8 GB · rustc โดน OOM ก่อนใคร)
-  ⇒ จะเปิดใบ/PR ย้าย `runs-on` **หยุดก่อน** · **ห้ามแตะ label ของ runner** (shared resource — เจ้าของเท่านั้น)
+- **ย้าย `runs-on` ยังไม่ใช่การกระจายโหลด** — ทุกตัวถือ label ชุดเดียวกัน (`self-hosted,Linux,X64`) ⇒ GitHub เลือกเองว่าจะลงเครื่องไหน
+  การแก้ `runs-on` จึงไม่ได้ย้ายงาน · **วิธีกระจายโหลดคือเพิ่มเครื่องในพูล** (แบบที่ทำกับ Lenovo 2026-09-27) ไม่ใช่แก้ workflow
+  · **ห้ามแตะ label ของ runner** (shared resource — เจ้าของเท่านั้น) · Dell เคยวัด load 61/64 core · 2026-09-27T07:46Z วัดได้ **load 129 บน 64 thread**
 - job ที่ยังปัก `pos108-ci` (วัด 09-14: `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`) ไม่แคบกว่าพูลรวมแล้ว · หาด้วย `grep -n "runs-on:"` ไม่ใช่ `git grep -l <label>` (สตริงในคอมเมนต์ก็ติด) · เลขบรรทัดเลื่อนทุก PR — วัดใหม่ก่อนอ้าง:
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"`
 - CI เร็วขึ้นไม่ใช่ข้ออนุญาตให้ push เดาแก้ — ยังต้อง local verify ให้เขียวก่อน
@@ -946,9 +953,28 @@ gh api -X POST repos/108-Plaza/<repo>/actions/runs/<id>/cancel
   · PR ที่ไม่ behind (update-branch ใช้ไม่ได้) ⇒ ผู้เขียน push empty commit หนึ่งครั้งหลังติดป้าย ·
   🔴 **update-branch = head ใหม่ = verdict ใหม่ + ต้องแย่งช่องใหม่** ⇒ อย่ากดบน PR ที่รอช่องอยู่โดยไม่ถามผู้คุมเลน (2026-09-26 PR 2268: update-branch สองครั้งจากเซสชันที่ไม่ทราบตัว ⇒ verdict ผูกใหม่ 3 รอบ)
 - ⚠️ ด่านเบาต่อคิวหลัง `cargo` เพราะใช้ runner ตัวเดียวกัน (วัด 04:56Z: รอ 46 · เป็นด่านเบา 29 · build จริง 7) — แยก runner ให้ด่านเบาต้องเพิ่ม label = งานเจ้าของ
-## 🖥 บิลด์ก้อนใหญ่ไปทำที่ Mac Studio
+## 🖥 บิลด์ก้อนใหญ่ — Mac Studio ไม่ใช่ตัวเลือกเดียวอีกแล้ว เลือกตามที่วัด
 
-เจ้าของสั่ง 2026-09-12 — `cargo build/test/clippy` ทั้ง workspace ของ `pos108-*` · `jh-api` · `park108` · `108-platform-services`
+🔴 **เจ้าของสั่ง 2026-09-27 *"แบ่ง งานไปที่ Lenovo ด้วย"*** — แก้คำสั่ง 2026-09-12 ที่ให้ทุกงานไปที่ Mac Studio
+เพราะตอนนั้น Studio ว่าง · **วัด 2026-09-27T14:5xZ: Studio เหลือดิสก์ 195 GiB จาก 1.8 TB (90%) · 12 users · load 16–19 บน 20 core
+ขณะ Lenovo เหลือ 953 GB จาก 1007 G (1%) · load 0.00 · ไม่มีใครล็อกอิน**
+
+**ก่อนส่งงานหนัก ให้วัดก่อนเลือก ห้ามเลือกจากความเคยชิน:**
+```bash
+ssh macstudio 'df -h /System/Volumes/Data | tail -1; uptime'
+ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
+```
+
+| เครื่อง | สเปก | เหมาะกับ |
+|---|---|---|
+| **Lenovo** (WSL2 · `worker`) | i9-10885H 16 thread · 62 GB · ดิสก์ 1007 G | **ตัวเลือกแรกตอนนี้** — ว่างที่สุดทั้งดิสก์และ CPU · rustc/cargo **1.98.1** ลงแล้ว 2026-09-27 (`~/.cargo/bin` · wired ใน `~/.profile`) |
+| **Mac Studio** | 20 core · 128 GB | งานที่ต้อง macOS/arm64 จริง (Xcode · bundle · โค้ดที่ผูกกับ Apple) หรือเมื่อวัดแล้วว่าง |
+| **Mac mini** | — | งานวัดโมเดล `park108` เท่านั้น (ดูข้างล่าง) |
+
+⚠️ **ของที่ Lenovo ยังไม่มี:** `cmake` · `unzip` · `node` · docker (WSL integration ปิด) — ต้องใช้ ⇒ `sudo apt install` ซึ่ง**ต้องรหัสผ่านของเจ้าของ**
+⚠️ **systemd ไม่ทำงานใน WSL นี้** (`systemctl is-system-running` = `offline` · PID 1 เป็น `init(Ubuntu-24.…)`) ⇒ ตั้ง service ไม่ได้ ของที่รันต้อง `nohup`
+
+(คำสั่งเดิม 2026-09-12 · ยังใช้กับ Mac Studio) — `cargo build/test/clippy` ทั้ง workspace ของ `pos108-*` · `jh-api` · `park108` · `108-platform-services`
 **รันที่ Mac Studio** (20 core · 128 GB) · งานไม่กี่ crate ทำบน MacBook ได้ · **Mac mini มี rustc/cargo 1.98.1 แล้ว** (วัด 2026-09-23 · `ssh 100.100.204.107 'rustc --version'`) — บรรทัดเดิมที่เขียนว่าไม่มีทำให้เกือบข้ามเครื่องเดียวที่วัด park108#942 ได้
 ```bash
 ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'
@@ -957,6 +983,10 @@ ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core &&
 - 🔴 **งานวัดโมเดล `park108` ต้องรันบน Mac mini (`Mac-mini-khxng-ai-01` · 100.100.204.107) เท่านั้น** — โมเดล (`~/data/det_*.onnx` · `finetuned.onnx` · `park108-province-model/`) และคลังภาพป้าย 244 ใบ (`~/data/108Park-plates/`) อยู่ที่นั่น และ `README.md` ของคลังสั่งว่า **ห้าม commit เข้า repo ไหนทั้งสิ้น** (PDPA) ⇒ ห้ามคัดลอกภาพออกจากเครื่อง · ทำใน worktree ใต้ `~/park108-src/.worktrees/` แล้วลบทิ้งเมื่อจบ
 - 🔴 โครงโฟลเดอร์ต่างกัน ห้ามลอกพาธข้ามเครื่อง: Studio ใช้ `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}` · `JH-Platform/Api` · `parking/park108` · MacBook ใช้ `pos/` `heros/` `parking/`
 - เข้าทาง Tailscale `macstudio` (100.84.133.23) · `macstudio-lan` ใช้ได้เฉพาะ LAN เดียวกัน · หลังรีสตาร์ตอาจต้องยืนยัน Tailscale SSH ในเบราว์เซอร์หนึ่งครั้ง
+- 🔴 **สั่งงาน Lenovo ต้องส่งสคริปต์ทาง stdin เสมอ** — ต่อได้จาก Mac Studio เท่านั้น · ssh ของมันตกที่ cmd.exe ⇒ เครื่องหมายคำพูดซ้อนพังทุกแบบ · **ไม่มี sftp ⇒ `scp` เข้าไม่ได้**
+  ```bash
+  ssh macstudio 'ssh pos108-lenovo "bash -s"' < /path/to/script.sh
+  ```
 
 **toolchain ฟลีต = 1.98.1 ตัวเดียวกับ runner** (สั่ง 2026-09-16) — รุ่นอื่นพิสูจน์แทน CI ไม่ได้ (nightly lint ต่างจาก stable)
 ```bash
