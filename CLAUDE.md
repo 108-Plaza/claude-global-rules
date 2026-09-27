@@ -901,9 +901,11 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 - 🔴 **ไม่จริงอีกแล้วว่า Linux runner อยู่เครื่องเดียว** — เจ้าของสั่ง 2026-09-27 *"เพิ่ม Runners lenovo ด้วย"* ⇒ ลงทะเบียน
   **`lenovo-org-ci-1` · `lenovo-org-ci-2`** ที่ระดับ org (runner 2.337.0 · label `self-hosted,Linux,X64` · `/home/worker/actions-runner-lenovo-{1,2}`)
   ยืนยัน 2026-09-27T08:19Z: ทั้งคู่ `status=online` และรับ job ภายใน 4 วินาทีหลังสตาร์ต (คิวอดอยู่จริง) ·
-  🔴 **ยังไม่ทนรีบูต** — WSL นี้ไม่มี systemd ⇒ รันด้วย `nohup ./run.sh` · log `~/runner-lenovo-{1,2}.log` · ตายเมื่อ Windows รีสตาร์ต/WSL shutdown
-  ⇒ ทำให้ถาวรต้องเปิด systemd ใน WSL (`[boot] systemd=true` ใน `/etc/wsl.conf` + `wsl --shutdown` ฝั่ง Windows) ซึ่ง**ต้องรหัสผ่านและมือของเจ้าของ**
-  · สตาร์ตใหม่หลังเครื่องรีบูต: `ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'cd ~/actions-runner-lenovo-1 && nohup ./run.sh > ~/runner-lenovo-1.log 2>&1 &'`
+  · **เป็น systemd service แล้ว** (เจ้าของเปิด `[boot] systemd=true` ใน `/etc/wsl.conf` + `wsl --shutdown` 2026-09-27T10:12Z ⇒ `systemctl is-system-running` = `running`) ·
+  `actions.runner.108-Plaza.lenovo-org-ci-{1,2}.service` **enabled + active** · ฟื้นเองเมื่อ WSL ขึ้น
+  · ⚠️ **ยังไม่ทนรีบูต Windows เต็มที่** — Windows ไม่สตาร์ต WSL เองตอนบูต ต้องมีอะไรปลุกก่อน ⇒ ต้องเพิ่ม Task Scheduler
+  (`wsl.exe -d Ubuntu-24.04 -e true` ตอน logon) ซึ่งยังไม่ได้ทำ
+  · คำสั่งจัดการต้องรันจาก cmd.exe บนเครื่องนั้น: `wsl -u root -e bash -c "systemctl restart actions.runner.108-Plaza.lenovo-org-ci-1"`
 - **พูล org ทั้งหมด วัด 2026-09-27T08:23Z** (`gh api orgs/108-Plaza/actions/runners --jq '.runners[] | "\(.name)\t\([.labels[].name]|join(","))"'`):
 
   | พูล | ตัว | label |
@@ -978,12 +980,12 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 
 | เครื่อง | สเปก | เหมาะกับ |
 |---|---|---|
-| **Lenovo** (WSL2 · `worker`) | i9-10885H 16 thread · 62 GB · ดิสก์ 1007 G | **ตัวเลือกแรกตอนนี้** — ว่างที่สุดทั้งดิสก์และ CPU · rustc/cargo **1.98.1** ลงแล้ว 2026-09-27 (`~/.cargo/bin` · wired ใน `~/.profile`) |
+| **Lenovo** (WSL2 · `worker`) | i9-10885H 16 thread · 62 GB · ดิสก์ 1007 G | **ตัวเลือกแรกตอนนี้** — ว่างที่สุดทั้งดิสก์และ CPU · ลงให้แล้ว 2026-09-27: rustc/cargo **1.98.1** · node **v24.21.0** (nvm · `npm` ที่เจอตอนแรกชี้ `/mnt/c/nvm4w` = ของ Windows ใช้ไม่ได้) · `claude` CLI **2.1.283** · tmux `claude-1..3` cwd `~/worktrees` · ทั้งหมด wired ใน `~/.profile` |
 | **Mac Studio** | 20 core · 128 GB | งานที่ต้อง macOS/arm64 จริง (Xcode · bundle · โค้ดที่ผูกกับ Apple) หรือเมื่อวัดแล้วว่าง |
 | **Mac mini** | — | งานวัดโมเดล `park108` เท่านั้น (ดูข้างล่าง) |
 
-⚠️ **ของที่ Lenovo ยังไม่มี:** `cmake` · `unzip` · `node` · docker (WSL integration ปิด) — ต้องใช้ ⇒ `sudo apt install` ซึ่ง**ต้องรหัสผ่านของเจ้าของ**
-⚠️ **systemd ไม่ทำงานใน WSL นี้** (`systemctl is-system-running` = `offline` · PID 1 เป็น `init(Ubuntu-24.…)`) ⇒ ตั้ง service ไม่ได้ ของที่รันต้อง `nohup`
+⚠️ **ของที่ Lenovo ยังไม่มี:** `cmake` · `unzip` · docker (WSL integration ปิด) — ต้องใช้ ⇒ จาก cmd.exe บนเครื่องนั้น `wsl -u root -e bash -c "apt-get install -y cmake unzip"`
+✅ **systemd ทำงานแล้ว** ตั้งแต่ 2026-09-27T10:12Z · 🔑 **`sudo` ใน WSL ต้องรหัสผ่าน แต่ `wsl -u root` จาก cmd.exe ฝั่ง Windows ไม่ต้อง** — งาน root ทุกอย่างไปทางนั้น
 
 (คำสั่งเดิม 2026-09-12 · ยังใช้กับ Mac Studio) — `cargo build/test/clippy` ทั้ง workspace ของ `pos108-*` · `jh-api` · `park108` · `108-platform-services`
 **รันที่ Mac Studio** (20 core · 128 GB) · งานไม่กี่ crate ทำบน MacBook ได้ · **Mac mini มี rustc/cargo 1.98.1 แล้ว** (วัด 2026-09-23 · `ssh 100.100.204.107 'rustc --version'`) — บรรทัดเดิมที่เขียนว่าไม่มีทำให้เกือบข้ามเครื่องเดียวที่วัด park108#942 ได้
