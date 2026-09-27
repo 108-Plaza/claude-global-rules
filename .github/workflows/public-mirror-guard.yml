@@ -1,0 +1,53 @@
+name: public mirror guard
+
+# เตือนเมื่อหัวข้อ "วิธีทำงาน" ใน CLAUDE.md เปลี่ยน แต่รีโปสาธารณะยังไม่ขยับตาม
+# และกันไม่ให้รายละเอียดโครงสร้างพื้นฐานหลุดเข้าไปในรีโปสาธารณะ
+
+on:
+  push:
+    branches: [main]
+    paths: ['CLAUDE.md', 'scripts/**', '.github/**']
+  pull_request:
+    paths: ['CLAUDE.md', 'scripts/**', '.github/**']
+  schedule:
+    - cron: '17 2 * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: public-mirror-guard-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  guard:
+    runs-on: [self-hosted, Linux, X64]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: หัวข้อวิธีทำงานเปลี่ยนแล้วตามไปแก้รีโปสาธารณะหรือยัง
+        run: |
+          set -euo pipefail
+          M=.github/public-sync.json
+          WANT=$(python3 -c "import json;print(json.load(open('$M'))['sections_sha'])")
+          GOT=$(python3 scripts/public_sections.py)
+          if [ "$WANT" != "$GOT" ]; then
+            REPO=$(python3 -c "import json;print(json.load(open('$M'))['public_repo'])")
+            echo "::error::หัวข้อ \"วิธีทำงาน\" ใน CLAUDE.md เปลี่ยนแล้ว แต่ marker ยังเป็นของเดิม"
+            echo "บันทึกไว้: $WANT"
+            echo "ปัจจุบัน:  $GOT"
+            echo ""
+            echo "ต้องทำ: ตามไปแก้ https://github.com/$REPO ให้ตรงก่อน"
+            echo "        แล้วรัน  bash scripts/sync_public_marker.sh  และ commit marker"
+            echo "        ถ้าการแก้ครั้งนี้ไม่กระทบฉบับสาธารณะจริง ใช้ --force พร้อมเขียนเหตุผลในคอมมิต"
+            exit 1
+          fi
+          echo "✅ marker ตรงกับเนื้อหาปัจจุบัน ($GOT)"
+
+      - name: รีโปสาธารณะต้องไม่มีรายละเอียดภายใน
+        run: |
+          set -euo pipefail
+          REPO=$(python3 -c "import json;print(json.load(open('.github/public-sync.json'))['public_repo'])")
+          rm -rf /tmp/pubmirror
+          git clone --quiet --depth 1 "https://github.com/$REPO" /tmp/pubmirror
+          echo "สแกน $REPO ที่ $(git -C /tmp/pubmirror rev-parse --short HEAD)"
+          python3 scripts/scan_public_leaks.py /tmp/pubmirror
+          rm -rf /tmp/pubmirror
