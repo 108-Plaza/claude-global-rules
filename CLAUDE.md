@@ -939,7 +939,7 @@ gh api -X POST repos/108-Plaza/<repo>/actions/runs/<id>/cancel
   เจ้าของเลือกทาง B: **CI ตัวเต็มของ PR รันเฉพาะ PR ที่ติดป้าย `ci:go`** · PR ไม่มีป้าย ⇒ ด่านบังคับแดงเร็ว (ไม่ใช่ skipped) และอยู่กลุ่มของตัวเอง
   · ใช้แล้วที่ `108-agent-queue` (#831 · PR 832 `a544b54`) · `jh-api` (#815 `5ba573e`) · `pos108-core` (#2273 · PR 2274 `de8c8c2` · 2026-09-26)
   — ในรีโปเหล่านี้ PR **ฝั่ง org** ไม่มีป้าย ⇒ `cargo check + test` แดงที่สเต็ป `Wait for merge turn (ci:go)` **ตั้งใจ ไม่ใช่โค้ดพัง** ·
-  ด่านเช็ก `github.repository` ⇒ PR บนกระจก `yuthstyle88/*-dev` (คนนอก org ติดป้ายไม่ได้) บิลด์/เทสต์เต็มเหมือนก่อน ci:go (pos108-core #2277 · jh-api #946 · 2026-09-27 · `108-agent-queue` ยังไม่แยก) ·
+  ด่านเช็ก `github.repository` ⇒ PR บนกระจก `yuthstyle88/*-dev` (คนนอก org ติดป้ายไม่ได้) บิลด์/เทสต์เต็มเหมือนก่อน ci:go (pos108-core #2277 · jh-api #946 · 108-agent-queue #893 · 2026-09-27 — ครบทั้งสามรีโปที่ใช้ ci:go) ·
   รีโปอื่นยังไม่มี (วัด 2026-09-26 `grep -c ci:go .github/workflows/ci.yml`: `park108` · `pos108-admin` · `pos108-store` · `pos108-terminal` = 0)
   · **ขั้นตอนถึงคิว:** ผู้คุมเลน/ผู้รีวิวติด `ci:go` (ครั้งละใบ) **ก่อน** push/update-branch
   ⇒ run ตัวเต็ม ⇒ verdict ⇒ merge ⇒ ถอด `ci:go` · FAIL ⇒ ถอด `ci:go` · ป้ายต้องอยู่ใน payload ตอนเกิด event ⇒ ติดทีหลังแล้ว rerun **ไม่เห็นป้าย**
