@@ -7,9 +7,22 @@
 
 ## ✏️ แก้ไฟล์นี้อย่างไร
 
-- อยู่ใน git: `~/.claude/rules-repo` → `108-Plaza/claude-global-rules` · `~/.claude/CLAUDE.md` ทุกเครื่อง
-  (Mac Studio · MacBook · Mac mini · Dell) เป็น symlink เข้ามา ⇒ **แก้ที่เดียว + commit + `claude-rules push`**
-  เครื่องอื่นดึงเองทุก 15 นาที (fast-forward อย่างเดียว · Mac: LaunchAgent `com.108ting.claude-rules-autopull` · Dell: cron `*/15`)
+- อยู่ใน git: `~/.claude/rules-repo` → `108-Plaza/claude-global-rules` · **ทั้ง `~/.claude/CLAUDE.md`
+  และ `~/AGENTS.md`** ทุกเครื่องเป็น symlink เข้ามา ⇒ **แก้ที่เดียว + commit + `claude-rules push`**
+  · `AGENTS.md` ในรีโปตั้งใจให้เป็น**ตัวชี้สั้น ๆ ห้ามคัดลอกกฎไปไว้** เพราะ Claude Code โหลดทั้งสองไฟล์
+  ⇒ สำเนา = จ่าย token สองรอบทุกเซสชัน (เคยเป็นไฟล์ 77.6 KB นอก git จนค้าง 21 วัน · `66f3d1f`)
+- **5 เครื่องที่ถือกฎนี้** — เครื่องใหม่ต้องมาต่อท้ายที่นี่ ไม่งั้นจะมีเครื่องที่ไม่มีกฎโดยไม่มีใครรู้:
+
+  | เครื่อง | ssh | ดึงอัปเดตเอง |
+  |---|---|---|
+  | MacBook · Mac Studio · Mac mini | `macstudio` · `macmini` (user `yuth`) | LaunchAgent `com.108ting.claude-rules-autopull` |
+  | Dell (`ibrowe.com`) | `Dell-server` | cron `*/15` |
+  | **Lenovo — WSL2 บน `DESKTOP-ENCHS4F`** (user `worker`) | `pos108-lenovo` **ต่อได้จาก Mac Studio เท่านั้น** | 🔴 **ไม่ได้** — ไม่มีสิทธิ์ GitHub |
+
+  🔴 **Lenovo ค้างที่คอมมิตที่ส่งไปครั้งล่าสุด** — แก้กฎแล้วต้องส่งตามด้วยมือ (git bundle ผ่าน Mac Studio)
+  จนกว่าจะมี deploy key/`gh auth` ให้มัน · ssh ของมันตกที่ **cmd.exe** ไม่ใช่ WSL ⇒ ต้องเรียกผ่าน
+  `bash -s` หรือ `bash -c "…"` (single quote ใช้ไม่ได้ cmd ไม่ถอดให้) และ **ไม่มี sftp ⇒ scp เข้าไม่ได้** ส่งทาง stdin เท่านั้น
+  · `legion-utd-1` (100.98.93.83) เป็นคนละเครื่อง พอร์ต 22 ปิด **ยังไม่มีกฎ**
 - 🔴 **แก้แล้วไม่ commit = ฟลีตแตก** — autopull เจอเวิร์กทรีสกปรกแล้ว**ข้ามทั้งเครื่อง**
   แล้วเขียน `ข้าม: มีของค้างยังไม่ commit` ลง `~/.claude/rules-sync.log` (เกิดจริง 2026-09-10→11 กฎค้าง ~14 ชม.) · ห้ามก๊อป/scp ทีละเครื่อง (เคยทับกฎเจ้าของหาย 32 บรรทัด)
 - 🔴 **กฎที่ถูกยกเลิกให้ลบทิ้ง ห้ามขีดฆ่าค้างไว้** · เรื่องเล่า/หลักฐานให้ย่อเหลือบรรทัดเดียวพร้อมเลขใบ ·
