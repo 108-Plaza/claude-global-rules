@@ -19,7 +19,9 @@ concurrency:
 
 jobs:
   guard:
-    runs-on: [self-hosted, Linux, X64]
+    # งานนี้แค่ hash + clone + regex — ไม่ผูกกับ Linux · วาง macOS เพราะพูล Linux
+    # ตึงตลอด (วัด 2026-09-27: Linux busy 5/5 · macOS ว่าง 9) และนี่เป็นด่านเบาที่ไม่ควรไปต่อคิวหลัง build
+    runs-on: [self-hosted, macOS, ARM64]
     steps:
       - uses: actions/checkout@v4
 
