@@ -17,10 +17,10 @@
   |---|---|---|
   | MacBook · Mac Studio · Mac mini | `macstudio` · `macmini` (user `yuth`) | LaunchAgent `com.108ting.claude-rules-autopull` |
   | Dell (`ibrowe.com`) | `Dell-server` | cron `*/15` |
-  | **Lenovo — WSL2 บน `DESKTOP-ENCHS4F`** (user `worker`) | `pos108-lenovo` **ต่อได้จาก Mac Studio เท่านั้น** | 🔴 **ไม่ได้** — ไม่มีสิทธิ์ GitHub |
+  | **Lenovo — WSL2 บน `DESKTOP-ENCHS4F`** (user `worker`) | `pos108-lenovo` **ต่อได้จาก Mac Studio เท่านั้น** | cron `*/15` (deploy key read-only id `164563018`) |
 
-  🔴 **Lenovo ค้างที่คอมมิตที่ส่งไปครั้งล่าสุด** — แก้กฎแล้วต้องส่งตามด้วยมือ (git bundle ผ่าน Mac Studio)
-  จนกว่าจะมี deploy key/`gh auth` ให้มัน · ssh ของมันตกที่ **cmd.exe** ไม่ใช่ WSL ⇒ ต้องเรียกผ่าน
+  · **Lenovo ใช้ deploy key ของตัวเอง** (`~/.ssh/id_ed25519_rules` · `core.sshCommand` ของรีโปชี้ไปคีย์นั้น)
+  ⇒ remote เป็น `git@github.com:` ไม่ใช่ https · ssh ของมันตกที่ **cmd.exe** ไม่ใช่ WSL ⇒ ต้องเรียกผ่าน
   `bash -s` หรือ `bash -c "…"` (single quote ใช้ไม่ได้ cmd ไม่ถอดให้) และ **ไม่มี sftp ⇒ scp เข้าไม่ได้** ส่งทาง stdin เท่านั้น
   · `legion-utd-1` (100.98.93.83) เป็นคนละเครื่อง พอร์ต 22 ปิด **ยังไม่มีกฎ**
 - 🔴 **แก้แล้วไม่ commit = ฟลีตแตก** — autopull เจอเวิร์กทรีสกปรกแล้ว**ข้ามทั้งเครื่อง**
