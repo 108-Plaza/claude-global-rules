@@ -922,7 +922,11 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 - workflow/ใบใหม่ใช้ `runs-on: [self-hosted, Linux, X64]` **ห้ามปักป้ายเฉพาะทางเพิ่ม**
 - **`runs-on` ที่กว้างที่สุด (`[self-hosted, Linux, X64]`) = GitHub เลือกเครื่องให้เอง** ⇒ การกระจายโหลดทำได้สองทางเท่านั้น:
   **เพิ่มเครื่องในพูล** (แบบที่ทำกับ Lenovo 2026-09-27) และ **ถอด label เฉพาะทางออกจาก `runs-on` ของ job ที่ปักไว้แคบ** (ข้อบน)
-  · การย้าย `runs-on` จากพูลกว้างไปพูลกว้างไม่ได้ย้ายอะไร
+  · การย้าย `runs-on` **ภายใน OS เดียวกัน** (Linux→Linux) ไม่ได้ย้ายอะไร — GitHub เลือกเครื่องในพูลให้อยู่แล้ว
+  · 🔴 **แต่ข้ามไป OS อื่นย้ายจริง** ถ้างานนั้นไม่ผูกกับ OS — คนละพูลคือคนละเครื่อง ·
+    วัด 2026-09-27T07:48Z: Linux busy 5/5 ขณะ macOS ว่าง 9 ⇒ ด่านเบา (hash · clone · regex · ตรวจข้อความ)
+    วางบน `[self-hosted, macOS, ARM64]` ได้ runner ทันทีและไม่ไปต่อคิวหลัง build (`6719b7c`) ·
+    **เงื่อนไข:** งานต้องไม่ต้องการ toolchain เฉพาะของ Linux · งาน build/test จริงยังอยู่ Linux เหมือนเดิม
   · **ห้ามแตะ label ของ runner** (shared resource — เจ้าของเท่านั้น) · Dell เคยวัด load 61/64 core · 2026-09-27T07:46Z วัดได้ **load 129 บน 64 thread**
 - job ที่ยังปัก `pos108-ci` (วัด 09-14: `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`) ไม่แคบกว่าพูลรวมแล้ว · หาด้วย `grep -n "runs-on:"` ไม่ใช่ `git grep -l <label>` (สตริงในคอมเมนต์ก็ติด) · เลขบรรทัดเลื่อนทุก PR — วัดใหม่ก่อนอ้าง:
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"`
