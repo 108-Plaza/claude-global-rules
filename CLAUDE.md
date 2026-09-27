@@ -870,7 +870,11 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
 - **ของค้างที่วัดแล้ว 2026-09-21** (`gh api search/code -f q='"runs-on: ubuntu-latest" user:<owner> path:.github/workflows'`):
   ฝั่ง personal **30 ไฟล์** ยัง `ubuntu-latest` (หนักสุด `Livechat-Platform-dev` 3 · `pos108-admin-dev` 3 ·
   `pos108-orders-dev` 2 · `pos108-store-dev` 2) · ฝั่ง org เหลือ **4** (`jh-client` ×2 · `thai-geography` · `Livechat-sdk`)
-  · `windows-latest` org 2 · personal 1
+  · 🟢 **`windows-latest` กวาดหมดแล้ว — วัด 2026-09-27T10:51Z: org 0 · personal 0** · คำว่า `windows-latest`
+  ที่ยังเจอใน `pos108-terminal` + กระจกเป็น**คอมเมนต์อธิบายว่าเคยอยู่ตรงนั้น** ไม่ใช่ `runs-on:` ·
+  งาน Windows ทุกตัวอยู่ `[self-hosted, Windows, X64]` แล้วและ**รันจริง** — `windows-tests.yml` ของ org
+  รัน 4 ครั้งในวันเดียว (07:17 · 08:14 · 09:04 · 09:35Z) `success` ทุกครั้ง บน `lenovo-org-win-1`
+  ⇒ **ที่เหลือคือ `ubuntu-latest` อย่างเดียว** (ตัวเลขข้างบนวัด 09-21 ต้องวัดซ้ำก่อนอ้าง)
 - **ข้อยกเว้นเดียวที่ยอมได้** = ระบบปฏิบัติการที่ฟลีตไม่มีเครื่อง · ⚠️ **Windows ไม่ใช่ข้อยกเว้นนั้นอีกแล้ว** — วัด 2026-09-27T08:19Z: `lenovo-org-win-1` (`self-hosted,X64,Windows`) `status=online` อยู่ใน org ⇒ ก่อนอ้างว่าไม่มีเครื่อง ให้ `gh api orgs/108-Plaza/actions/runners` ดูก่อน ⇒
   ต้องเขียนคอมเมนต์ `# hosted-ok: <เหตุผลที่ฟลีตไม่มีเครื่องนี้>` ไว้เหนือ `runs-on` นั้น **และรู้ว่ามันจะไม่รันจนกว่าบิลจะถูกปลด**
   · อยากให้ด่านนั้นรันจริงต้องลงทะเบียน runner ของ OS นั้นเพิ่ม ซึ่งเป็นงานของเจ้าของ
