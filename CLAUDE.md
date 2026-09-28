@@ -1069,6 +1069,15 @@ git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # ไ�
 
 **ก่อนรายงานว่าจบ ต้องว่าง:** `docker ps -a --filter label=fleet.worker=<kind>/<id>` · worktree ของใบถูกลบพร้อม `target/`
 
+**ผู้รีวิวโดยเฉพาะ** (เจ้าของสั่ง 2026-09-28 — วัดวันนั้น: target ของเซสชันรีวิวตัวเดียวรวม ~260 GB บน Studio · ก้อนเดียว 144 GB = `incremental` 84 + `deps` 60):
+- **base กับ head ของ PR เดียวกันใช้ worktree เดียว target เดียว** — `git checkout <base>` → เทสต์ → `git checkout <head>` → เทสต์ · ห้ามสร้าง `…-base` / `…-head` แยก (เดิม 2–3 ก้อนต่อ PR)
+- **บิลด์เพื่อรีวิวตั้ง `CARGO_INCREMENTAL=0`** — แคช incremental มีไว้แก้-บิลด์ซ้ำ ไม่ใช่บิลด์ครั้งเดียวต่อคอมมิต · เปิดไว้ = สะสมทุกคอมมิตที่รีวิว
+- **รีโปใหญ่ (`pos108-core` · `rust-project-backend` · `jh-api`) บิลด์บน Lenovo** ด้วย `scripts/lenovo-run.sh` (หัวข้อ 🖥)
+- จบรีวิว (verdict แล้ว) ⇒ ลบ target ของ PR นั้นทันที ไม่รอตัวกวาด
+
+**ตัวกวาดอัตโนมัติ** (`108-Ting-Ecosystem/scripts/fleet-sweep.sh`) รันแล้วบน Mac Studio (LaunchAgent) และ Lenovo (cron) ทุก 6 ชม. — ลบ target ที่ไม่มีไฟล์ไหนถูกแก้ตามเกณฑ์เวลาและไม่มีโปรเซสเปิดอยู่ ·
+**โปรเซสที่ค้างเปิดไฟล์ใน target ไว้ = ตัวกวาดไม่แตะ target นั้นตลอดไป** ⇒ ปิด job/pg/redis ที่ไม่ใช้แล้วเสมอ (เกิดจริง 09-28: `find | head` ค้าง 12 ชม. ถือ target 144 GB)
+
 วัด 2026-09-27: Studio มีคอนเทนเนอร์ 118 ตัว (รันจริง 5 · ที่เหลือตั้งชื่อตามเลขใบ `pg1956` `revpg2117` `pg789` … บางตัวค้างมา 23 วัน) ·
 volume 440 ตัว ตายแล้ว 63 GB · Dell มี image 991 ตัว (ไม่มีใครใช้ 57.7 GB) + volume ตาย 206 ตัว (41 GB) — เจ้าของสั่งลบทั้งหมดวันเดียวกัน
 
