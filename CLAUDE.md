@@ -1012,6 +1012,11 @@ ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core &&
   ```bash
   ssh macstudio 'ssh pos108-lenovo "bash -s"' < /path/to/script.sh
   ```
+- 🟢 **บิลด์/เทสต์ cargo บน Lenovo ใช้ `scripts/lenovo-run.sh` (ใน `108-Ting-Ecosystem` · merge `cb764edc` 2026-09-28)** —
+  รันจากใน worktree ของรีโปนั้นบน Mac Studio: `…/108-Ting-Ecosystem/scripts/lenovo-run.sh -- cargo test -p <crate>` ⇒
+  ผลและ exit code กลับมาตรง · ต้อง commit + push ก่อน (ไฟล์แก้ค้าง/ไฟล์ใหม่ที่ยังไม่ commit ⇒ rc=3 เพราะ Lenovo ไม่เห็นมัน) ·
+  บน Lenovo ใช้ worktree ต่อสาขา `~/worktrees/lr-*` ซ้ำข้ามรอบ (incremental) และล็อกกันสองงานชนกันให้เอง ·
+  **Studio ดิสก์ตึงเมื่อไหร่ ให้ใช้ทางนี้ก่อนบิลด์บน Studio** (วัด 2026-09-27: ที่ว่าง Studio ลด ~10 GB/ชม. จาก target ของ worktree)
 
 **toolchain ฟลีต = 1.98.1 ตัวเดียวกับ runner** (สั่ง 2026-09-16) — รุ่นอื่นพิสูจน์แทน CI ไม่ได้ (nightly lint ต่างจาก stable)
 ```bash
