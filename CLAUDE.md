@@ -128,7 +128,8 @@
   จ่ายใบ (จากเครื่องที่มี alias `warut-mbp`): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<ข้อความ>\r'"` ·
   ดูผล `ssh warut-mbp 'screen -S agy-N -p 0 -X hardcopy /tmp/a.txt; LC_ALL=C tr -cd "\11\12\40-\176" < /tmp/a.txt | tail -30'` · ยกเลิกเทิร์น `stuff $'\e'` ·
   ข้อความจ่ายต้องครบตามข้อ Dell ข้างบน — ข้อความสั้นลอย ๆ (เช่นชื่อโปรเจกต์คำเดียว) ⇒ agy ที่ skip-permissions ไล่ค้นทั้งเครื่องเอง รวม `~/.zsh_history` ของ Warut (เกิดจริง 2026-09-29) ·
-  ⚠️ **ยังไม่มี `~/.config/tq/env`** ⇒ claim/heartbeat ไม่ได้ ⇒ ห้ามจ่ายใบที่ต้องล็อกไฟล์จนกว่าเจ้าของจะวาง token เอง ·
+  `~/.config/tq/env` เจ้าของวางเอง 2026-09-29T06:05Z (600 · `GET /v1/status` = 200) ⇒ claim `assigned_only` + heartbeat ได้เหมือน Dell ·
+  ⚠️ ไฟล์นั้นติด `TQ_AUTOPILOT_GEMINI_TOKEN` มาด้วย (คัดลอกจาก env ของ MacBook ทั้งไฟล์) — worker เซสชันไม่ต้องใช้ ·
   ⚠️ **ไม่ฟื้นเอง** — เครื่องหลับ/รีสตาร์ต ⇒ session หาย ต้องเปิดใหม่ด้วยมือ (ตัวเปิดอัตโนมัติยังไม่ได้ติดตั้ง)
 
 ### 📨 controller วนจ่ายงาน · worker ไม่วนดึงคิว
