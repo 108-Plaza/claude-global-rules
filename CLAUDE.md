@@ -920,8 +920,15 @@ body ของ POST ส่วนใหญ่ = พารามิเตอร์
   | Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
   | macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
   | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
+  | macOS/ARM64 — **MacBook ของ Warut (พัก)** | `warut-org-1..2` | `warut-mbp` **เท่านั้น** |
 
   · `ibrowe-pos108-2` เป็น runner **ระดับ repo** ของ `pos108-core` — ไม่โผล่ใน `orgs/.../actions/runners` ต้องถาม `repos/<slug>/actions/runners`
+- 🔴 **`warut-org-1..2` จงใจไม่มี label `self-hosted,macOS,ARM64`** — เจ้าของเลือก 2026-09-29 ให้ลงทะเบียนแบบพักไว้ก่อน ·
+  เครื่อง (`waruts-macbook-pro` · Tailscale 100.95.105.73 · user `warutjantabut` · แชร์มาจาก `sunrustpower@`) เป็นของ Warut **ไม่ใช่ของฟลีต** ·
+  วัดวันนั้น: ยังไม่ยอมรับ Xcode license ⇒ `/usr/bin/git` ใช้ไม่ได้ ⇒ ทุก job ตายที่ checkout · rustc 1.80.1 · node 20 · ไม่มี psql/libpq ·
+  **ห้ามเติม label พูลจนกว่า:** Warut รัน `sudo xcodebuild -license accept` เอง + toolchain ตรงพูล (rust 1.98.1 · node 24) + เจ้าของสั่ง ·
+  เป็น LaunchAgent (`svc.sh`) ⇒ รับงานได้เฉพาะตอน Warut ล็อกอินและเครื่องไม่หลับ (วันที่ลงหลุดออฟไลน์สองรอบ) ·
+  `~/actions-runner` บนเครื่องนั้นเป็น runner ของ repo ส่วนตัว `warut1688/testfight` ไม่เกี่ยวกับ org — ห้ามแตะ
 - 🔴 **job ที่ปัก `pos108-ci` ลง Lenovo ไม่ได้** — label นั้นมีเฉพาะบน Dell ⇒ งานเหล่านั้นยังกองที่ Dell เครื่องเดียวแม้พูลจะโตขึ้น ·
   ที่ยังปักอยู่ (วัด 09-14 · ต้องวัดซ้ำก่อนอ้าง): `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`
   ⇒ **อยากให้งานพวกนี้กระจายจริง ต้องถอด `pos108-ci` ออกจาก `runs-on` ให้เหลือ `[self-hosted, Linux, X64]`** (เป็นการแก้ workflow ไม่ใช่แก้ label ของ runner)
@@ -993,6 +1000,7 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 | **Lenovo** (WSL2 · `worker`) | i9-10885H 16 thread · 62 GB · ดิสก์ 1007 G | **ตัวเลือกแรกตอนนี้** — ว่างที่สุดทั้งดิสก์และ CPU · ลงให้แล้ว 2026-09-27: rustc/cargo **1.98.1** · node **v24.21.0** (nvm · `npm` ที่เจอตอนแรกชี้ `/mnt/c/nvm4w` = ของ Windows ใช้ไม่ได้) · `claude` CLI **2.1.283** · tmux `claude-1..3` cwd `~/worktrees` · ทั้งหมด wired ใน `~/.profile` |
 | **Mac Studio** | 20 core · 128 GB | งานที่ต้อง macOS/arm64 จริง (Xcode · bundle · โค้ดที่ผูกกับ Apple) หรือเมื่อวัดแล้วว่าง |
 | **Mac mini** | — | งานวัดโมเดล `park108` เท่านั้น (ดูข้างล่าง) |
+| **MacBook ของ Warut** (`warut-mbp`) | 10 core · 64 GB · ดิสก์ 926 GiB · macOS 26.6.2 | **ไม่ใช่เครื่องของฟลีต** — ห้ามส่งงานบิลด์โดยเจ้าของไม่สั่ง · มี `agy` 1.2.13 (`~/.local/bin` · ลง 2026-09-29) ยังไม่ได้ล็อกอิน · ssh `warut-mbp` ได้จาก Mac mini และ MacBook (ทั้ง `yuth` และ `yongyutjantaboot`) · runner ดูหัวข้อ ⚙️ |
 
 ⚠️ **ของที่ Lenovo ยังไม่มี:** `cmake` · `unzip` · docker (WSL integration ปิด) — ต้องใช้ ⇒ จาก cmd.exe บนเครื่องนั้น `wsl -u root -e bash -c "apt-get install -y cmake unzip"`
 ✅ **systemd ทำงานแล้ว** ตั้งแต่ 2026-09-27T10:12Z · 🔑 **`sudo` ใน WSL ต้องรหัสผ่าน แต่ `wsl -u root` จาก cmd.exe ฝั่ง Windows ไม่ต้อง** — งาน root ทุกอย่างไปทางนั้น
