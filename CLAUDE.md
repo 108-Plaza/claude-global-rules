@@ -122,6 +122,14 @@
   จะเปิดคืนได้เฉพาะในโหมด dispatch-only (autopilot รับเฉพาะใบที่ controller ปัก `assign:gemini/auto-<id>` ตรงตัว)
   ฝั่งคิว (`assigned_only`) merge ที่ `108-agent-queue` `9766ada` · ฝั่งสคริปต์ autopilot วัดได้ด้วย `git grep -n assigned_only origin/main -- scripts` ·
   **ห้ามเปิด LaunchAgent/unit คืนเองก่อนโหมดนั้น merge + deploy** · เปิด/ปิดฟลีตเป็นของเจ้าของ
+- **เซสชัน Gemini บน MacBook ของ Warut** (เจ้าของสั่งเปิด 2026-09-29) — `screen` ไม่ใช่ tmux (`brew` ของเครื่องนั้นลง tmux ไม่ได้) ·
+  session `agy-1` · `agy-2` · worker id `gemini/warut-1` · `gemini/warut-2` · cwd `~/worktrees` · บัญชี agy `ibrowe108@gmail.com` ·
+  🔴 **gh บนเครื่องนั้นล็อกอินเป็น `yuthstyle88`** (active) ทั้งที่เครื่องไม่ใช่ของฟลีต · ถอน: `gh auth logout -h github.com -u yuthstyle88` บนเครื่องนั้น ·
+  จ่ายใบ (จากเครื่องที่มี alias `warut-mbp`): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<ข้อความ>\r'"` ·
+  ดูผล `ssh warut-mbp 'screen -S agy-N -p 0 -X hardcopy /tmp/a.txt; LC_ALL=C tr -cd "\11\12\40-\176" < /tmp/a.txt | tail -30'` · ยกเลิกเทิร์น `stuff $'\e'` ·
+  ข้อความจ่ายต้องครบตามข้อ Dell ข้างบน — ข้อความสั้นลอย ๆ (เช่นชื่อโปรเจกต์คำเดียว) ⇒ agy ที่ skip-permissions ไล่ค้นทั้งเครื่องเอง รวม `~/.zsh_history` ของ Warut (เกิดจริง 2026-09-29) ·
+  ⚠️ **ยังไม่มี `~/.config/tq/env`** ⇒ claim/heartbeat ไม่ได้ ⇒ ห้ามจ่ายใบที่ต้องล็อกไฟล์จนกว่าเจ้าของจะวาง token เอง ·
+  ⚠️ **ไม่ฟื้นเอง** — เครื่องหลับ/รีสตาร์ต ⇒ session หาย ต้องเปิดใหม่ด้วยมือ (ตัวเปิดอัตโนมัติยังไม่ได้ติดตั้ง)
 
 ### 📨 controller วนจ่ายงาน · worker ไม่วนดึงคิว
 
