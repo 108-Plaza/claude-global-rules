@@ -137,7 +137,7 @@
   จ่ายใบ: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` แล้วใน stdin: `tmux send-keys -t agy-N -l "<ข้อความ>"; tmux send-keys -t agy-N Enter` · ดูผล `tmux capture-pane -p -t agy-N` ·
   เจ้าของเปิดดูเอง: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'` ออกด้วย `Ctrl-B D` (ห้าม Ctrl-C) ·
   ⚠️ agy **ฝั่ง Windows** ของ Lenovo (1.2.9 · `ibrowe108`) ไม่ใช่ worker — toolchain ไม่ตรงฟลีตและตายเมื่อ ssh หลุด · มี `agy.exe` ใน session Services ที่ยังไม่รู้ว่าใครเปิด ·
-  ⚠️ ยังไม่มี `~/.config/tq/env` บน Lenovo ⇒ claim/heartbeat ไม่ได้จนกว่าเจ้าของวาง · ไม่ฟื้นเองหลัง WSL/Windows รีสตาร์ต
+  `~/.config/tq/env` เจ้าของวาง 2026-09-29T07:19Z (`/v1/status` = 200 · ติด `TQ_AUTOPILOT_*` มาด้วย) ⇒ claim/heartbeat ได้ · ไม่ฟื้นเองหลัง WSL/Windows รีสตาร์ต
 - **เซสชัน Gemini บน Mac Studio** (เจ้าของสั่ง 2026-09-29) — tmux `agy-1` · `agy-2` · worker id `gemini/studio-1` · `gemini/studio-2` ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · มี tq env (`TQ`+`TQ_TOKEN`) + gh/git เป็น `yuthstyle88` แล้ว ⇒ claim/heartbeat ได้ทันที ·
   จ่ายใบ `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<ข้อความ>\"; tmux send-keys -t agy-N Enter"'` · ดูผล `tmux capture-pane -p -t agy-N` ·
