@@ -132,6 +132,12 @@
   `~/.config/tq/env` เจ้าของวางเอง 2026-09-29T06:05Z (600 · `GET /v1/status` = 200) ⇒ claim `assigned_only` + heartbeat ได้เหมือน Dell ·
   ไฟล์มีแค่ `TQ` + `TQ_TOKEN` (เจ้าของลบ `TQ_AUTOPILOT_*` ที่ติดมาออกแล้ว 06:07Z) — ห้ามวาง token autopilot บนเครื่องนี้ ·
   ⚠️ **ไม่ฟื้นเอง** — เครื่องหลับ/รีสตาร์ต ⇒ session หาย ต้องเปิดใหม่ด้วยมือ (ตัวเปิดอัตโนมัติยังไม่ได้ติดตั้ง)
+- **เซสชัน Gemini บน Lenovo (WSL)** (เจ้าของอนุญาต 2026-09-29) — tmux `agy-1` · `agy-2` · worker id `gemini/lenovo-1` · `gemini/lenovo-2` ·
+  `agy --dangerously-skip-permissions` cwd `~/worktrees` · บัญชี agy `yutjan50@gmail.com` (**คนละบัญชีกับ warut/Windows** = `ibrowe108` ⇒ โควตาแยก) ·
+  จ่ายใบ: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` แล้วใน stdin: `tmux send-keys -t agy-N -l "<ข้อความ>"; tmux send-keys -t agy-N Enter` · ดูผล `tmux capture-pane -p -t agy-N` ·
+  เจ้าของเปิดดูเอง: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'` ออกด้วย `Ctrl-B D` (ห้าม Ctrl-C) ·
+  ⚠️ agy **ฝั่ง Windows** ของ Lenovo (1.2.9 · `ibrowe108`) ไม่ใช่ worker — toolchain ไม่ตรงฟลีตและตายเมื่อ ssh หลุด · มี `agy.exe` ใน session Services ที่ยังไม่รู้ว่าใครเปิด ·
+  ⚠️ ยังไม่มี `~/.config/tq/env` บน Lenovo ⇒ claim/heartbeat ไม่ได้จนกว่าเจ้าของวาง · ไม่ฟื้นเองหลัง WSL/Windows รีสตาร์ต
 
 ### 📨 controller วนจ่ายงาน · worker ไม่วนดึงคิว
 
@@ -1007,12 +1013,12 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 
 | เครื่อง | สเปก | เหมาะกับ |
 |---|---|---|
-| **Lenovo** (WSL2 · `worker`) | i9-10885H 16 thread · 62 GB · ดิสก์ 1007 G | **ตัวเลือกแรกตอนนี้** — ว่างที่สุดทั้งดิสก์และ CPU · ลงให้แล้ว 2026-09-27: rustc/cargo **1.98.1** · node **v24.21.0** (nvm · `npm` ที่เจอตอนแรกชี้ `/mnt/c/nvm4w` = ของ Windows ใช้ไม่ได้) · `claude` CLI **2.1.283** · tmux `claude-1..3` cwd `~/worktrees` · ทั้งหมด wired ใน `~/.profile` |
+| **Lenovo** (WSL2 · `worker`) | i9-10885H 16 thread · 62 GB · ดิสก์ 1007 G | **ตัวเลือกแรกตอนนี้** — ว่างที่สุดทั้งดิสก์และ CPU · ลงให้แล้ว 2026-09-27: rustc/cargo **1.98.1** · node **v24.21.0** (nvm · `npm` ที่เจอตอนแรกชี้ `/mnt/c/nvm4w` = ของ Windows ใช้ไม่ได้) · `claude` CLI **2.1.283** · ทั้งหมด wired ใน `~/.profile` · tmux `claude-1..3` **ไม่มีแล้ว** (วัด 2026-09-29) · worker ตอนนี้คือ agy (ดูหัวข้อ Gemini) |
 | **Mac Studio** | 20 core · 128 GB | งานที่ต้อง macOS/arm64 จริง (Xcode · bundle · โค้ดที่ผูกกับ Apple) หรือเมื่อวัดแล้วว่าง |
 | **Mac mini** | — | งานวัดโมเดล `park108` เท่านั้น (ดูข้างล่าง) |
 | **MacBook ของ Warut** (`warut-mbp`) | 10 core · 64 GB · ดิสก์ 926 GiB · macOS 26.6.2 | **ไม่ใช่เครื่องของฟลีต** — ห้ามส่งงานบิลด์โดยเจ้าของไม่สั่ง · มี `agy` 1.2.13 (`~/.local/bin` · ลง 2026-09-29) ยังไม่ได้ล็อกอิน · ssh `warut-mbp` ได้จาก Mac mini และ MacBook (ทั้ง `yuth` และ `yongyutjantaboot`) · runner ดูหัวข้อ ⚙️ |
 
-⚠️ **ของที่ Lenovo ยังไม่มี:** `cmake` · `unzip` · docker (WSL integration ปิด) — ต้องใช้ ⇒ จาก cmd.exe บนเครื่องนั้น `wsl -u root -e bash -c "apt-get install -y cmake unzip"`
+✅ **Lenovo มี `cmake` 3.28 · docker 29.1 · psql 16 · `unzip` แล้ว** (วัด 2026-09-29T06:10Z)
 ✅ **systemd ทำงานแล้ว** ตั้งแต่ 2026-09-27T10:12Z · 🔑 **`sudo` ใน WSL ต้องรหัสผ่าน แต่ `wsl -u root` จาก cmd.exe ฝั่ง Windows ไม่ต้อง** — งาน root ทุกอย่างไปทางนั้น
 
 (คำสั่งเดิม 2026-09-12 · ยังใช้กับ Mac Studio) — `cargo build/test/clippy` ทั้ง workspace ของ `pos108-*` · `jh-api` · `park108` · `108-platform-services`
