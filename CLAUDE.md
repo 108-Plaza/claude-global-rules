@@ -1214,7 +1214,9 @@ frontend พึ่ง backend ⇒ ตรวจ contract/DTO/API client/permissio
 **merge แล้ว = ลบทันที ทั้ง local และ remote ไม่ต้องถาม** (ไม่ใช่ destructive op)
 - repo ของเรา (`108-Plaza/*` · `yuthstyle88/*`) เปิด `delete_branch_on_merge` แล้ว · repo ใหม่: `gh api -X PATCH repos/<slug> -F delete_branch_on_merge=true` ·
   `fetch.prune true` ตั้ง global แล้ว
-- local: `~/bin/git-cleanup-merged.sh [--remote] [--dry-run] [REPO ...]` หลัง merge ทุกครั้ง
+- local: หลัง merge ทุกครั้ง · สคริปต์อยู่ใน rules-repo ⇒ มีทุกเครื่องผ่าน autopull (เดิมอยู่ `~/bin` ของ Mac Studio เครื่องเดียว · วัด 2026-10-04)
+  - `~/.claude/rules-repo/bin/git-gone [--dry-run]` — **ตัวหลัก** · จับ squash merge ได้ (head ของ PR ที่ merge ที่ sha เดียวกัน) · ไม่รู้ว่าลบได้ ⇒ พิมพ์ `REVIEW` ไม่ลบ
+  - `~/.claude/rules-repo/bin/git-cleanup-merged.sh [--remote] [--dry-run] [REPO ...]` — ลบฝั่ง remote ด้วย/หลายรีโป · เช็กแค่ ancestry + `git cherry` ต่อคอมมิต ⇒ **squash หลายคอมมิตเป็นหนึ่งไม่ถูกจับ** (จะเหลือค้าง ไม่ลบผิด)
 - **ลบได้เฉพาะที่พิสูจน์ว่าไม่มี commit หาย:** tip เป็น ancestor ของ `origin/<default>` หรือ `git cherry` ไม่เหลือ `+` ·
   ยังมี commit เฉพาะตัว ⇒ ห้ามลบ รายงานผู้ใช้
 - **ห้ามลบเด็ดขาด:** `main` `master` `develop` `dev` `gh-pages` `release/*` `deploy/*` (`deploy/staging` = trigger build) `auto/*` `backup/*` `archive/*` ·

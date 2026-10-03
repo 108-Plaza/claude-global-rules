@@ -1,0 +1,157 @@
+#!/bin/sh
+# git gone [--dry-run]
+#
+# Deletes local branches that hold no work you would miss, and prints REVIEW for
+# everything else. Never touches the default branch, the current branch, a branch
+# checked out in another worktree, or the head of an OPEN pull request.
+#
+# A branch is deleted when ANY of these say its content is already in the default
+# branch. Each exists because the cheaper one before it misses a real case:
+#   1. ancestor of origin/<default>                  — the plain merged branch
+#   2. zero commits ahead of origin/<default>        — an old tip, e.g. release-bump-v0127
+#   3. head of a MERGED PR at the SAME sha           — squash merges, whose own shas
+#                                                      never land on the default branch
+#   4. every commit patch-id-matches (`git cherry`)  — content that landed under a
+#                                                      different branch name or PR
+#
+# 2026-08-17: this used to iterate only branches marked `[gone]` — the marker git
+# stamps once `delete_branch_on_merge` removes the remote branch and you prune.
+# That missed 16 of 116 branches in pos108-terminal, because two populations never
+# get the marker at all: branches never pushed anywhere (no upstream), and branches
+# whose upstream IS origin/<default>, which read `[origin/master: behind 178]`
+# forever. Sweeping on the marker leaves those behind and still reports "clean".
+# Every branch is classified now; `gone` is reported, not required.
+#
+# Protected by name, never deleted however merged they look: the default branch,
+# `deploy/*` and `archive/*`, and any branch whose name appears in the default
+# branch's workflow YAML. `deploy/staging` is the image-build trigger in most 108
+# repos and reads as "in main" in the ones that keep it fast-forwarded — the first
+# run of this rewrite offered to delete it in admin and sell.
+
+set -e
+
+dry=0
+if [ "$1" = "--dry-run" ] || [ "$1" = "-n" ]; then dry=1; fi
+
+git rev-parse --git-dir >/dev/null 2>&1 || { echo "not a git repo" >&2; exit 1; }
+
+git fetch --prune --quiet 2>/dev/null || true
+
+def=$(git symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null | sed 's|^origin/||')
+if [ -z "$def" ]; then
+  for c in main master; do
+    git rev-parse --verify -q "origin/$c" >/dev/null && { def=$c; break; }
+  done
+fi
+[ -z "$def" ] && { echo "cannot determine default branch" >&2; exit 1; }
+base="origin/$def"
+
+cur=$(git rev-parse --abbrev-ref HEAD)
+del=0
+keep=""
+
+# Head refs of every MERGED PR, so squash-merged branches are recognised, and of
+# every OPEN one, so in-flight work is never a delete candidate. Optional: without
+# gh (or offline) both lists are empty and the content tests alone decide, which is
+# conservative — an unrecognised branch is reviewed, not deleted. One bulk call
+# each: per-branch `gh` inside the loop hangs.
+merged_prs=""
+open_prs=""
+if command -v gh >/dev/null 2>&1; then
+  # `|| true` is load-bearing: under `set -e` a command substitution that fails
+  # takes the whole script down at the assignment. Without it, running this in a
+  # repo with no GitHub remote (or while offline) exited silently right here —
+  # no deletions, no REVIEW list, no error. The documented fallback to the
+  # content tests never ran. Present in the pre-2026-08-17 version too.
+  slug=$(gh repo view --json nameWithOwner -q .nameWithOwner 2>/dev/null || true)
+  if [ -n "$slug" ]; then
+    merged_prs=$(gh pr list -R "$slug" --state merged --limit 1000 \
+                 --json headRefName,headRefOid \
+                 -q '.[] | "\(.headRefName) \(.headRefOid)"' 2>/dev/null || true)
+    open_prs=$(gh pr list -R "$slug" --state open --limit 500 \
+               --json headRefName -q '.[].headRefName' 2>/dev/null || true)
+  fi
+fi
+
+# Ledger every deletion, so any of them is restorable by sha from the reflog.
+ledger="${TMPDIR:-/tmp}/git-gone-deleted-$(git rev-parse --show-toplevel | sed 's|.*/||')-$(date +%Y%m%d-%H%M%S).tsv"
+
+worktree_branches=$(git worktree list --porcelain | sed -n 's|^branch refs/heads/||p')
+
+# Workflow YAML from the DEFAULT branch (not the working tree, which may be on a
+# feature branch). Read once: per-branch re-reads are O(branches x workflows).
+workflow_yaml=""
+for f in $(git ls-tree -r --name-only "$base" -- .github/workflows 2>/dev/null); do
+  workflow_yaml="$workflow_yaml
+$(git show "$base:$f" 2>/dev/null || true)"
+done
+
+for b in $(git for-each-ref --format='%(refname:short)' refs/heads); do
+  [ "$b" = "$cur" ] && continue
+  [ "$b" = "$def" ] && continue
+  case "$b" in
+    main|master|develop|dev|gh-pages|release/*|deploy/*|auto/*|backup/*|archive/*)
+      keep="$keep
+  KEEP   $b (protected prefix)"
+      continue ;;
+  esac
+  # A name a workflow dispatches on, pushes to, or filters by is live infrastructure
+  # regardless of whether its commits are in the default branch.
+  if [ -n "$workflow_yaml" ] && printf '%s' "$workflow_yaml" | grep -qF "$b"; then
+    keep="$keep
+  KEEP   $b (named in workflow YAML)"
+    continue
+  fi
+  # A branch checked out in another worktree cannot be deleted, and a session may
+  # be working in it right now.
+  if printf '%s\n' "$worktree_branches" | grep -qx "$b"; then continue; fi
+  # In-flight work. Only reachable for a branch whose remote still exists, which is
+  # exactly the population the old marker-based loop never looked at.
+  if printf '%s\n' "$open_prs" | grep -qx "$b"; then
+    keep="$keep
+  KEEP   $b (open PR)"
+    continue
+  fi
+
+  sha=$(git rev-parse "$b")
+  ahead=$(git rev-list --count "$base".."$b" 2>/dev/null || echo 0)
+  track=""
+  if [ -z "$(git for-each-ref --format='%(upstream)' "refs/heads/$b")" ]; then
+    track=", never pushed"
+  elif [ -n "$(git for-each-ref --format='%(upstream:track)' "refs/heads/$b" | grep -F '[gone]' || true)" ]; then
+    track=", gone"
+  fi
+
+  why=""
+  if git merge-base --is-ancestor "$b" "$base" 2>/dev/null; then
+    why="in $def"
+  elif [ "$ahead" = "0" ]; then
+    why="no commits ahead of $def"
+  elif printf '%s\n' "$merged_prs" | grep -qx "$b $sha"; then
+    why="squash-merged PR"
+  elif printf '%s\n' "$merged_prs" | awk '{print $1}' | grep -qx "$b"; then
+    keep="$keep
+  REVIEW $b (PR merged at another sha — local branch has newer commits$track)"
+    continue
+  elif [ -z "$(git cherry "$base" "$b" 2>/dev/null | grep '^+' || true)" ]; then
+    why="all $ahead commit(s) landed (patch-id)"
+  fi
+
+  if [ -n "$why" ]; then
+    if [ "$dry" = 1 ]; then
+      echo "  would delete $b ($why$track)"
+    else
+      printf '%s\t%s\t%s\t%s\n' "$b" "$sha" "$(git log -1 --format=%s "$b")" "$why" >> "$ledger"
+      git branch -D "$b" >/dev/null && echo "  deleted $b ($why$track)"
+    fi
+    del=$((del + 1))
+  else
+    keep="$keep
+  REVIEW $b (+$ahead commit(s), no merged PR$track — closed unmerged, or never opened?)"
+  fi
+done
+
+if [ "$del" = 0 ] && [ -z "$keep" ]; then echo "  nothing to sweep"; fi
+if [ -n "$keep" ]; then printf '%s\n' "$keep"; fi
+if [ "$dry" = 0 ] && [ -f "$ledger" ]; then echo "  ledger: $ledger"; fi
+exit 0
