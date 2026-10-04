@@ -1,28 +1,28 @@
-# AGENTS.md — กฎกลางไม่ได้อยู่ในไฟล์นี้
+# AGENTS.md — the global rules are not in this file
 
-🔴 **กฎกลางทั้งหมดอยู่ที่ `CLAUDE.md` ในรีโปเดียวกันนี้** (`108-Plaza/claude-global-rules`)
-เช็คเอาต์อยู่ที่ `~/.claude/rules-repo/` ทุกเครื่อง · autopull ทุก 15 นาที
+🔴 **All global rules live in `CLAUDE.md` in this same repo** (`108-Plaza/claude-global-rules`),
+checked out at `~/.claude/rules-repo/` on every machine · autopull every 15 minutes.
 
-**agent ที่อ่าน `AGENTS.md` เป็นหลัก ให้อ่านไฟล์นั้นก่อนเริ่มงาน:**
+**Agents that read `AGENTS.md` first: read that file before starting work:**
 
 ```
 cat ~/.claude/rules-repo/CLAUDE.md
 ```
 
-ไฟล์นี้ตั้งใจให้สั้น **ห้ามคัดลอกกฎมาไว้ที่นี่** — Claude Code โหลดทั้ง `CLAUDE.md`
-และ `AGENTS.md` เข้า context ⇒ สำเนาที่นี่ = จ่าย token เท่าตัวทุกเซสชัน
+This file is short on purpose. **Never copy rules into it** — Claude Code loads both `CLAUDE.md`
+and `AGENTS.md` into context ⇒ a copy here = paying the tokens twice every session.
 
-## ห้ามเขียนกฎลงไฟล์นี้
+## Never write rules into this file
 
-มีกฎใหม่/แก้กฎ ⇒ แก้ `~/.claude/rules-repo/CLAUDE.md` + commit + `claude-rules push`
-· แก้แล้วไม่ commit = ฟลีตแตก (autopull ข้ามทั้งเครื่องเมื่อเวิร์กทรีสกปรก)
+New or changed rule ⇒ edit `~/.claude/rules-repo/CLAUDE.md` + commit + `claude-rules push`
+· editing without committing = a split fleet (autopull skips the whole machine when the worktree is dirty).
 
-## ทำไมไฟล์นี้ถึงเหลือแค่นี้ (2026-09-27)
+## Why this file is this short (2026-09-27)
 
-`~/AGENTS.md` ฉบับเดิม 711 บรรทัด / 77.6 KB แก้ล่าสุด 2026-09-06 และ **ไม่อยู่ใน git**
-⇒ ไม่มีกลไกพาตัวเองให้ทันสมัย · ค้าง 21 วันแล้วขัดกับ `CLAUDE.md` 8 จุด จุดที่อันตรายที่สุด:
-สั่งใส่ `[skip ci]` (กฎกลางห้าม — ด่านบังคับไม่เคยรัน · park108#943) และสั่งว่า merge
-เป็นของเจ้าของคนเดียว (กฎกลาง 🟢 ให้ merge เองได้เมื่อครบสามข้อ) · ทั้งไฟล์ยังเขียนถึง
-Codex เป็นบทบาทหลัก ซึ่งเจ้าของเลิกใช้ไปตั้งแต่ 2026-09-22
+The old `~/AGENTS.md` was 711 lines / 77.6 KB, last edited 2026-09-06, and **not in git**
+⇒ nothing kept it current · it went stale for 21 days and contradicted `CLAUDE.md` in 8 places. The most dangerous:
+it ordered `[skip ci]` (the global rules forbid it — required checks never run · park108#943) and said merge
+belongs to the owner alone (global rule 🟢 lets the reviewer merge when all three conditions hold) · the whole file
+still described Codex as a main role, which the owner stopped using on 2026-09-22.
 
-เนื้อหาที่ไม่ซ้ำเหลือ 2 ก้อน ย้ายเข้า `CLAUDE.md` แล้วที่คอมมิต `60065c3`
+The 2 remaining non-duplicate pieces were moved into `CLAUDE.md` in commit `60065c3`.

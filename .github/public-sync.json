@@ -1,7 +1,7 @@
 {
   "_comment": "อัปเดตด้วย scripts/sync_public_marker.sh หลังตามไปแก้รีโปสาธารณะแล้วเท่านั้น",
   "public_repo": "108-Plaza/agent-working-rules",
-  "sections_sha": "1b4bb0c85a0e2cebbde1dd09e6b97a84137f3a7a6749404983626859beeb8591",
-  "public_head": "53666c78ad4db55470cc8180621378e1a490a3ef",
-  "updated": "2026-09-27"
+  "sections_sha": "5afca4e2484d57ef4bd5cb51155605b2992108672a57cd33bb0809a83be46a14",
+  "public_head": "0dd9352c7db0f44b2937d8263182fb2032950148",
+  "updated": "2026-10-04"
 }
