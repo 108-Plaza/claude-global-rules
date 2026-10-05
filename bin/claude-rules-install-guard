@@ -1,0 +1,66 @@
+#!/usr/bin/env python3
+# claude-rules-install-guard — register bin/pretooluse-guard.sh as a PreToolUse(Bash) hook in ~/.claude/settings.json
+#
+#   claude-rules-install-guard                 install or update (idempotent; backs up to settings.json.bak-guard)
+#   claude-rules-install-guard --check         read-only: exit 0 if registered with the current command, 1 if not
+#   claude-rules-install-guard --print-command print the hook command string (used by test-pretooluse-guard.sh)
+#
+# The hook points at the clone itself (~/.claude/rules-repo/bin/pretooluse-guard.sh), so autopull delivers every
+# later edit of the guard to every machine; this installer only has to run once per machine.
+#
+# The command is a wrapper: exit code 2 from the guard is mapped to 0. In Claude Code exit 2 = "block the tool call",
+# and bash returns 2 on a syntax error — without the wrapper, one bad push of the guard would block every Bash call
+# on every machine. Deliberate blocks use JSON on stdout with exit 0, so nothing legitimate is lost.
+import json, os, shutil, sys
+
+COMMAND = (
+    'f="$HOME/.claude/rules-repo/bin/pretooluse-guard.sh"; '
+    '[ -x "$f" ] || exit 0; "$f"; rc=$?; [ "$rc" -eq 2 ] && exit 0; exit "$rc"'
+)
+MARK = "pretooluse-guard.sh"
+
+if "--print-command" in sys.argv:
+    print(COMMAND)
+    sys.exit(0)
+
+home = os.path.expanduser("~")
+p = os.path.join(home, ".claude", "settings.json")
+host = os.uname().nodename.split(".")[0]
+
+d = json.load(open(p)) if os.path.exists(p) else {}
+lst = d.setdefault("hooks", {}).setdefault("PreToolUse", [])
+
+found = None
+for entry in lst:
+    for h in entry.get("hooks", []):
+        if MARK in h.get("command", ""):
+            found = (entry, h)
+            break
+    if found:
+        break
+
+if "--check" in sys.argv:
+    ok = bool(found) and found[0].get("matcher") == "Bash" and found[1]["command"] == COMMAND
+    print(f"[{host}] guard hook {'registered (current)' if ok else 'NOT registered / outdated'}")
+    sys.exit(0 if ok else 1)
+
+if found:
+    entry, h = found
+    if h["command"] == COMMAND and entry.get("matcher") == "Bash":
+        print(f"[{host}] already registered — nothing to do")
+        sys.exit(0)
+    h["command"], h["type"], h["timeout"] = COMMAND, "command", 10
+    entry["matcher"] = "Bash"
+    action = "updated"
+else:
+    lst.append({"matcher": "Bash", "hooks": [{"type": "command", "command": COMMAND, "timeout": 10}]})
+    action = "added"
+
+os.makedirs(os.path.dirname(p), exist_ok=True)
+if os.path.exists(p):
+    shutil.copy(p, p + ".bak-guard")
+with open(p, "w") as f:
+    json.dump(d, f, indent=2, ensure_ascii=False)
+    f.write("\n")
+json.load(open(p))  # a broken file here means restore from settings.json.bak-guard
+print(f"[{host}] {action} PreToolUse(Bash) -> rules-repo/bin/pretooluse-guard.sh")
