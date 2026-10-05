@@ -24,10 +24,16 @@ does not reach another ⇒ rules that must apply everywhere must live in this fi
   `bash -s` or `bash -c "…"` (single quotes don't work; cmd doesn't strip them) and **there is no sftp ⇒ scp cannot get in**; send via stdin only
   · `legion-utd-1` (100.98.93.83) is a different machine, port 22 closed, **has no rules yet**
 - 🔴 **Edited but not committed = the fleet splits** — autopull finds a dirty worktree and **skips the whole machine**,
-  then writes `ข้าม: มีของค้างยังไม่ commit` to `~/.claude/rules-sync.log` (real incident 2026-09-10→11: rules stale ~14 h) · never copy/scp machine by machine (it once overwrote the owner's rules, losing 32 lines)
+  then writes `ข้าม: มีของค้างยังไม่ commit` (= "skipped: uncommitted work") to `~/.claude/rules-sync.log` (real incident 2026-09-10→11: rules stale ~14 h) · never copy/scp machine by machine (it once overwrote the owner's rules, losing 32 lines)
 - 🌐 **There is a public edition** `108-Plaza/agent-working-rules` (public) = only the *way of working* (roles · 10-part ticket · file scope · class diagram · lifecycle · review/verdict · merge gate · writing principles)
   **with all infrastructure removed** (machines · IPs · hosts · secret file paths · internal repo names · ports · image/bundle ids) · separate history; nothing from here was dragged over
   🔴 **Editing a "way of working" rule here ⇒ you must make the same edit there too**, or the public edition goes stale the same way the old `~/AGENTS.md` did · **never put infrastructure detail into the public repo** — once exposed it cannot be undone
+- 🌏 **This file is English (owner's order 2026-09-27 · translated 2026-10-04). A few Thai strings stay on purpose — never translate these:**
+  the owner's verbatim quotes (translating them destroys the evidence) · `## ขอบเขตไฟล์` (a heading the queue parses — `## File scope` is accepted too) ·
+  `กำลังทำอยู่` (the legacy label name in `create-labels.sh`'s rename map) · `คำตัดสิน:` / `สรุป: ผ่าน` (kept as the **wrong** forms the review gate cannot see) ·
+  `ข้าม: มีของค้างยังไม่ commit` (text autopull writes to its log) · `รับงานแล้ว — worker …` (text `tq-autopilot.sh` posts) ·
+  `งานต่อเนื่องที่เสนอ` (a section heading in reports the owner reads) · and the notification example, because notifications go to the owner
+  · ticket markers moved to `[required]`/`[proposed]`; older tickets still say `[บังคับ]`/`[เสนอ]` and both are fine
 - 🔴 **Delete rules that are cancelled; never leave them struck through** · shrink stories/evidence to one line with the ticket number ·
   full history is in `git log -p` — this file once swelled to 215 KB (~50k tokens every session) because every reversal was appended instead of replacing
 
@@ -71,7 +77,7 @@ Comes before every rule below — *Autonomous Execution* says **how** work is do
 | Who | Does | Must not |
 |---|---|---|
 | **Gemini** (`gemini/*` and `antigravity/*` = the same one — the owner runs it through an IDE called Antigravity · fold the two names together before counting) | implementer — two kinds: **Gemini sessions (tmux on Dell) do not call the queue themselves**; they sit and wait for Claude to dispatch a ticket · **the autopilot fleet** (`gemini/auto-*` on MacBook/Mac Studio) pulls the queue itself as normal (see below) | review · merge · tmux sessions calling `/v1/next` to find a ticket themselves (claiming the ticket the lane controller ordered is allowed — see below) |
-| **GLM** (`glm/<8ตัว>`) | implementer — takes only tickets Claude dispatches (no work outside the ticket) · holding a ticket = finish it (PR + `pr_open`) before taking a new one · can be dispatched in any lane | review · merge |
+| **GLM** (`glm/<8-char-id>`) | implementer — takes only tickets Claude dispatches (no work outside the ticket) · holding a ticket = finish it (PR + `pr_open`) before taking a new one · can be dispatched in any lane | review · merge |
 | **Claude** | explore/find the root cause → **design the class diagram from the owner's requirement** (📐 Class diagram before code) → **write the ticket** → dispatch → monitor → **review every PR** (including `gemini/*`) → add `reviewed` + merge when the conditions are met · maintain docs/context | merge work it wrote itself |
 | **the owner** | decides business rules · approves merge exceptions (below) | |
 
@@ -111,7 +117,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   latest jobs `glm-d*` 09-25 · `glm-m6` 09-27 ⇒ must start a new worker with `glm-worker-up.sh` before dispatching
 - **Junie** (JetBrains · owner's order 2026-10-03 *"เรามี junie ทำงาน ฟรีไม่เสียตัง"*) — implementer · worker id `junie/<เลขใบ>` ·
   🔴 **only the `junie-lite` model works (free)** — the account has no balance; other models fail with `Insufficient account balance` ·
-  dispatch from a machine with the CLI: `junie --skip-update-check --model=junie-lite -p <worktree> --task "<ใบ + กติกา>"` (MacBook `~/.local/bin/junie` is logged in) ·
+  dispatch from a machine with the CLI: `junie --skip-update-check --model=junie-lite -p <worktree> --task "<ticket + rules>"` (MacBook `~/.local/bin/junie` is logged in) ·
   the ticket must go through the queue: set `assign:junie/<n>` + `ready` → Junie claims it itself via `/v1/next` + `assigned_only` once (using `~/.config/tq/env`) ·
   Junie commits locally only · the controller pushes + opens the PR `> worker: junie/<n>` + `pr_open` · Junie does not review ·
   Junie in RustRover (ACP) cannot receive work from Claude; CLI only · tickets sent to Junie must satisfy all of 🧪 A ticket for an implementer
@@ -119,7 +125,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · workers run on Dell in tmux `gemini-1`…`gemini-4`
   (id `gemini/pool-N` · `agy --dangerously-skip-permissions` **without `-i`** — in agy 1.2.9 `-i` = `--prompt-interactive`, which needs text after it; given bare, agy exits immediately and the session is lost (2026-09-24) · cwd `/data/yuth/worktrees` · **the owner starts them** —
   Claude cannot start agy in skip-permissions mode, and the owner must click the first-time folder trust prompt) ·
-  dispatch: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<ข้อความ>"; tmux send-keys -t gemini-N Enter'`
+  dispatch: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<message>"; tmux send-keys -t gemini-N Enter'`
   view output `tmux capture-pane -p -t gemini-N` · the dispatch message must include repo#issue · worker id · clone location `/data/yuth/worktrees/<slug>` ·
   the take-ticket comment · file scope · PR body `> worker:` · no review/merge · if stuck, comment on the ticket and stop
   🔴 **The dispatch message must order one claim through the queue before touching code** (owner's choice 2026-09-24): add `assign:gemini/pool-N` first ⇒
@@ -137,7 +143,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   sessions `agy-1` · `agy-2` · worker id `gemini/warut-1` · `gemini/warut-2` · cwd `~/worktrees` · agy account `ibrowe108@gmail.com` ·
   🔴 **gh on that machine is logged in as `yuthstyle88`** (active) even though the machine is not the fleet's · to remove: `gh auth logout -h github.com -u yuthstyle88` on that machine ·
   git uses that token too (`gh auth setup-git` run by the owner 2026-09-29 ⇒ can clone/push private repos + `cargo` can fetch private deps) · to remove: `git config --global --unset-all credential.https://github.com.helper` ·
-  dispatch (from a machine with the `warut-mbp` alias): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<ข้อความ>\r'"` ·
+  dispatch (from a machine with the `warut-mbp` alias): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<message>\r'"` ·
   view output `ssh warut-mbp 'screen -S agy-N -p 0 -X hardcopy /tmp/a.txt; LC_ALL=C tr -cd "\11\12\40-\176" < /tmp/a.txt | tail -30'` · cancel a turn `stuff $'\e'` ·
   the dispatch message must be complete per the Dell item above — a short bare message (e.g. a one-word project name) ⇒ agy in skip-permissions mode searches the whole machine on its own, including Warut's `~/.zsh_history` (happened for real 2026-09-29) ·
   `~/.config/tq/env` placed by the owner 2026-09-29T06:05Z (600 · `GET /v1/status` = 200) ⇒ can claim `assigned_only` + heartbeat like Dell ·
@@ -145,13 +151,13 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   ⚠️ **does not recover on its own** — machine sleeps/restarts ⇒ sessions are lost and must be reopened by hand (no auto-starter installed yet)
 - **Gemini sessions on Lenovo (WSL)** (owner permitted 2026-09-29) — tmux `agy-1` · `agy-2` · worker id `gemini/lenovo-1` · `gemini/lenovo-2` ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · agy account `yutjan50@gmail.com` (**a different account from warut/Windows** = `ibrowe108` ⇒ separate quota) ·
-  dispatch: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` then on stdin: `tmux send-keys -t agy-N -l "<ข้อความ>"; tmux send-keys -t agy-N Enter` · view output `tmux capture-pane -p -t agy-N` ·
+  dispatch: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` then on stdin: `tmux send-keys -t agy-N -l "<message>"; tmux send-keys -t agy-N Enter` · view output `tmux capture-pane -p -t agy-N` ·
   for the owner to watch: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'` exit with `Ctrl-B D` (never Ctrl-C) ·
   ⚠️ agy **on the Windows side** of Lenovo (1.2.9 · `ibrowe108`) is not a worker — its toolchain does not match the fleet and it dies when ssh drops · there is an `agy.exe` in the Services session and nobody knows yet who started it ·
   `~/.config/tq/env` placed by the owner 2026-09-29T07:19Z (`/v1/status` = 200 · `TQ_AUTOPILOT_*` came along too) ⇒ can claim/heartbeat · does not recover on its own after a WSL/Windows restart
 - **Gemini sessions on Mac Studio** (owner's order 2026-09-29) — tmux `agy-1` · `agy-2` · worker id `gemini/studio-1` · `gemini/studio-2` ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · has tq env (`TQ`+`TQ_TOKEN`) + gh/git as `yuthstyle88` already ⇒ can claim/heartbeat right away ·
-  dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<ข้อความ>\"; tmux send-keys -t agy-N Enter"'` · view output `tmux capture-pane -p -t agy-N` ·
+  dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` · view output `tmux capture-pane -p -t agy-N` ·
   ⚠️ `~/worktrees` on Studio already holds other sessions' worktrees (17 on setup day) ⇒ the dispatch message must order it to create its own new folder and not touch existing ones ·
   not the autopilot `auto-studio01..04` (a different mechanism · LaunchAgent) · does not recover on its own after a restart
 
@@ -210,7 +216,7 @@ Owner's order 2026-09-10 *"ปกติ ผมให้ รีวิว แล�
    - Measured 2026-09-24T01:33Z: `true` = `park108` · `jh-api` · `108-agent-queue` · `false` = `pos108-core` · `pos108-store` · `pos108-admin` · `pos108-orders` · `108-sell` (`claude-global-rules#3`)
 
 🔴 **Still stop and ask the owner for:**
-- verdict `FAIL`, or `PASS` with a "ต้องแก้ก่อน merge" (must fix before merge) list
+- verdict `FAIL`, or `PASS` with a "Must fix before merge" list
 - migration · schema change · data backfill · destructive op
 - touching the 4 BLOCK groups (section 🏷 The brand is 108heros — not 108jobs)
 - going to production (`deploy/*`, `release/prod`) or changing a business rule the owner has not yet decided
@@ -226,7 +232,7 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
 the single source is `108-Plaza/108-agent-queue` → `scripts/create-labels.sh` (name · colour · English description) · **new repo = run this script; never type `gh label create` by hand**
 (safe to re-run · it keeps the owner-only description of `reviewed` in CCTV-Platform for you · exit 3 = Thai labels still remain):
 ```bash
-bash scripts/create-labels.sh [--dry-run] 108-Plaza/<repo>     # ใน clone ของ 108-agent-queue
+bash scripts/create-labels.sh [--dry-run] 108-Plaza/<repo>     # in a clone of 108-agent-queue
 ```
 A new label needed fleet-wide ⇒ add it to the script via a PR, not by hand · descriptions are limited to 100 characters (the script checks)
 
@@ -265,6 +271,7 @@ Send `PushNotification` (`status: "proactive"`) when: **offering work to choose 
 Do not send when: an ordinary progress report · answering a question the owner just asked and is still present for · a task of a few seconds
 
 **Message:** one line < 200 characters, no markdown, starting with *what needs deciding* — e.g. `สำรวจเรียกรถเสร็จ เจอ 6 ช่องว่าง จะเปิด issue ข้อไหนบ้าง`
+(notifications are read by the owner, so write them in Thai; everything written into a repo stays English)
 - Result `not sent — this terminal is active` = normal (the owner is focused on the screen) · **never resend**, never conclude the system is broken ·
   to test that it reaches the phone, the owner must first switch screens/lock the screen
 - Sent successfully but not on the phone ⇒ the cause is the account-level switch `Settings → Notifications` (`Response completions` + `Code permission requests`), not Focus/iOS/the app
@@ -275,18 +282,18 @@ Owner's order 2026-09-17 — 🔔 says you **must notify**; this rule says **wha
 🔴 **A bare question throws the thinking back to the owner** — the owner is not in the code; we are
 
 Every question must have four things:
-1. **Root cause, not symptom** — the chain `อาการ ← A ← B ← ต้นเหตุ`, every link with a `file:line` or a re-runnable command
+1. **Root cause, not symptom** — the chain `symptom ← A ← B ← root cause`, every link with a `file:line` or a re-runnable command
 2. **What was measured** — numbers/run output/file contents, not opinion · a *"ไม่แน่ใจว่า X ไหม"* ("not sure whether X") you can check yourself in 2 minutes **must not be asked**
 3. **Options with costs** — one line each: reversible? · who is affected? · what follow-up is needed
 4. 🔴 **One recommendation of ours, with the reason** — if you truly cannot choose, say where you are stuck and what more you need to know
 
 ```
-ต้นตอ:        <file:line + สายลูกโซ่>
-วัดแล้ว:      <ตัวเลข/ผลรัน/เนื้อไฟล์>
-ทางเลือก:     ก. <ทาง> — ราคา/ย้อนได้ไหม
-              ข. <ทาง> — ราคา/ย้อนได้ไหม
-ผมเสนอ:       <ก. หรือ ข.> เพราะ <เหตุผล>
-ถ้าไม่ตอบ:    <ผมจะเดินทางไหนไปก่อน หรืองานหยุดตรงไหน>
+Root cause:    <file:line + the chain>
+Measured:      <numbers / run output / file contents>
+Options:       A. <path> — cost / reversible?
+               B. <path> — cost / reversible?
+I propose:     <A or B> because <reason>
+If no answer:  <which path I take meanwhile, or where the work stops>
 ```
 Evidence: `park108#664`/`#735` traced the root cause fully ⇒ answered in ~4 minutes · `park108#633` asked vaguely ⇒ no answer overnight
 
@@ -302,7 +309,7 @@ Owner's order 2026-09-14 — every agent posts through the same GitHub account (
 
 | Kind | First line |
 |---|---|
-| General comment | `> claude/c4ad6edb — <คอมเมนต์นี้คืออะไร>` |
+| General comment | `> claude/c4ad6edb — <what this comment is>` |
 | verdict | `> reviewer: <kind>/<session-id>` + `> head: <sha>` |
 | PR body | `> worker: <kind>/<id>` |
 | Newly opened ticket | `> dispatched-by: <kind>/<session-id>` |
@@ -331,15 +338,15 @@ Owner's order 2026-09-09 — in one day, three wrong identifications by three di
 
 Owner's order 2026-09-23 · applies to **docs · tickets · PR bodies · comments · verdicts** of every kind
 
-**`"ใบ #N เปิดอยู่"` (ticket #N is open) is a time bomb** — true only on the day it was typed; nothing keeps it true
-**`"X ยังไม่มีคำตอบ (ดู #N)"` (X has no answer yet, see #N) never expires** — the sentence stays right after the ticket closes
+**`"ticket #N is open"` is a time bomb** — true only on the day it was typed; nothing keeps it true
+**`"X has no answer yet (see #N)"` never expires** — the sentence stays right after the ticket closes
 
 | Never write | Write instead |
 |---|---|
 | "ticket #N is open to fix this" | "X has no answer yet · there was an attempt at #N" |
 | "⇒ opened ticket #N" (at the end of a section) | "#N closed `not planned` 2026-09-16, replaced by #753 — the problem remains" |
 | "waiting on #N" as a blocking reason | a reason that can be re-checked + a command that tells you whether it can be unblocked yet |
-| a bare ticket number (`ใบ #942`) | ticket number + half a line on what it asks for |
+| a bare ticket number (`ticket #942`) | ticket number + half a line on what it asks for |
 
 **Measured real cost (2026-09-23 · one session):** the sentence *"ใบ #938 เปิดไว้"* (the ticket is open) **expired in 40 minutes**
 while *"พิกัดครอปยังไม่มีวิธีหาที่เชื่อถือได้"* (there is still no reliable way to find the crop coordinates) in the same paragraph stayed true to the letter ·
@@ -383,7 +390,7 @@ closing a ticket with an explanation and nothing that prevents recurrence
 
 **By role:** ticket author ⇒ "fix the root cause" = **open a ticket at the root cause, not do it yourself** · the *evidence* part has the causal chain · the *fix* part points at the root cause ·
 never send a symptom-fixing ticket worded to look like a fix · if you can't trace it, write *"ยังไม่รู้ต้นเหตุ — ใบนี้คือการสืบ"* (root cause unknown — this ticket is the investigation) ·
-implementer ⇒ if the ticket orders a symptom-site fix, write that on the ticket and go `blocked` + reason; don't fix it silently and don't expand beyond `ขอบเขตไฟล์` ·
+implementer ⇒ if the ticket orders a symptom-site fix, write that on the ticket and go `blocked` + reason; don't fix it silently and don't expand beyond the ticket's file scope ·
 reviewer ⇒ a symptom-site fix without `stopgap` + a root-cause ticket = **FAIL**
 
 This rule does not ask you to go slower — many root causes are one-line fixes · tracing is paid once, symptom fixes are paid every round
@@ -470,9 +477,9 @@ Owner's order 2026-09-22 *"สร้างเป็นกฏกลางไว�
 **do not design diagrams** — they follow the diagram · requirements unclear ⇒ the designer asks the owner before drawing (🔬 Blocked on an owner decision), not guess and draw
 
 ```
-1. class diagram (+ เอกสารสัญญา ถ้าผูกของนอกระบบ)  → รีวิว → merge
-2. ผู้คุมคิวซอยใบตาม class ในไดอะแกรม — ใบละชุด class ที่ไฟล์ไม่ทับกัน
-3. ใบลูกทั้งหมดติด ready พร้อมกัน → เขียนขนาน → รีวิว → merge
+1. class diagram (+ a contract doc if it binds to something outside)  → review → merge
+2. the queue controller splits tickets by the classes in the diagram — one class set per ticket, no overlapping files
+3. every child ticket goes `ready` at once → written in parallel → review → merge
 ```
 
 **Why:** tickets split by symptom run into the same file, because nobody decided which piece lives in which file ⇒ the queue locks the file for one ticket at a time
@@ -520,7 +527,7 @@ Owner's order 2026-10-03 *"ทำเป็นกฏไว้ด้วย อา�
 - 🔴 **A diagram alone is not enough** — the diagram makes code land **in the right place** · the behaviour table and tests make it **mean the right thing**
 - **Procedure:** the ticket author branches from `origin/main` → commits failing tests (failing on wrong results, not on compile errors, where possible) → pushes →
   the ticket names the branch + test names · the implementer makes them pass and may add tests, but 🔴 **must not edit/delete/weaken the provided tests**
-- **Reviewer:** `git diff <คอมมิตเทสต์>..<head> -- <ไฟล์เทสต์>` must not touch the provided tests · touched ⇒ **FAIL**
+- **Reviewer:** `git diff <test-commit>..<head> -- <test-file>` must not touch the provided tests · touched ⇒ **FAIL**
 - Dependency not landed yet (tests cannot compile yet) ⇒ write the tests once the dependency merges, **before** dispatching the ticket · a ticket with no behaviour to lock (pure file move · docs) ⇒ write in the ticket "no tests up front — intentional, because …"
 - ⚠️ **Cost:** the ticket author writes extra tests · wrongly written tests lead the implementer astray ⇒ up-front tests must pass review together with the ticket
 
@@ -531,7 +538,7 @@ and Junie reported "match the original behavior precisely" · existing tests all
 ### Entering the queue
 
 Add labels `ready` + `class:mechanical|logic|guarded` (+ `p0` if urgent · + `assign:<kind>` to name a specific worker)
-⇒ the queue picks it up within ≤60 seconds · the ticket must have a `## ขอบเขตไฟล์` the queue can parse (🧱 … is the fleet-wide file lock), otherwise scope `**` collides with every ticket
+⇒ the queue picks it up within ≤60 seconds · the ticket must have a `## ขอบเขตไฟล์` heading the queue can parse — **`## File scope` works just as well** (`108-agent-queue/src/sync/parse/scope.rs:27` accepts `ขอบเขตไฟล์` · `file scope` · `file_scope`) · without it, scope `**` collides with every ticket (🧱 … is the fleet-wide file lock)
 
 ### Lanes and dispatch
 
@@ -546,7 +553,7 @@ Add labels `ready` + `class:mechanical|logic|guarded` (+ `p0` if urgent · + `as
 with `pos108-sell` → `108-sell` · **before renaming any repo, check whether the new name still matches its lane; if not, this table must be fixed
 in the same round**, otherwise there will be a repo nobody controls without anyone knowing
 
-🔴 **Renaming a repo ⇒ also edit the queue's `config.toml` on Dell in the same round** (`/home/yuth/108-agent-queue/config.toml`, the `repos` list · **not in git** — only `config.toml.example` is ⇒ no PR can catch it), then `systemctl --user restart tq.service` · before editing, check for tickets under the old name `redis-cli -p 6381 --scan --pattern 'tq:t:<owner>/<ชื่อเก่า>#*'` — tickets not yet `merged`/`retired` must be closed or moved first, otherwise duplicate tickets appear under the new name and the old ones become orphans holding stale file locks · confirm with `journalctl --user -u tq.service -o cat | grep 'sync repo="<owner>/<ชื่อใหม่>"'` · happened for real 2026-09-22: the queue was still watching `pos108-sell` a day after the rename (the 22 old tickets had all finished, so nothing broke)
+🔴 **Renaming a repo ⇒ also edit the queue's `config.toml` on Dell in the same round** (`/home/yuth/108-agent-queue/config.toml`, the `repos` list · **not in git** — only `config.toml.example` is ⇒ no PR can catch it), then `systemctl --user restart tq.service` · before editing, check for tickets under the old name `redis-cli -p 6381 --scan --pattern 'tq:t:<owner>/<old-name>#*'` — tickets not yet `merged`/`retired` must be closed or moved first, otherwise duplicate tickets appear under the new name and the old ones become orphans holding stale file locks · confirm with `journalctl --user -u tq.service -o cat | grep 'sync repo="<owner>/<new-name>"'` · happened for real 2026-09-22: the queue was still watching `pos108-sell` a day after the rename (the 22 old tickets had all finished, so nothing broke)
 
 - **Controller** = one Claude session per lane (opens tickets · dispatches · monitors · reviews) · announce the lane at the start, then touch only repos in that lane ·
   worrying work seen outside the lane ⇒ report to the owner, do not act · ticket in the wrong lane ⇒ move the label
@@ -563,8 +570,8 @@ in the same round**, otherwise there will be a repo nobody controls without anyo
 
 ### Taking a ticket (implementer)
 
-Before touching the first line of code: add your own kind label + `in-progress` (formerly `กำลังทำอยู่` · the queue removes it itself when a PR opens/the ticket ends) + comment `รับงานแล้ว — worker <kind>/<id>` with the files you will touch ·
-check `origin/main` for whether it is already fixed (`git log -p origin/main -- <ไฟล์>` — ticket still open ≠ nobody has done it) ·
+Before touching the first line of code: add your own kind label + `in-progress` (formerly `กำลังทำอยู่` · the queue removes it itself when a PR opens/the ticket ends) + comment `รับงานแล้ว — worker <kind>/<id>` (= "ticket taken — worker …"; `scripts/tq-autopilot.sh:122` posts exactly this text) with the files you will touch ·
+check `origin/main` for whether it is already fixed (`git log -p origin/main -- <file>` — ticket still open ≠ nobody has done it) ·
 check `gh pr list --json files` for collisions with open PRs · clone shared by several sessions ⇒ work in your own worktree ·
 returning the ticket/`blocked` = remove the labels too · PR body first line `> worker: <kind>/<id>`
 
@@ -588,13 +595,13 @@ The implementer reads only the ticket — not this conversation, not other repos
 
 **Rules for parts 7–10 (ordered 2026-09-04 — mandatory for every ticket):**
 - Proposed names **must cite real code** with `file:line` — a wrongly guessed signature is worse than none, because the implementer follows it without asking
-- Prefix with **`[บังคับ]`** (wrong = the ticket is wrong · contracts others see: JSON fields · HTTP routes · columns) or
-  **`[เสนอ]`** (internal shape · may change, but the reason must be written in the PR)
+- Prefix with **`[required]`** (wrong = the ticket is wrong · contracts others see: JSON fields · HTTP routes · columns) or
+  **`[proposed]`** (internal shape · may change, but the reason must be written in the PR)
 - Every edge case must have a test in the done criteria, or say *"ยังไม่มีเทสต์ — ตั้งใจ เพราะ …"* (no test yet — intentional, because …)
 - If unknown, write **"รอ #N"** (waiting on #N) / **"ต้องถามเจ้าของ — ห้ามเดา"** (must ask the owner — do not guess) · a six-part ticket that is all true beats ten parts with four guessed
 - **One ticket = one outcome** reviewable in one sitting · split big work into sub-tickets ordered with `blocked by #N`
 - ⚠️ **Cost of this rule:** tickets get longer and take longer to write · **guessing structure wrong = leading the implementer wrong too** ⇒ the first two rules
-  (cite real `file:line` · separate `[บังคับ]`/`[เสนอ]`) are what keep that cost from happening — **never skip them**
+  (cite real `file:line` · separate `[required]`/`[proposed]`) are what keep that cost from happening — **never skip them**
 
 ### 1a. "Tight and clear"
 
@@ -616,7 +623,7 @@ The implementer reads only the ticket — not this conversation, not other repos
    · ways out, in order (always first fix it so it does not rise · raising the ceiling needs a per-item reason in the PR) · **a ticket that orders writing a transpile harness + mock injection must always warn about `any`**
    (cause: store#212/#213/#215 all three went red on `any_types`)
 
-### 🧱 `## ขอบเขตไฟล์` is the fleet-wide file lock
+### 🧱 `## ขอบเขตไฟล์` (or `## File scope`) is the fleet-wide file lock
 
 The `tq` queue takes the lines under this heading and **actually reserves those files** — one bad line and the whole repo stops dispatching, while workers only see `empty`
 (incident 2026-09-14: a bare `tests/` in `pos108-core#1843` reserved the whole subtree and collided with p0 ticket `#1855` ⇒ the whole repo could not dispatch all day · after changing it to file names, work flowed within 19 seconds)
@@ -644,7 +651,7 @@ After adding `ready`, confirm the queue read it correctly: `ssh Dell-server "red
 **Who reviews:** Claude reviews every ticket · **which session = the session that opened the ticket** (`> dispatched-by:`) — other sessions may add comments but **must not issue their own `Verdict:`**
 (incident `pos108-store#256`: two sessions issued FAIL → PASS → FAIL within 3 minutes)
 - Ticket opener is dead / silent more than 60 minutes after `pr_open` / ticket has no `dispatched-by` / the ticket opener wrote the PR itself (cannot review its own work) ⇒ another session may take over, but must **first post a claim comment on the PR**
-  (`reviewing as <worker> — ผู้เปิดใบเงียบ N นาที`) and wait ≥1 minute · someone already claimed = add comments instead
+  (`reviewing as <worker> — ticket opener silent N minutes`) and wait ≥1 minute · someone already claimed = add comments instead
 - Tickets that Gemini/GLM put into the queue ⇒ `dispatched-by` = the Claude that told them to open it · none = the first Claude session that sees it takes it
 - 🔴 Conflicting verdicts must not be left hanging — the ticket opener summarises in the thread which one stands and why
 - The owner directly assigns a session to review a ticket = do as told
@@ -676,21 +683,21 @@ After adding `ready`, confirm the queue read it correctly: `ssh Dell-server "red
 
 **Sending the verdict:** queued ticket ⇒ post on the PR by default · PASS with all conditions met ⇒ add `reviewed` + merge yourself (see section 🟢 merge) ·
 after posting, `transition → in_review` (otherwise the queue hands this ticket to another reviewer again) ·
-FAIL ⇒ end with `ส่งกลับ` + `in_review → rework` (`pr_open → rework` directly gives 409) + open a follow-up ticket if what slipped is out of scope · non-queue work ⇒ post only when the owner orders it
+FAIL ⇒ end with "send back" + `in_review → rework` (`pr_open → rework` directly gives 409) + open a follow-up ticket if what slipped is out of scope · non-queue work ⇒ post only when the owner orders it
 
 ### 3. Verdict format — machine-read; a malformed one is invisible to the gate
 
 ```
 > reviewer: <kind>/<session-id>
-> head: <sha ของ head ที่รีวิว — อย่างน้อย 7 ตัว>
+> head: <sha of the head reviewed — at least 7 chars>
 
-Verdict: PASS | PASS+follow-up | FAIL   (PR <url> ต่อ issue #N)
-เทียบ acceptance criteria: n/m ผ่าน
-  1. <criterion> — ผ่าน (หลักฐาน: path:line)
-  2. <criterion> — ไม่ผ่าน (ที่ผิด: path:line, ที่คาด: …)
-Verify ที่รันเอง: <คำสั่ง> → <ผล>
-นอก scope ที่เจอ: <ไม่มี | issue #M ที่เพิ่งเปิด>
-ต้องแก้ก่อน merge: <รายการ หรือ "ไม่มี">
+Verdict: PASS | PASS+follow-up | FAIL   (PR <url> for issue #N)
+Acceptance criteria: n/m met
+  1. <criterion> — met (evidence: path:line)
+  2. <criterion> — not met (wrong at: path:line, expected: …)
+Verify I ran myself: <command> → <result>
+Out of scope found: <none | issue #M just opened>
+Must fix before merge: <list, or "none">
 ```
 
 - 🔴 **Line 1 `> reviewer:`** is mandatory — identity in prose does not count
@@ -698,13 +705,13 @@ Verify ที่รันเอง: <คำสั่ง> → <ผล>
   **a new push (including `Merge branch 'main'`) = a new verdict is required**
 - 🔴 **The verdict line must start with the English `Verdict:`** — the reader `decide.mjs` → `isVerdictComment()` counts only lines that
   (leading `#` stripped · case-insensitive) start with `verdict:` or `review:` **and** contain `pass`/`fail` on the same line ·
-  `คำตัดสิน: PASS` / `สรุป: ผ่าน` = invisible to the gate ⇒ log `Awaiting an independent review (no attributable review)`
+  `คำตัดสิน: PASS` / `สรุป: ผ่าน` (Thai for "Verdict: PASS" / "Summary: passed") = invisible to the gate ⇒ log `Awaiting an independent review (no attributable review)`
   (unlike `no PASS on head <sha>` = seen but bound to the wrong head) · a FAIL written in Thai shows no symptom until a PASS is needed to unlock the gate
   (incident `park108#763`: changing only `คำตัดสิน:` → `Verdict:` turned the gate green in one round) ·
   **never wrap the whole line in `**`** — `**Verdict: PASS**` = malformed, gate red (`Verdict: **PASS**` is fine)
 - 🔴 **Lines that are not the verdict must not start with the word `verdict` or `review`** — the gate reads every comment in the thread (skipping only content inside code blocks)
   strictness differs per repo (`park108` flags every line that starts with verdict and contains pass/fail) ⇒ it is read as a malformed verdict and then `setFailed`
-  `unparseable verdict line` (incident `pos108-core#1936`) · put another word in front (`· verdict ของ …`) or fold it into the middle of a sentence ·
+  `unparseable verdict line` (incident `pos108-core#1936`) · put another word in front (`· verdict for …`) or fold it into the middle of a sentence ·
   rules got stricter 2026-09-15 ⇒ old comments can become the problem as soon as the branch rebases onto a new main (PR red without any code change)
 - **Repos with this gate** = those with `.github/workflows/independent-review.yml` (measured 2026-09-18: `pos108-core` · `store` · `admin` · `orders` · `sell` ·
   `terminal` · `park108` · `jh-api` — not present: `108-agent-queue` · `108-platform-services`)
@@ -739,7 +746,7 @@ Full protocol: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` · the queue r
 ### Entry point = HTTP API (ordered 2026-09-09)
 
 ```bash
-source ~/.config/tq/env      # ตั้ง $TQ=https://tq-api.108plaza.net + $TQ_TOKEN
+source ~/.config/tq/env      # sets $TQ=https://tq-api.108plaza.net + $TQ_TOKEN
 curl -s -X POST -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: application/json' \
   -d '{"worker":"claude/<session-id>","host":"'"$(hostname)"'","capabilities":["mechanical","logic"]}' "$TQ/v1/next"
 ```
@@ -822,9 +829,9 @@ run `gh issue edit --add-label` against **real tickets on GitHub** · inject a f
 
 ### Non-compliance = three warnings, then removal from the queue (ordered 2026-09-05)
 
-"Non-compliance" = working outside the queue without an owner order · opening a PR without `pr_open` · touching files outside `ขอบเขตไฟล์` · deleting/skipping tests ·
+"Non-compliance" = working outside the queue without an owner order · opening a PR without `pr_open` · touching files outside the ticket's file scope · deleting/skipping tests ·
 not heartbeating until the lease drops and then pushing anyway · a new ticket without `dispatched-by` · Gemini/GLM reviewing or adding `reviewed` · anyone reviewing/merging their own work
-1. The reviewer comments a warning naming the violation + `ส่งกลับ` (rework)
+1. The reviewer comments a warning naming the violation + "send back" (rework)
 2. Warning + take the ticket back to `ready` + comment `strike 2/3 <worker>`
 3. `strike 3/3` + notify the owner immediately + that worker may not take new tickets until the owner lifts it (the queue has a *kind*-level denylist `tq:policy:no_claim` — blocks the whole kind, needs an owner order · meanwhile the reviewer returns every ticket it picks up to `ready`)
 
@@ -871,7 +878,7 @@ Owner's order 2026-09-01 (before going to real production — when a customer ca
 
 Claiming a ticket cannot prevent collisions because **different tickets can touch the same file** (incident: `core#1209` became CONFLICTING because `#1213` merged on the same file within ~20 minutes)
 - 🔴 **rebase on `origin/main` both when opening the PR and before merge** — needed in both kinds of repo: `strict = false` repos because GitHub doesn't guard it for you · `strict = true` repos because GitHub won't allow merge until you catch up (check the repo's `strict` per section 🟢 merge, item 3)
-- 🔴 **When resolving conflicts, never take one side wholesale** — read `git log -p <base>..origin/main -- <ไฟล์>` first to know what the other side changed and **why**
+- 🔴 **When resolving conflicts, never take one side wholesale** — read `git log -p <base>..origin/main -- <file>` first to know what the other side changed and **why**
 - 🔴 **After a rebase, earlier run results are void** — re-run and prove two things: your own tests can still go red on the new base · the tests of the side you rebased over are still green
 
 ## 🚀 Deploy lanes — personal ships staging · org ships prod
@@ -931,7 +938,7 @@ Owner's order 2026-09-21: *"action ให้ใช้ self-host runner"* · appl
   ran 4 times in one day (07:17 · 08:14 · 09:04 · 09:35Z) `success` every time, on `lenovo-org-win-1`
   ⇒ **what remains is `ubuntu-latest` only** (the numbers above were measured 09-21; re-measure before citing)
 - **The only acceptable exception** = an OS the fleet has no machine for · ⚠️ **Windows is no longer that exception** — measured 2026-09-27T08:19Z: `lenovo-org-win-1` (`self-hosted,X64,Windows`) `status=online` in the org ⇒ before claiming there is no machine, check `gh api orgs/108-Plaza/actions/runners` first ⇒
-  you must write the comment `# hosted-ok: <เหตุผลที่ฟลีตไม่มีเครื่องนี้>` above that `runs-on` **and know it will not run until billing is unblocked**
+  you must write the comment `# hosted-ok: <why the fleet has no machine for this>` above that `runs-on` **and know it will not run until billing is unblocked**
   · to make that gate really run, a runner for that OS must be registered, which is the owner's job
 
 ⚠️ **This rule is not new — the owner ordered it back on 2026-06-23** · the source of truth is
@@ -1107,8 +1114,8 @@ and died at the cleanup step of `actions/checkout` (the latter symptom showed as
 Measured that day: `target/` 148 folders totalling **709 GB** · `scratch/` 275 GB · `worktrees/` 168 GB · runner `_work` ~300 GB
 
 ```bash
-ssh Dell-server 'df -h /home /data'        # ดูก่อนเสมอ
-git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # ไม่ใช่ ~/worktrees
+ssh Dell-server 'df -h /home /data'        # always look first
+git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # not ~/worktrees
 ```
 🔴 **Never delete things on this machine yourself, even when free space is critical** — it is a fleet-wide shared resource · measure, then report to the owner with runnable commands
 · `/home/koey` (260 GB) belongs to another user, not the fleet
