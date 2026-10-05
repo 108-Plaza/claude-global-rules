@@ -390,8 +390,8 @@ closing a ticket with an explanation and nothing that prevents recurrence
 
 **By role:** ticket author ⇒ "fix the root cause" = **open a ticket at the root cause, not do it yourself** · the *evidence* part has the causal chain · the *fix* part points at the root cause ·
 never send a symptom-fixing ticket worded to look like a fix · if you can't trace it, write *"ยังไม่รู้ต้นเหตุ — ใบนี้คือการสืบ"* (root cause unknown — this ticket is the investigation) ·
-implementer ⇒ if the ticket orders a symptom-site fix, write that on the ticket and go `blocked` + reason; don't fix it silently and don't expand beyond the ticket's file scope ·
-reviewer ⇒ a symptom-site fix without `stopgap` + a root-cause ticket = **FAIL**
+implementer ⇒ if the ticket orders a symptom-site fix, write that on the ticket and go `blocked` + reason; don't fix it silently and don't expand beyond the ticket's file scope
+· reviewer ⇒ a symptom-site fix without `stopgap` + a root-cause ticket = **FAIL**
 
 This rule does not ask you to go slower — many root causes are one-line fixes · tracing is paid once, symptom fixes are paid every round
 
