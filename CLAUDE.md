@@ -433,6 +433,40 @@ broke at just 9.9 requests/minute ⇒ the problem is the design, not the load
 **Violation signs:** reading a whole log/table and then filtering out more than half · counting by walking history instead of `COUNT`/`ZCARD` ·
 setting `refreshInterval` without looking at how often the data changes · fixing with timeouts/machines/connections instead of less work per request · every client gets exactly the same answer
 
+## ♻️ Several variants of one job = one shared core + a `dyn Trait` or generic per variant — never a copy per variant
+
+Owner's order 2026-10-06 *"ทำเป็น กฏ ไว้ด้วย ว่า ถ้ามีงานประเภท นี้ให้ ใช้ trait dyn หรือ generic"* ·
+*"ต้องทำให้ reuseได้นะ"* · *"ไม่ใข่ สร้างใหม่ไปเรื่อย"* · *"เพราะ logic มันคล้าย ๆ กัน"* ·
+*"Payment มัน มีหลาย เจ้า"* · *"เรา ใช้ Trait load dynamic"* · *"มัน จะมี logic กลาง"*
+
+**"This kind of work"** = the same job done for several interchangeable things, where more will come:
+payment providers · banks · notification channels · printers/hardware drivers · OCR/LPR engines · storage backends ·
+the same admin screen needed by several apps
+
+| Part | Where it lives | Written |
+|---|---|---|
+| What is the same for every variant (routes · auth · validation flow · masking · audit · storage · the screen) | **one central place** | once |
+| What differs (field list · names · mapping · that variant's own rules) | behind a trait — `Arc<dyn Trait>` when the variant is chosen at runtime (per merchant · per config · per request), a generic `T: Trait` when it is fixed at compile time | one small file per variant |
+
+- 🔴 **Adding a variant = adding one implementation file** — if it also needs a new route set, a new DTO pair, a new handler block
+  or a new screen, the design is a copy, not a reuse ⇒ redesign before writing
+- 🔴 **Before writing variant number two, look at variant number one** — if the new code would be the old code with the names changed,
+  extract the shared core first (📐 Class diagram before code: the trait and the central type go in the diagram)
+- **Safety-relevant logic goes in the core, never in the variant** (masking secrets · auth · money rounding · idempotency) —
+  a variant that does not write it cannot get it wrong
+- **UI too:** one component drawn from data the backend describes (field specs), embedded by every app that needs it —
+  not one screen per app per variant
+- Existing copies that others call (URLs · JSON shapes another repo depends on) keep their contract; re-point them at the shared core
+  in a follow-up ticket rather than breaking the caller
+- **Reviewer:** a PR that adds a per-variant copy where a shared core + trait was possible = **FAIL**, unless the PR says why
+  the variants are not actually alike
+- ⚠️ **Not a licence to abstract a single case** — one variant with no second in sight stays concrete; this rule fires when the
+  second arrives or is already planned
+
+Evidence 2026-10-06 `Payment-Platform`: credential storage and service were generic over the provider, but the HTTP layer was copied —
+16 handlers + 4 DTOs + 2 mappers for SCB and KBank, nothing for 2C2P or Beam; a third copy for Beam was started and stopped
+⇒ design `docs/design/provider-credential-specs.md` (`ProviderCredentialSpec` trait + one registry + one form)
+
 ## 🔭 Every finished task must analyse and propose follow-up work
 
 Owner's order 2026-09-13 — cause: `pos108-terminal#478` was closed COMPLETED with no PR/commit while the core half had merged;
