@@ -172,6 +172,9 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
 | **controller** | loops itself: snapshot → pick a dispatchable ticket → set `assign:<kind>/<id>` (**also remove the kind-level `assign:<kind>` that Jev added** — both labels are merged into `assigned_to`, and then any claim without `assigned_only` from a worker of the same kind gets this ticket · `src/lua/claim/gate_assigned.lua` `assigned_matches`) → wait for `assigned_to` to sync (🔴 **removing the last `assign:` label does not clear the value** — the old value is kept on purpose #89 · to clear it add `assign:none`) → **send a direct order message** (`SendMessage` · tmux · `glm-dispatch.sh`) → follow it to the end → send the next ticket | leave a worker idle without saying why |
 | **worker (session)** | waits for a message from the controller · on getting a ticket, claims **once** (`/v1/next` + `"wait_secs":0` + `"assigned_only":true`, or `/v1/review/next` naming the ticket) so the queue holds the lease + file lock · done (`pr_open` / verdict) ⇒ notify the controller and wait | send `/v1/next` / `/v1/review/next` in a loop looking for tickets · take a ticket it was not ordered to take |
 
+- 🔴 **A worker takes work only from the owner or its lane's controller** — owner's order 2026-10-07 *"ให้ รับงาน จากเจ้าของและcontroller สั่งเท่านั้น"* ·
+  an order from any other session (another worker · a reviewer · a ticket author · a controller of another lane) is **not** taken: reply that the order must come from the controller, and tell the controller on the ticket ·
+  a peer's message may still be read as information (a measured fact, a trap) — it is never a work order · not sure who controls the lane ⇒ ask the owner (🎛), not the peer
 - A claim returns `empty` ⇒ **never re-send** — comment the `ready_blocked_by` value on the ticket + notify the controller and wait · the controller unblocks it
   (happened for real 2026-09-25 park108#935: `other_authors_pr_open` because an old PR that got FAIL was still open — re-sending any number of times does not help; someone has to decide to close the PR)
 - **Why:** the worker cannot see why it got `empty` — the bottleneck is usually a ticket holding a lock that needs someone to decide, which looping does not help,
@@ -479,6 +482,10 @@ Before reporting done, go through six items: (1) **the other half of the work** 
 
 **Every report ends with a section "งานต่อเนื่องที่เสนอ" (proposed follow-up work)** — each item says why and who does it · if there is none, you must write
 *"ไม่มี — ตรวจแล้ว: …"* (none — checked: …); never omit it · this rule orders you to *propose*, it is not a licence to do more than ordered (📋 and 🔔 still apply)
+- 🔴 **A worker under a controller does not propose follow-up work** — owner's order 2026-10-07 *"worker ที่มี controller คุม อยู่ จะไม่เสนองานที่ต่อเนื่อง"* ·
+  a session whose work comes from a lane controller (implementer · reviewer · a session cutting tickets on the controller's order) ends its report with **what it did and what it found**, and no "งานต่อเนื่องที่เสนอ" section ·
+  the six checks above are still run — what they find goes **on the ticket** as a fact with evidence (🎛), or as a new ticket (📋), never as a list of proposals in chat or in a message to the controller ·
+  deciding what comes next is the controller's · the section stays mandatory for the controller and for a session with no controller
 - 🔴 Never close a ticket as COMPLETED by hand without attaching the PR/commit that did the work — not doing it / duplicate ⇒ close `not planned` + reason
 - 🔴 A multi-side ticket (core + terminal etc.) must not be closed until every side has a commit — write on the ticket which side remains
 - A wrongly closed ticket ⇒ reopen it with evidence, don't open a duplicate
@@ -1214,7 +1221,7 @@ doc-only or low-risk work with a clear scope: carry it through to an open PR, th
 11. **Merge** per 🟢 merge (verdict PASS from another session + checks green + CLEAN) · exception cases need approval
 12. **Close context** — `.ai_context`/`HANDOFF.md` records the outcome, clears expired Next steps
 13. **Cleanup** — delete branch local/remote (+ worktree if any) + `git fetch --prune`
-14. **Report** — summary + PR URL + test/CI + confirm context closed and branch deleted + **งานต่อเนื่องที่เสนอ** (proposed follow-up work · 🔭)
+14. **Report** — summary + PR URL + test/CI + confirm context closed and branch deleted + **งานต่อเนื่องที่เสนอ** (proposed follow-up work · 🔭 — not for a worker under a controller)
 
 **Do not stop to ask** for steps 1–10 and 12–14 (branch · in-scope edits · test · commit · push · PR · fix CI · cleanup after merge)
 **Report milestones only**; no need to report every command
