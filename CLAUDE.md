@@ -1086,6 +1086,26 @@ gh api -X POST repos/108-Plaza/<repo>/actions/runs/<id>/cancel
   · a PR that is not behind (update-branch unavailable) ⇒ the author pushes one empty commit after the label is added ·
   🔴 **update-branch = new head = new verdict + must win a slot again** ⇒ do not press it on a PR waiting for a slot without asking the lane controller (2026-09-26 PR 2268: two update-branches from an unidentified session ⇒ verdict re-bound 3 times)
 - ⚠️ Light gates queue behind `cargo` because they use the same runners (measured 04:56Z: 46 waiting · 29 light gates · 7 real builds) — separate runners for light gates require adding a label = owner's job
+### 📄 Doc-only changes run no build or test CI
+
+Owner's order 2026-10-09 *"ถ้างาน เอกสาร ไม่ต้องทำ ci นะ ตรวจด้วย สร้างกฏกลางด้วย"* · applies to **every repo, both PRs and pushes to main**
+
+A change that touches only docs (`*.md` · `docs/**` · design docs · blueprint HTML · `.ai_context`/`HANDOFF.md`) **must not compile, test, lint or build anything**.
+Every CI run on a doc-only change is a runner taken away from code PRs waiting on the same machines.
+
+- 🔴 **Required checks must still report green.** Give each required workflow a doc-only fast path: an early step that diffs the change and makes every heavy step `if: skip_build != 'true'`.
+  **Never `paths-ignore` a required workflow**: a required check that never reports blocks the PR forever.
+- 🔴 **The fast path must not wait for a heavy runner or start services.**
+  - Decide "doc-only?" in a light first job.
+  - Put `services:` (postgres and the like) and heavy steps in a second job gated on that decision.
+  - A light job may run on the macOS pool (🖥 Big builds / ⚙️ CI runner: light gates there do not queue behind builds).
+- **Check:** on a doc-only PR, every workflow finishes with **no build/test step run** and **no `services:` container started**. Look at a doc PR's job steps (`gh api repos/<slug>/actions/runs/<id>/jobs`).
+  A repo where a doc PR still runs build/test ⇒ open a ticket in that repo. That is part of every controller's bottleneck survey.
+- **Evidence 2026-10-09 `xchange`:**
+  - Doc PR 565's `web` job ran typecheck + test + build, because `web.yml` has no doc filter.
+  - Its `api` job skipped correctly (37 s of work) but waited **5 min** for a Dell runner and still started a postgres container.
+  - Meanwhile 6 code PRs with PASS sat waiting for the same runners.
+
 ## 🖥 Big builds — Mac Studio is no longer the only option; choose by measurement
 
 🔴 **Owner's order 2026-09-27 *"แบ่ง งานไปที่ Lenovo ด้วย"*** — amends the 2026-09-12 order that sent all work to Mac Studio
@@ -1217,8 +1237,8 @@ doc-only or low-risk work with a clear scope: carry it through to an open PR, th
      ```bash
      gh api repos/<slug>/branches/main/protection --jq '.required_status_checks.contexts'
      ```
-     **Saving CI on doc-only PRs is the workflow's job, not the commit message's** — give the workflow a doc-only
-     path that reports the required checks green without building (done example: `park108/.github/workflows/ci.yml`)
+     **Saving CI on doc-only PRs is the workflow's job, not the commit message's** — see 📄 Doc-only changes run no build or test CI
+     (done example: `park108/.github/workflows/ci.yml`)
 10. **Ready → CI** only once green locally · CI red due to env differences ⇒ reproduce + fix locally before pushing again
 11. **Merge** per 🟢 merge (verdict PASS from another session + checks green + CLEAN) · exception cases need approval
 12. **Close context** — `.ai_context`/`HANDOFF.md` records the outcome, clears expired Next steps
