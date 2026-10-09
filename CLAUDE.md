@@ -217,6 +217,13 @@ Owner's order 2026-09-10 *"ปกติ ผมให้ รีวิว แล�
    - `true` ⇒ GitHub **enforces it already** (old base = `BEHIND`, cannot merge) ⇒ `update-branch` creates a new head ⇒ **a new verdict is required at that head**
      ⇒ PRs in these repos may need the verdict re-bound several times when main moves often (real incident `jh-api#747`: 3 rounds) · merge quickly after PASS
    - Measured 2026-09-24T01:33Z: `true` = `park108` · `jh-api` · `108-agent-queue` · `false` = `pos108-core` · `pos108-store` · `pos108-admin` · `pos108-orders` · `108-sell` (`claude-global-rules#3`)
+   - 🟢 **Exception: main moved only by docs.** Owner's choice 2026-10-09: *"ยกเว้นถ้าต่างแค่เอกสาร"*.
+     - **Condition:** every file changed on main since the PR's merge-base is a doc that no build or check reads (`*.md`, `docs/**`, design docs).
+     - **What it allows:** merge at the PASS head **without** `update-branch`. The CI result on the new base would be the same, so re-running it only burns a runner.
+     - **Proof before merging:** paste `git diff --name-only $(git merge-base origin/main <head>) origin/main` in a PR comment. One non-doc path ⇒ the exception is off; update-branch as usual.
+     - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head.
+     - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
+     - **Evidence:** xchange 2026-10-09. Design-doc merges every few minutes kept PASS code PRs on an update → 14-minute CI → re-verdict treadmill. PR 581 went 3 rounds while Dell's load was 200.
 
 🔴 **Still stop and ask the owner for:**
 - verdict `FAIL`, or `PASS` with a "Must fix before merge" list
