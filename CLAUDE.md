@@ -125,7 +125,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · workers run on Dell in tmux `gemini-1`…`gemini-11`
   · **Gemini sessions fleet-wide, measured 2026-10-10 ~13:00 local: Dell 11 · Mac Studio 8 · Warut 5 · Lenovo 0 = 24** ·
   the owner opens/closes sessions without telling the rules ⇒ **recount before dispatching** (`tmux ls` / `screen -ls` on each machine) instead of trusting these numbers
-  (id `gemini/pool-N` · `agy --dangerously-skip-permissions` **without `-i`** — in agy 1.2.9 `-i` = `--prompt-interactive`, which needs text after it; given bare, agy exits immediately and the session is lost (2026-09-24) · cwd `/data/yuth/worktrees` · **the owner starts them** —
+  (id `gemini/pool-N` · agy account `yutjan50@gmail.com` (measured 2026-10-10 from the agy log) · `agy --dangerously-skip-permissions` **without `-i`** — in agy 1.2.9 `-i` = `--prompt-interactive`, which needs text after it; given bare, agy exits immediately and the session is lost (2026-09-24) · cwd `/data/yuth/worktrees` · **the owner starts them** —
   Claude cannot start agy in skip-permissions mode, and the owner must click the first-time folder trust prompt) ·
   dispatch: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<message>"; tmux send-keys -t gemini-N Enter'`
   view output `tmux capture-pane -p -t gemini-N` · the dispatch message must include repo#issue · worker id · clone location `/data/yuth/worktrees/<slug>` ·
@@ -157,7 +157,8 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   for the owner to watch: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'` exit with `Ctrl-B D` (never Ctrl-C) ·
   ⚠️ agy **on the Windows side** of Lenovo (1.2.9 · `ibrowe108`) is not a worker — its toolchain does not match the fleet and it dies when ssh drops · there is an `agy.exe` in the Services session and nobody knows yet who started it ·
   `~/.config/tq/env` placed by the owner 2026-09-29T07:19Z (`/v1/status` = 200 · `TQ_AUTOPILOT_*` came along too) ⇒ can claim/heartbeat · does not recover on its own after a WSL/Windows restart
-- **Gemini sessions on Mac Studio** (owner's order 2026-09-29) — tmux `agy-1`…`agy-8` · worker id `gemini/studio-1`…`gemini/studio-8` (8 since 2026-10-10 07:14 · measured that day) ·
+- **Gemini sessions on Mac Studio** (owner's order 2026-09-29) — tmux `agy-1`…`agy-8` · worker id `gemini/studio-1`…`gemini/studio-8` (8 since 2026-10-10 07:14 · measured that day) · agy account `yutjan50@gmail.com` — 🔴 **the same account as Dell ⇒ Dell + Studio (19 sessions) share one quota** · Warut's `ibrowe108` is separate ·
+  check an account with `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` (never open the token files) ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · has tq env (`TQ`+`TQ_TOKEN`) + gh/git as `yuthstyle88` already ⇒ can claim/heartbeat right away ·
   dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` (a session running on Studio itself: the `macstudio` alias does not resolve there — run `tmux send-keys` locally) · view output `tmux capture-pane -p -t agy-N` ·
   ⚠️ `~/worktrees` on Studio already holds other sessions' worktrees (17 on setup day) ⇒ the dispatch message must order it to create its own new folder and not touch existing ones ·
