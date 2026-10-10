@@ -230,6 +230,14 @@ Owner's order 2026-09-10 *"ปกติ ผมให้ รีวิว แล�
      - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head.
      - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
      - **Evidence:** xchange 2026-10-09. Design-doc merges every few minutes kept PASS code PRs on an update → 14-minute CI → re-verdict treadmill. PR 581 went 3 rounds while Dell's load was 200.
+   - 🟢 **Exception: main moved only outside the PR's area.** Owner's order 2026-10-10: *"A merge เลย C ตั้งเป็นกฎถาวร"* (permanent rule).
+     - **Condition:** every file main changed since the PR's merge-base is in a different top-level area from every file the PR changes (e.g. the PR touches only `api/`, main moved only `web/` and `app/`), **and** none of them is a file shared across areas.
+       - Shared = anything more than one CI job reads: root and workspace manifests and lockfiles (`Cargo.toml`, `Cargo.lock`, `package.json`, lockfiles), `.github/**`, `migrations/**`, shared crates or packages the PR's area depends on, generated types both sides commit, and build scripts.
+     - **What it allows:** merge at the PASS head **without** `update-branch`. The PR's own CI job tests only its area, and main's change cannot alter that job's result.
+     - **Proof before merging:** paste `git diff --name-only $(git merge-base origin/main <head>) origin/main` in a PR comment and say which area the PR is in. One path in the PR's area, or one shared path ⇒ the exception is off; update-branch as usual.
+     - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head. Not sure whether a path is shared ⇒ treat it as shared.
+     - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
+     - **Evidence:** xchange 2026-10-10. An `api` run takes ~10 minutes while `web`/`app` PRs merge every few minutes, so `api` PRs fell behind on every round. PR 963 needed update-branch 3 times. PR 1060 was behind again after its first update-branch (8 `web`/`app` files, 0 `api`), and merged under this rule as `54b92f3`.
 
 🔴 **Still stop and ask the owner for:**
 - verdict `FAIL`, or `PASS` with a "Must fix before merge" list
