@@ -122,7 +122,9 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   Junie commits locally only · the controller pushes + opens the PR `> worker: junie/<n>` + `pr_open` · Junie does not review ·
   Junie in RustRover (ACP) cannot receive work from Claude; CLI only · tickets sent to Junie must satisfy all of 🧪 A ticket for an implementer
 - **Gemini sessions** wait for dispatch and do not call the queue themselves — owner's order 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
-  เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · workers run on Dell in tmux `gemini-1`…`gemini-4`
+  เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · workers run on Dell in tmux `gemini-1`…`gemini-11`
+  · **Gemini sessions fleet-wide, measured 2026-10-10 ~13:00 local: Dell 11 · Mac Studio 8 · Warut 2 · Lenovo 0 = 21** ·
+  the owner opens/closes sessions without telling the rules ⇒ **recount before dispatching** (`tmux ls` / `screen -ls` on each machine) instead of trusting these numbers
   (id `gemini/pool-N` · `agy --dangerously-skip-permissions` **without `-i`** — in agy 1.2.9 `-i` = `--prompt-interactive`, which needs text after it; given bare, agy exits immediately and the session is lost (2026-09-24) · cwd `/data/yuth/worktrees` · **the owner starts them** —
   Claude cannot start agy in skip-permissions mode, and the owner must click the first-time folder trust prompt) ·
   dispatch: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<message>"; tmux send-keys -t gemini-N Enter'`
@@ -140,24 +142,24 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   queue side (`assigned_only`) merged at `108-agent-queue` `9766ada` · autopilot script side can be measured with `git grep -n assigned_only origin/main -- scripts` ·
   **never re-enable the LaunchAgent/unit yourself before that mode is merged + deployed** · turning the fleet on/off belongs to the owner
 - **Gemini sessions on Warut's MacBook** (owner ordered them opened 2026-09-29) — `screen`, not tmux (that machine's `brew` cannot install tmux) ·
-  sessions `agy-1` · `agy-2` · worker id `gemini/warut-1` · `gemini/warut-2` · cwd `~/worktrees` · agy account `ibrowe108@gmail.com` ·
+  sessions `agy-1` · `agy-2` · worker id `gemini/warut-1` · `gemini/warut-2` (measured 2026-10-10: both up · 2 more agy processes from 10-09 run outside any screen = cannot be dispatched to; not ours to kill) · cwd `~/worktrees` · agy account `ibrowe108@gmail.com` ·
   🔴 **gh on that machine is logged in as `yuthstyle88`** (active) even though the machine is not the fleet's · to remove: `gh auth logout -h github.com -u yuthstyle88` on that machine ·
   git uses that token too (`gh auth setup-git` run by the owner 2026-09-29 ⇒ can clone/push private repos + `cargo` can fetch private deps) · to remove: `git config --global --unset-all credential.https://github.com.helper` ·
-  dispatch (from a machine with the `warut-mbp` alias): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<message>\r'"` ·
+  dispatch (from a machine with the `warut-mbp` alias — the Mac mini and the MacBook · 🔴 **not Mac Studio**: measured 2026-10-10 the alias does not resolve there and ssh to the IP fails `Too many authentication failures` ⇒ from Studio go `ssh 100.100.204.107 'ssh warut-mbp "…"'`): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<message>\r'"` ·
   view output `ssh warut-mbp 'screen -S agy-N -p 0 -X hardcopy /tmp/a.txt; LC_ALL=C tr -cd "\11\12\40-\176" < /tmp/a.txt | tail -30'` · cancel a turn `stuff $'\e'` ·
   the dispatch message must be complete per the Dell item above — a short bare message (e.g. a one-word project name) ⇒ agy in skip-permissions mode searches the whole machine on its own, including Warut's `~/.zsh_history` (happened for real 2026-09-29) ·
   `~/.config/tq/env` placed by the owner 2026-09-29T06:05Z (600 · `GET /v1/status` = 200) ⇒ can claim `assigned_only` + heartbeat like Dell ·
   the file has only `TQ` + `TQ_TOKEN` (the owner removed the `TQ_AUTOPILOT_*` that came along at 06:07Z) — never put an autopilot token on this machine ·
   ⚠️ **does not recover on its own** — machine sleeps/restarts ⇒ sessions are lost and must be reopened by hand (no auto-starter installed yet)
-- **Gemini sessions on Lenovo (WSL)** (owner permitted 2026-09-29) — tmux `agy-1` · `agy-2` · worker id `gemini/lenovo-1` · `gemini/lenovo-2` ·
+- **Gemini sessions on Lenovo (WSL)** (owner permitted 2026-09-29) — ⚠️ **no workers now: the owner turned Lenovo off 2026-10-09** (measured 2026-10-10: ssh timeout) · when it comes back: tmux `agy-1` · `agy-2` · worker id `gemini/lenovo-1` · `gemini/lenovo-2` ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · agy account `yutjan50@gmail.com` (**a different account from warut/Windows** = `ibrowe108` ⇒ separate quota) ·
   dispatch: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` then on stdin: `tmux send-keys -t agy-N -l "<message>"; tmux send-keys -t agy-N Enter` · view output `tmux capture-pane -p -t agy-N` ·
   for the owner to watch: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'` exit with `Ctrl-B D` (never Ctrl-C) ·
   ⚠️ agy **on the Windows side** of Lenovo (1.2.9 · `ibrowe108`) is not a worker — its toolchain does not match the fleet and it dies when ssh drops · there is an `agy.exe` in the Services session and nobody knows yet who started it ·
   `~/.config/tq/env` placed by the owner 2026-09-29T07:19Z (`/v1/status` = 200 · `TQ_AUTOPILOT_*` came along too) ⇒ can claim/heartbeat · does not recover on its own after a WSL/Windows restart
-- **Gemini sessions on Mac Studio** (owner's order 2026-09-29) — tmux `agy-1` · `agy-2` · worker id `gemini/studio-1` · `gemini/studio-2` ·
+- **Gemini sessions on Mac Studio** (owner's order 2026-09-29) — tmux `agy-1`…`agy-8` · worker id `gemini/studio-1`…`gemini/studio-8` (8 since 2026-10-10 07:14 · measured that day) ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · has tq env (`TQ`+`TQ_TOKEN`) + gh/git as `yuthstyle88` already ⇒ can claim/heartbeat right away ·
-  dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` · view output `tmux capture-pane -p -t agy-N` ·
+  dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` (a session running on Studio itself: the `macstudio` alias does not resolve there — run `tmux send-keys` locally) · view output `tmux capture-pane -p -t agy-N` ·
   ⚠️ `~/worktrees` on Studio already holds other sessions' worktrees (17 on setup day) ⇒ the dispatch message must order it to create its own new folder and not touch existing ones ·
   not the autopilot `auto-studio01..04` (a different mechanism · LaunchAgent) · does not recover on its own after a restart
 
