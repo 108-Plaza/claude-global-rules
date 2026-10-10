@@ -123,7 +123,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   Junie in RustRover (ACP) cannot receive work from Claude; CLI only · tickets sent to Junie must satisfy all of 🧪 A ticket for an implementer
 - **Gemini sessions** wait for dispatch and do not call the queue themselves — owner's order 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
   เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · workers run on Dell in tmux `gemini-1`…`gemini-11`
-  · **Gemini sessions fleet-wide, measured 2026-10-10 ~13:00 local: Dell 11 · Mac Studio 8 · Warut 2 · Lenovo 0 = 21** ·
+  · **Gemini sessions fleet-wide, measured 2026-10-10 ~13:00 local: Dell 11 · Mac Studio 8 · Warut 5 · Lenovo 0 = 24** ·
   the owner opens/closes sessions without telling the rules ⇒ **recount before dispatching** (`tmux ls` / `screen -ls` on each machine) instead of trusting these numbers
   (id `gemini/pool-N` · `agy --dangerously-skip-permissions` **without `-i`** — in agy 1.2.9 `-i` = `--prompt-interactive`, which needs text after it; given bare, agy exits immediately and the session is lost (2026-09-24) · cwd `/data/yuth/worktrees` · **the owner starts them** —
   Claude cannot start agy in skip-permissions mode, and the owner must click the first-time folder trust prompt) ·
@@ -142,7 +142,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   queue side (`assigned_only`) merged at `108-agent-queue` `9766ada` · autopilot script side can be measured with `git grep -n assigned_only origin/main -- scripts` ·
   **never re-enable the LaunchAgent/unit yourself before that mode is merged + deployed** · turning the fleet on/off belongs to the owner
 - **Gemini sessions on Warut's MacBook** (owner ordered them opened 2026-09-29) — `screen`, not tmux (that machine's `brew` cannot install tmux) ·
-  sessions `agy-1` · `agy-2` · worker id `gemini/warut-1` · `gemini/warut-2` (measured 2026-10-10: both up · 2 more agy processes from 10-09 run outside any screen = cannot be dispatched to; not ours to kill) · cwd `~/worktrees` · agy account `ibrowe108@gmail.com` ·
+  sessions `agy-1`…`agy-5` · worker id `gemini/warut-1`…`gemini/warut-5` (`agy-3..5` opened 2026-10-10 on the owner's order · all 5 up that day · 2 more agy processes from 10-09 run outside any screen = cannot be dispatched to; not ours to kill) · cwd `~/worktrees` · agy account `ibrowe108@gmail.com` ·
   🔴 **gh on that machine is logged in as `yuthstyle88`** (active) even though the machine is not the fleet's · to remove: `gh auth logout -h github.com -u yuthstyle88` on that machine ·
   git uses that token too (`gh auth setup-git` run by the owner 2026-09-29 ⇒ can clone/push private repos + `cargo` can fetch private deps) · to remove: `git config --global --unset-all credential.https://github.com.helper` ·
   dispatch (from a machine with the `warut-mbp` alias — the Mac mini and the MacBook · 🔴 **not Mac Studio**: measured 2026-10-10 the alias does not resolve there and ssh to the IP fails `Too many authentication failures` ⇒ from Studio go `ssh 100.100.204.107 'ssh warut-mbp "…"'`): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<message>\r'"` ·
