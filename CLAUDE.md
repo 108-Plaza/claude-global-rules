@@ -151,7 +151,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   `~/.config/tq/env` placed by the owner 2026-09-29T06:05Z (600 · `GET /v1/status` = 200) ⇒ can claim `assigned_only` + heartbeat like Dell ·
   the file has only `TQ` + `TQ_TOKEN` (the owner removed the `TQ_AUTOPILOT_*` that came along at 06:07Z) — never put an autopilot token on this machine ·
   🟢 **recovers on its own since 2026-10-10** — LaunchAgent `com.108plaza.agy-sessions` (installed by the owner) runs `~/.local/bin/agy-sessions-up.sh` at login and every 5 min,
-  starting only missing `agy-1..5` (log `~/Library/Logs/agy-sessions.log`) · ⚠️ runs only while Warut is logged in · to drain a session for good, first lower `AGY_SESSIONS`/the script, or it comes back within 5 min
+  starting only missing `agy-1..5` (log `~/Library/Logs/agy-sessions.log`) · `AbandonProcessGroup` added by the owner the same day · ⚠️ runs only while Warut is logged in · to drain a session for good, first lower `AGY_SESSIONS`/the script, or it comes back within 5 min
 - **Gemini sessions on Lenovo (WSL)** (owner permitted 2026-09-29) — ⚠️ **no workers now: the owner turned Lenovo off 2026-10-09** (measured 2026-10-10: ssh timeout) · when it comes back: tmux `agy-1` · `agy-2` · worker id `gemini/lenovo-1` · `gemini/lenovo-2` ·
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · agy account `yutjan50@gmail.com` (**a different account from warut/Windows** = `ibrowe108` ⇒ separate quota) ·
   dispatch: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` then on stdin: `tmux send-keys -t agy-N -l "<message>"; tmux send-keys -t agy-N Enter` · view output `tmux capture-pane -p -t agy-N` ·
@@ -163,7 +163,9 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   `agy --dangerously-skip-permissions` cwd `~/worktrees` · has tq env (`TQ`+`TQ_TOKEN`) + gh/git as `yuthstyle88` already ⇒ can claim/heartbeat right away ·
   dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` (a session running on Studio itself: the `macstudio` alias does not resolve there — run `tmux send-keys` locally) · view output `tmux capture-pane -p -t agy-N` ·
   ⚠️ `~/worktrees` on Studio already holds other sessions' worktrees (17 on setup day) ⇒ the dispatch message must order it to create its own new folder and not touch existing ones ·
-  not the autopilot `auto-studio01..04` (a different mechanism · LaunchAgent) · does not recover on its own after a restart
+  not the autopilot `auto-studio01..04` (a different mechanism · LaunchAgent; its plists were renamed `*.off-20261010-owner` that day) ·
+  🟢 **recovers on its own since 2026-10-10** — LaunchAgent `com.108plaza.agy-sessions` (installed by the owner) runs `~/.local/bin/agy-sessions-up.sh` at login and every 5 min, starting only missing `agy-9..13`
+  (log `~/Library/Logs/agy-sessions.log` · `AbandonProcessGroup` keeps the tmux server alive) · the first run sat ~1 min at `_dyld_start` before running = macOS checking a new script, not a hang · ⚠️ runs only while yuth is logged in
 
 ### 📨 The controller loops dispatching · workers do not loop pulling the queue
 
