@@ -1044,13 +1044,15 @@ if you see that org's own version is wrong ⇒ open a ticket on the org side and
   | Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
   | macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
   | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
-  | macOS/ARM64 — **Warut's MacBook (parked)** | `warut-org-1..2` | `warut-mbp` **only** |
+  | macOS/ARM64 — Warut's MacBook (in the pool since 2026-10-11) | `warut-org-1..2` | `self-hosted,macOS,ARM64,fast-mac` + `warut-mbp` |
 
   · `ibrowe-pos108-2` is a **repo-level** runner of `pos108-core` — it doesn't show in `orgs/.../actions/runners`; query `repos/<slug>/actions/runners`
-- 🔴 **`warut-org-1..2` deliberately lack the `self-hosted,macOS,ARM64` label** — owner chose 2026-09-29 to register them parked for now ·
+- 🟢 **`warut-org-1..2` joined the macOS pool 2026-10-11** (owner's order *"ทำ F"* · labels `self-hosted,macOS,ARM64,fast-mac` + `warut-mbp`; parked since 2026-09-29) ·
   the machine (`waruts-macbook-pro` · Tailscale 100.95.105.73 · user `warutjantabut` · shared from `sunrustpower@`) is Warut's, **not the fleet's** ·
-  measured that day: Xcode license not yet accepted ⇒ `/usr/bin/git` unusable ⇒ every job dies at checkout · rustc 1.80.1 · node 20 · no psql/libpq ·
-  **never add pool labels until:** Warut runs `sudo xcodebuild -license accept` himself + toolchain matches the pool (rust 1.98.1 · node 24) + the owner orders it ·
+  measured 2026-10-11 before joining: Xcode license accepted · rustc 1.98.1 · node 24.21.0 (nvm) · psql 18.6 (`brew install libpq`, keg-only) · cargo-nextest 0.9.148 · cargo-deny 0.20.2 · protoc 36.2 · docker ·
+  🔴 **the runner's own PATH is `~/actions-runner-warut-org-N/.path`** — it had neither `/usr/local/bin` nor node 24 nor libpq; now it starts with
+  `/opt/homebrew/opt/libpq/bin:~/.nvm/versions/node/v24.21.0/bin:/opt/homebrew/bin:/usr/local/bin` (old file `.path.bak-20261011`) · a new tool for jobs ⇒ edit `.path` + `launchctl kickstart -k gui/$(id -u)/actions.runner.108-Plaza.warut-org-N` ·
+  ⚠️ nextest/deny there are newer than Studio's (0.9.137 · 0.19.9) — a job red only on `warut-org-*` ⇒ suspect the version first ·
   it is a LaunchAgent (`svc.sh`) ⇒ it takes jobs only while Warut is logged in and the machine is awake (went offline twice on the day it was set up) ·
   `~/actions-runner` on that machine is a runner for the personal repo `warut1688/testfight`, unrelated to the org — do not touch
 - 🔴 **Jobs pinned to `pos108-ci` cannot land on Lenovo** — that label exists only on Dell ⇒ those jobs still pile up on the single Dell machine even though the pool has grown ·
