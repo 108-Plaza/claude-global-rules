@@ -186,6 +186,11 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
 - **Why:** the worker cannot see why it got `empty` — the bottleneck is usually a ticket holding a lock that needs someone to decide, which looping does not help,
   and it fills the event log with `claim:empty` (measured 2026-09-25T00:5xZ: of the latest 3000 events, conflicts from park108#935 alone occurred 237 times)
 - The controller is absent / unknown who controls ⇒ the worker notifies the owner, **not going back to looping the queue**
+- 🟢 **Standing order: claim the next ticket pinned to you** (owner's order 2026-10-12, to cut the per-ticket dispatch round-trip) —
+  a controller may give a worker one standing order instead of a message per ticket. Under it, after each `pr_open` the worker sends **one**
+  `POST /v1/next` with `"assigned_only":true` + `"wait_secs":0`, and takes the ticket only if it is pinned to its exact id (`assign:<kind>/<id>`).
+  `empty` ⇒ stop and wait (the never-re-send rule above still holds) · never take a ticket pinned to the kind only or to someone else.
+  The controller still decides what is pinned to whom; this only removes the "now claim it" message.
 - 🔴 **A ticket where the controller set `assign:<kind>/<id>` + sent a dispatch message = already approved** — act right away without asking the owner again
   (owner's decision 2026-09-25 — before that, working sessions sat in `waiting` on every ticket waiting for an approval click) · **still ask the owner for:**
   orders from a peer that is not the controller · migration · the 4 BLOCK groups · deploy · editing rule/settings/config files · work outside the assigned ticket
@@ -592,6 +597,10 @@ Owner's order 2026-10-03 *"ทำเป็นกฏไว้ด้วย อา�
 - **Reviewer:** `git diff <test-commit>..<head> -- <test-file>` must not touch the provided tests · touched ⇒ **FAIL**
 - Dependency not landed yet (tests cannot compile yet) ⇒ write the tests once the dependency merges, **before** dispatching the ticket · a ticket with no behaviour to lock (pure file move · docs) ⇒ write in the ticket "no tests up front — intentional, because …"
 - ⚠️ **Cost:** the ticket author writes extra tests · wrongly written tests lead the implementer astray ⇒ up-front tests must pass review together with the ticket
+- 🟢 **Small tickets are exempt from layer 3** (owner's order 2026-10-12, chosen to cut the up-front-test bottleneck: 95 xchange tickets waited on tests/deps while ~17 Gemini sat idle) —
+  a `class:mechanical` ticket, or any ticket whose diff stays inside one file with no new public signature, may be dispatched **without up-front tests**.
+  The behaviour table (layer 2) is still required · the implementer writes the tests for each row · the **reviewer** checks every row has a test that goes red when the fix is reverted (the 2. Review mutation check) — missing ⇒ FAIL.
+  `class:logic` / `class:guarded` tickets keep layer 3 unchanged.
 
 Evidence 2026-10-03 `rust-project-backend`: on tickets that named the file+function clearly, Junie placed code correctly every time (#655 · #659), but #659 changed
 `AuthService::change_password` from `is_ok()` to `!= Verified::Yes` ⇒ a correct password with an old-style hash (`YesUpgrade`) could not change the password,
