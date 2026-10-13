@@ -1238,6 +1238,10 @@ Principle: **anything holding one ticket's data = use once and discard · anythi
 
 **The automatic sweeper** (`108-Ting-Ecosystem/scripts/fleet-sweep.sh`) already runs on Mac Studio (LaunchAgent) and Lenovo (cron) every 6 hrs — deletes targets in which no file was modified within the time threshold and that no process has open ·
 **a process left holding files open in a target = the sweeper never touches that target** ⇒ always shut down unused jobs/pg/redis (real incident 09-28: `find | head` hung 12 hrs holding a 144 GB target)
+- 🔴 **It also removes running test containers that carry no label** (since `108-Ting-Ecosystem` PR 226, 2026-10-14). It removes one only when all of these hold:
+  no label and no compose project · restart policy none · image postgres/redis/mysql/mariadb/mongo/nginx/python · up ≥ 48 h · name not in `FLEET_SWEEP_KEEP_CONTAINERS`.
+  A test DB you mean to keep standing ⇒ give it a restart policy (`--restart unless-stopped`) or add its name to the keep list, or it goes after 48 h.
+  Why: on 2026-10-11 Dell held 95 unlabelled test containers 2–17 days old, with swap full.
 
 Measured 2026-09-27: Studio had 118 containers (5 actually running · the rest named after ticket numbers `pg1956` `revpg2117` `pg789` … some left for 23 days) ·
 440 volumes, 63 GB dead · Dell had 991 images (57.7 GB unused) + 206 dead volumes (41 GB) — the owner ordered all of it deleted the same day
