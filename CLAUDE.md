@@ -243,6 +243,17 @@ Owner's order 2026-09-10 *"ปกติ ผมให้ รีวิว แล�
      - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head. Not sure whether a path is shared ⇒ treat it as shared.
      - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
      - **Evidence:** xchange 2026-10-10. An `api` run takes ~10 minutes while `web`/`app` PRs merge every few minutes, so `api` PRs fell behind on every round. PR 963 needed update-branch 3 times. PR 1060 was behind again after its first update-branch (8 `web`/`app` files, 0 `api`), and merged under this rule as `54b92f3`.
+   - 🟢 **Exception: main moved only in files the PR does not touch (file level, same area).** Owner's order 2026-10-14: *"เอา B ตั้งเป็นกฎถาวร"* (permanent rule).
+     - **Condition, all of:**
+       - no file main changed since the PR's merge-base is a file the PR changes;
+       - none of main's changed files is a shared file: any `Cargo.toml` or `Cargo.lock`, any `package.json` or lockfile, any `mod.rs` / `lib.rs` / `main.rs` (module registries), `build.rs` and build scripts, `migrations/**`, `.github/**`, and generated files either side commits (e.g. generated TS);
+       - `git merge-tree --write-tree origin/main <head>` merges with no conflict.
+     - **What it allows:** merge at the PASS head **without** `update-branch`, even when both sides are in the same area (e.g. both `api/`).
+     - **Proof before merging:** a PR comment with the output of `comm -12 <(git diff --name-only $(git merge-base origin/main <head>) origin/main | sort) <(git diff --name-only $(git merge-base origin/main <head>) <head> | sort)`, which must be empty. Add main's changed-file list showing no shared file, and the `merge-tree` result. Any overlap, or any shared file ⇒ the exception is off; update-branch as usual.
+     - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head. Not sure whether a file is shared ⇒ treat it as shared.
+     - **After merging:** watch main's CI for that merge commit. If it goes red because two PRs disagree (e.g. one changed a signature the other calls), revert the later merge at once and send that PR back for update-branch. Never leave main red while you debug.
+     - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
+     - **Evidence:** xchange 2026-10-13. Every backend PR is in `api/`, so each merge forced every open PR through update-branch plus a 30–60-minute Dell run, often OOM-killed. PRs 1627, 1630, 1636 and 1640 each needed two rounds, while PRs 1642 and 1643 shared no file with main.
 
 🔴 **Still stop and ask the owner for:**
 - verdict `FAIL`, or `PASS` with a "Must fix before merge" list
