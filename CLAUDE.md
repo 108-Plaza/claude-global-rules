@@ -262,6 +262,20 @@ Owner's order 2026-09-10 *"ปกติ ผมให้ รีวิว แล�
      - **After merging:** watch main's CI for that merge commit. If it goes red because two PRs disagree (e.g. one changed a signature the other calls), revert the later merge at once and send that PR back for update-branch. Never leave main red while you debug.
      - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
      - **Evidence:** xchange 2026-10-13. Every backend PR is in `api/`, so each merge forced every open PR through update-branch plus a 30–60-minute Dell run, often OOM-killed. PRs 1627, 1630, 1636 and 1640 each needed two rounds, while PRs 1642 and 1643 shared no file with main.
+   - 🟢 **Batch merge: one CI on the combined head decides for every PR in the batch.** Owner's order 2026-10-16: *"รวบ มา ทำ ci รวมได้ไหม เพราะมันงาน เติม ๆ รันซ้ำ เอา ci ตัวสุดท้ายตัดสิน"* · *"ไม่ต้องต้องรอ"*
+     - **Who:** the lane controller, or the merger it names. Run one batch per repo at a time, so two batches never race on main.
+     - **Build:**
+       - Branch `batch/merge-<UTC>` from `origin/main`.
+       - `git merge --no-ff` each PR head into it, in stack order (a base PR before the PRs stacked on it).
+       - A PR that conflicts leaves this batch.
+       - Push the branch and open a PR, so the full required checks run **once** on the batch head.
+     - **Entry condition per PR:** condition 1 holds, i.e. a PASS from a session that did not write the PR, with nothing under "Must fix before merge". The PASS binds to the head that went into the batch.
+     - **What it allows:**
+       - Required checks green on the batch head stand in for conditions 2 and 3 for every PR in it. No per-PR update-branch, no per-PR CI run, no re-bind.
+       - Merge the batch PR with a **merge commit**, never squash. Each PR head then becomes an ancestor of main, so GitHub marks every PR merged and closes its `Fixes #`.
+     - **Red batch:** bisect into halves, then quarters, until you find the PR that breaks it. Send that PR to rework and re-batch the rest. Never merge a red batch.
+     - **After merging:** watch main's CI on the merge commit. If it is red, revert the batch merge at once.
+     - **Why:** each single merge moved main and forced every other open PR through update-branch, a 30–60-minute CI run and a new verdict. Ten PRs cost 30–50 runs where a batch costs 1–4. The latest commit contains all the earlier ones (🧹 More than 3 CI runs queued).
 
 🔴 **Still stop and ask the owner for:**
 - verdict `FAIL`, or `PASS` with a "Must fix before merge" list
