@@ -121,63 +121,43 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   the ticket must go through the queue: set `assign:junie/<n>` + `ready` → Junie claims it itself via `/v1/next` + `assigned_only` once (using `~/.config/tq/env`) ·
   Junie commits locally only · the controller pushes + opens the PR `> worker: junie/<n>` + `pr_open` · Junie does not review ·
   Junie in RustRover (ACP) cannot receive work from Claude; CLI only · tickets sent to Junie must satisfy all of 🧪 A ticket for an implementer
-- **Gemini sessions** wait for dispatch and do not call the queue themselves — owner's order 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
-  เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · workers run on Dell in tmux `gemini-1`…`gemini-10` (`gemini-11` drains — closes once its work is done, owner 2026-10-10)
-  · **Gemini sessions fleet-wide, measured 2026-10-10 ~13:00 local: Dell 11 · Mac Studio 13 · Warut 5 · Lenovo 0 = 29** · 🎯 **owner's target 2026-10-11 (by machine strength): Dell 6 (`gemini-1..6`) · Studio 10 (`agy-1..10` · owner's order 2026-10-16, replaces `agy-9..16`) · Warut 6 (`agy-1..6`) = 22** — Dell carries k3s + Linux CI + DBs, so it gets fewer; `gemini-7..10` and Warut `agy-7..10` drain as their work finishes · the auto-restart LaunchAgents cover Studio `agy-1..10` and Warut `agy-1..5`
-  the owner opens/closes sessions without telling the rules ⇒ **recount before dispatching** (`tmux ls` / `screen -ls` on each machine) instead of trusting these numbers
-  (id `gemini/pool-N` · agy account `yutjan50@gmail.com` (measured 2026-10-10 from the agy log) · `agy --dangerously-skip-permissions` **without `-i`** — in agy 1.2.9 `-i` = `--prompt-interactive`, which needs text after it; given bare, agy exits immediately and the session is lost (2026-09-24) · cwd `/data/yuth/worktrees` · **the owner starts them** —
-  Claude cannot start agy in skip-permissions mode, and the owner must click the first-time folder trust prompt) ·
-  dispatch: `ssh Dell-server 'tmux send-keys -t gemini-N -l "<message>"; tmux send-keys -t gemini-N Enter'`
-  view output `tmux capture-pane -p -t gemini-N` · the dispatch message must include repo#issue · worker id · clone location `/data/yuth/worktrees/<slug>` ·
-  the take-ticket comment · file scope · PR body `> worker:` · no review/merge · if stuck, comment on the ticket and stop
-  🔴 **The dispatch message must order one claim through the queue before touching code** (owner's choice 2026-09-24): add `assign:gemini/pool-N` first ⇒
-  order it to send `POST $TQ/v1/next` `{"worker":"gemini/pool-N","host":…,"capabilities":["mechanical","logic","guarded"],"wait_secs":0,"assigned_only":true}`
-  and start only after getting `kind=ticket` for that ticket · 🔴 **`"assigned_only":true` is required** — without it ⇒ the queue hands over a higher-priority ticket whose kind-level label (`assign:gemini` added by Jev) matches the worker instead of the pinned ticket (happened for real 2026-09-25: dispatched `pos108-core#2223` but the worker got `jh-api#863`) · and order `POST $TQ/v1/heartbeat` every ≤30 minutes while working · **this is not pulling the queue itself**
-  (Gemini still does not choose the ticket; the lane controller orders it) — it exists so the queue holds the lease + **file lock** for the ticket · no claim = the ticket stays `ready`
-  with no lock ⇒ other tickets touching the same files can be dispatched on top of it (happened for real jh-api#774 and park108#557 the same day)
-  🔴 **The autopilot fleet must not pull the queue on its own either** (owner's order 2026-09-25 *"แก้ไข ไม่ให้ Gemini ดึงคิวเอง"* — replaces the 2026-09-22 exception) ·
-  the fleet was stopped that day: Mac Studio LaunchAgent `com.108plaza.tq-autopilot.gemini` (`launchctl disable`) · Dell
-  `tq-autopilot@dell01-03` (`systemctl --user mask` — `disable` is not enough: 2026-09-25 dell03 was restarted 12 s after stop) · MacBook `gemini/auto-macbook01-04` stopped by the owner ·
-  may be turned back on only in dispatch-only mode (autopilot takes only tickets where the controller set `assign:gemini/auto-<id>` exactly)
-  queue side (`assigned_only`) merged at `108-agent-queue` `9766ada` · autopilot script side can be measured with `git grep -n assigned_only origin/main -- scripts` ·
-  **never re-enable the LaunchAgent/unit yourself before that mode is merged + deployed** · turning the fleet on/off belongs to the owner
-- **Gemini sessions on Warut's MacBook** (owner ordered them opened 2026-09-29) — `screen`, not tmux (that machine's `brew` cannot install tmux) ·
-  sessions `agy-1`…`agy-10` · worker id `gemini/warut-1`…`gemini/warut-10` (`agy-3..10` opened 2026-10-10 on the owner's order · all 10 up that day · 10 cores ⇒ send it light work; heavy Rust builds go to Dell/Studio · 2 more agy processes from 10-09 run outside any screen = cannot be dispatched to; not ours to kill) · cwd `~/worktrees` · agy account `ibrowe108@gmail.com` ·
-  🔴 **gh on that machine is logged in as `yuthstyle88`** (active) even though the machine is not the fleet's · to remove: `gh auth logout -h github.com -u yuthstyle88` on that machine ·
-  git uses that token too (`gh auth setup-git` run by the owner 2026-09-29 ⇒ can clone/push private repos + `cargo` can fetch private deps) · to remove: `git config --global --unset-all credential.https://github.com.helper` ·
-  dispatch (from a machine with the `warut-mbp` alias — the Mac mini and the MacBook · 🔴 **not Mac Studio**: measured 2026-10-10 the alias does not resolve there and ssh to the IP fails `Too many authentication failures` ⇒ from Studio go `ssh 100.100.204.107 'ssh warut-mbp "…"'`): `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<message>\r'"` ·
-  view output `ssh warut-mbp 'screen -S agy-N -p 0 -X hardcopy /tmp/a.txt; LC_ALL=C tr -cd "\11\12\40-\176" < /tmp/a.txt | tail -30'` · cancel a turn `stuff $'\e'` ·
-  the dispatch message must be complete per the Dell item above — a short bare message (e.g. a one-word project name) ⇒ agy in skip-permissions mode searches the whole machine on its own, including Warut's `~/.zsh_history` (happened for real 2026-09-29) ·
-  `~/.config/tq/env` placed by the owner 2026-09-29T06:05Z (600 · `GET /v1/status` = 200) ⇒ can claim `assigned_only` + heartbeat like Dell ·
-  the file has only `TQ` + `TQ_TOKEN` (the owner removed the `TQ_AUTOPILOT_*` that came along at 06:07Z) — never put an autopilot token on this machine ·
-  🟢 **recovers on its own since 2026-10-10** — LaunchAgent `com.108plaza.agy-sessions` (installed by the owner) runs `~/.local/bin/agy-sessions-up.sh` at login and every 5 min,
-  starting only missing `agy-1..5` (log `~/Library/Logs/agy-sessions.log`) · `AbandonProcessGroup` added by the owner the same day · ⚠️ runs only while Warut is logged in · to drain a session for good, first lower `AGY_SESSIONS`/the script, or it comes back within 5 min
-- **Gemini sessions on Lenovo (WSL)** (owner permitted 2026-09-29) — ⚠️ **no workers now: the owner turned Lenovo off 2026-10-09** (measured 2026-10-10: ssh timeout) · when it comes back: tmux `agy-1` · `agy-2` · worker id `gemini/lenovo-1` · `gemini/lenovo-2` ·
-  `agy --dangerously-skip-permissions` cwd `~/worktrees` · agy account `yutjan50@gmail.com` (**a different account from warut/Windows** = `ibrowe108` ⇒ separate quota) ·
-  dispatch: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` then on stdin: `tmux send-keys -t agy-N -l "<message>"; tmux send-keys -t agy-N Enter` · view output `tmux capture-pane -p -t agy-N` ·
-  for the owner to watch: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'` exit with `Ctrl-B D` (never Ctrl-C) ·
-  ⚠️ agy **on the Windows side** of Lenovo (1.2.9 · `ibrowe108`) is not a worker — its toolchain does not match the fleet and it dies when ssh drops · there is an `agy.exe` in the Services session and nobody knows yet who started it ·
-  `~/.config/tq/env` placed by the owner 2026-09-29T07:19Z (`/v1/status` = 200 · `TQ_AUTOPILOT_*` came along too) ⇒ can claim/heartbeat · does not recover on its own after a WSL/Windows restart
-- 🟠 **TEMPORARY 2026-10-16 → ~10-19: Warut `agy-1..5` (account `ibrowe108`) run Claude Opus 5.5 medium, not Gemini** — owner *"สลับได้ ชั่วคราว"* ·
-  measured with agy `/usage` 2026-10-16 ~13:20 local — **quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account**:
-  `ibrowe108` (Warut): Gemini weekly **0%** (refresh ~74h) · Claude/GPT weekly 98.9%, 5-hour 98.9% ⇒ Claude ·
-  `yutjan50` (Studio `agy-1..10` **and** Dell `gemini-1..6`): Gemini weekly 67.4% (refresh ~116h), 5-hour 94.9% · Claude/GPT weekly **0%** (refresh ~97h) ⇒ **stay on Argon, never switch these to Claude** ·
-  check any session with agy `/usage` (shows the account + both groups) · switch: `/model claude-opus-5-5-medium` / back `/model gemini-4-argon-medium` · a restarted agy opens on Argon from `settings.json` ⇒ re-set Warut after any restart · when `ibrowe108` Gemini weekly is back above 0, switch Warut back and delete this item
-- **Gemini sessions on Mac Studio** (owner's order 2026-09-29) — tmux `agy-1`…`agy-10` · worker id `gemini/studio-1`…`gemini/studio-10` · 🔴 **owner's order 2026-10-16 *"ปรับใหม่ ให้รัน 1-10"* ⇒ dispatch new tickets only to `agy-1..10`** (`agy-1..8` restarted 2026-10-16 11:29 on `ibrowe108`, Argon medium) ·
-  `agy-11..13` closed 2026-10-16 11:3x on the owner's order · **`agy-14..16` are gone** (lost in the 2026-10-16 reboot) — tickets still pinned to `gemini/studio-14..16` (measured 04:28Z: xchange#2093 `ready` pinned to studio-14; pr_open/in_review xchange#2088 · #2137 · #2024 · #2105 · park108#1334) must be re-pinned by the lane controller, and any rework of them too ·
-  agy account: Studio's agy signed in as **`xc.team.th@gmail.com`** at 2026-10-16 20:42 local (measured from `cli.log`; before that it was `yutjan50`) ⇒ **`yutjan50` now carries only Dell's 6 sessions**; sessions started before the sign-in pick it up on token refresh — confirm with agy `/usage` in one Studio session · Warut runs `ibrowe108`, a separate quota ·
-  check an account with `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` (never open the token files) ·
-  `agy --dangerously-skip-permissions` cwd `~/worktrees` · has tq env (`TQ`+`TQ_TOKEN`) + gh/git as `yuthstyle88` already ⇒ can claim/heartbeat right away ·
-  dispatch `ssh macstudio 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` (a session running on Studio itself: the `macstudio` alias does not resolve there — run `tmux send-keys` locally) · view output `tmux capture-pane -p -t agy-N` ·
-  ⚠️ `~/worktrees` on Studio already holds other sessions' worktrees (17 on setup day) ⇒ the dispatch message must order it to create its own new folder and not touch existing ones ·
-  not the autopilot `auto-studio01..04` (a different mechanism · LaunchAgent; its plists were renamed `*.off-20261010-owner` that day) ·
-  🟢 **recovers on its own since 2026-10-10** — LaunchAgent `com.108plaza.agy-sessions` (installed by the owner) runs `~/.local/bin/agy-sessions-up.sh` at login and every 5 min, starting only missing `agy-1..10` (set changed 2026-10-16)
-  (log `~/Library/Logs/agy-sessions.log` · `AbandonProcessGroup` keeps the tmux server alive) · the first run sat ~1 min at `_dyld_start` before running = macOS checking a new script, not a hang · ⚠️ runs only while yuth is logged in · 🟢 **since 2026-10-16 Studio comes back by itself after any reboot** (owner turned FileVault off + auto-login `yuth`; tested 11:25 — agy, runners, Tailscale, the Claude app all return within ~1 min) · a reboot still kills every running turn: re-check the panes before assuming a dispatched ticket is still being worked
-- **Gemini sessions on the Mac mini** (owner's order 2026-10-16 *"mac mini หายไปไหน เอามารวมด้วย แล้ว ใส่เข้าไปในระบบ"*) — `ssh macmini` (Tailscale `100.100.204.107`, user `yuth`) · 🔴 **its Tailscale route drops** (2026-10-16 22:2x local: the mini showed itself online while the MacBook's `tailscale ping` timed out) ⇒ **owner: reach it through the MacBook (yongyutjantaboot) on the home LAN** with alias `macmini-lan` → `192.168.1.68` · it also had `sleep 1` / `autorestart 0` that day (needs `pmset` like the other Macs) · tmux `agy-1`…`agy-5` · worker id `gemini/mini-1`…`gemini/mini-5` · cwd `~/worktrees` · agy 1.4.0, account **`xc.team.th@gmail.com`** (measured 2026-10-16 from `cli.log` ⇒ **shares its quota with Studio's 10 sessions**) · has `~/.config/tq/env` ·
-  M1 · 8 cores · 16 GB ⇒ **light work only** (mechanical tickets, web/docs) — no whole-workspace Rust builds · node defaults to Homebrew **v26**, which breaks jsdom tests ⇒ the dispatch message must order `source ~/.nvm/nvm.sh && nvm use 24` before any `npm` · runner `macmini-org-1` already serves the org macOS pool on the same machine ·
-  🟢 **in service since 2026-10-16 ~15:4xZ:** the owner answered agy's folder-trust question in all five sessions and re-ran `gh auth login` (`yuthstyle88`, scopes repo/workflow/read:org/gist; a stale `KingsleyCodez` entry was logged out) · all five run **Gemini 3.8 Flash** (medium) ⇒ dispatch **`class:mechanical` tickets only** (🔴 Match the model to the ticket) · power set `sleep 0 · disksleep 0 · autorestart 1 · womp 1` the same day ·
-  dispatch `ssh macmini 'zsh -lc "tmux send-keys -t agy-N -l \"<message>\"; tmux send-keys -t agy-N Enter"'` · view `tmux capture-pane -p -t agy-N` · no auto-restart LaunchAgent yet ⇒ sessions do not come back after a reboot
-- **Claude sessions on Mac Studio** (owner's order 2026-10-16) — tmux `claude-1`…`claude-5` · `claude --dangerously-skip-permissions --model claude-opus-5-5` (same as Dell's `claude-N`) · cwd `~/108-Ting-Ecosystem` · LaunchAgent `com.108plaza.claude-sessions` → `~/.local/bin/claude-sessions-up.sh` (login + every 5 min, starts only missing ones · log `~/Library/Logs/claude-sessions.log`) · dispatch/view with `tmux send-keys` / `capture-pane` like agy
+- **Gemini sessions wait for dispatch and do not call the queue themselves** — owner's order 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
+  เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · `agy --dangerously-skip-permissions` **without `-i`**
+  (in agy 1.2.9 `-i` = `--prompt-interactive` and needs text after it; given bare, agy exits and the session is lost) ·
+  **the owner starts them** — Claude cannot start agy in skip-permissions mode, and only the owner can click the first-time folder-trust prompt
+  🔴 **The table below is what is intended, not what is running** — the owner opens and closes sessions without telling the rules ⇒
+  **recount before dispatching** (`tmux ls` / `screen -ls` on that machine) and read the pane's last line for the model (🔴 Match the model to the ticket)
+
+  | Machine | reach · sessions · worker id | must know |
+  |---|---|---|
+  | **Dell** | `ssh Dell-server` · tmux `gemini-1..6` · `gemini/pool-N` · cwd `/data/yuth/worktrees` | the big Linux machine: k3s + CI + DBs live here too |
+  | **Mac Studio** | `ssh macstudio 'zsh -lc "…"'` · tmux `agy-1..10` · `gemini/studio-N` · cwd `~/worktrees` | ⚠️ `~/worktrees` holds other sessions' worktrees ⇒ the message must order it to create its own folder and touch no existing one · `agy-14..16` are gone (2026-10-16 reboot) ⇒ tickets still pinned to them must be re-pinned by the lane controller · not the autopilot `auto-studio01..04` (plists renamed `*.off-20261010-owner`) |
+  | **Mac Studio (Claude)** | tmux `claude-1..5` · `claude --dangerously-skip-permissions --model claude-opus-5-5` · cwd `~/108-Ting-Ecosystem` | same `tmux send-keys` / `capture-pane` as agy |
+  | **Warut's MacBook** | `ssh warut-mbp "screen -S agy-N -p 0 -X stuff \$'<message>\r'"` · `screen` not tmux · `agy-1..6` · `gemini/warut-N` · cwd `~/worktrees` | **not the fleet's machine** · 10 cores ⇒ light work; heavy Rust goes to Dell/Studio · reach it from the Mac mini or the MacBook, 🔴 **not from Studio** (alias does not resolve there; go `ssh macmini 'ssh warut-mbp "…"'`) · read output with `screen … -X hardcopy /tmp/a.txt` then `tr -cd "\11\12\40-\176" < /tmp/a.txt \| tail -30` · cancel a turn `stuff $'\e'` |
+  | **Mac mini** | `ssh macmini 'zsh -lc "…"'` (🔴 its Tailscale route drops — from the home LAN use `macmini-lan` → `192.168.1.68`) · tmux `agy-1..5` · `gemini/mini-N` · cwd `~/worktrees` | M1 · 8 cores · 16 GB ⇒ **light work only**, no whole-workspace Rust · runs **Flash** ⇒ `class:mechanical` only · node defaults to Homebrew v26 which breaks jsdom ⇒ the message must order `source ~/.nvm/nvm.sh && nvm use 24` before any `npm` · no auto-restart yet |
+  | **Lenovo** (WSL2) | ⚠️ **off since 2026-10-09** · when back: `ssh macstudio 'ssh pos108-lenovo "bash -s"'` then `tmux send-keys …` on stdin · `agy-1..2` · `gemini/lenovo-N` | reachable only from Mac Studio · ssh lands in cmd.exe ⇒ send scripts over stdin, no sftp so `scp` cannot get in · for the owner to watch: `ssh -t macstudio 'ssh -t pos108-lenovo "wsl -e tmux attach -t agy-N"'`, exit `Ctrl-B D` **never Ctrl-C** · does not recover after a WSL/Windows restart · ⚠️ the agy on Lenovo's **Windows** side is not a worker (toolchain does not match the fleet, dies when ssh drops) |
+
+  **Dispatch, every machine:** `tmux send-keys -t <s> -l "<message>"; tmux send-keys -t <s> Enter` · view `tmux capture-pane -p -t <s>` ·
+  the message must carry **repo#issue · worker id · clone location · the take-ticket comment · file scope · PR body `> worker:` · no review/merge · if stuck, comment on the ticket and stop** ·
+  🔴 a short bare message (e.g. a one-word project name) ⇒ agy in skip-permissions mode searches the whole machine on its own, including the owner's shell history (happened 2026-09-29)
+  🔴 **The message must order one claim through the queue before any code** (owner's choice 2026-09-24): set `assign:gemini/<id>` first, then order
+  `POST $TQ/v1/next` `{"worker":"gemini/<id>","host":…,"capabilities":["mechanical","logic","guarded"],"wait_secs":0,"assigned_only":true}`
+  and start only on `kind=ticket` for that ticket · then `POST $TQ/v1/heartbeat` every ≤30 minutes ·
+  🔴 **`"assigned_only":true` is required** — without it the queue hands over a higher-priority ticket whose kind-level `assign:gemini` matches instead (happened 2026-09-25: dispatched `pos108-core#2223`, the worker got `jh-api#863`) ·
+  **this is not pulling the queue itself** (the controller still chooses) — it exists so the queue holds the lease + **file lock**; no claim ⇒ the ticket stays `ready` unlocked and another ticket on the same files can be dispatched on top of it (jh-api#774 · park108#557)
+  🟢 **Auto-restart:** Studio and Warut have LaunchAgent `com.108plaza.agy-sessions` → `~/.local/bin/agy-sessions-up.sh` (login + every 5 min, starts only missing sessions · log `~/Library/Logs/agy-sessions.log`) ·
+  Studio also has `com.108plaza.claude-sessions` for `claude-1..5`, and since 2026-10-16 Studio itself returns after a reboot (FileVault off + auto-login) · 🔴 **but a reboot kills every running turn** ⇒ re-check the panes before assuming a dispatched ticket is still being worked · ⚠️ the agents run only while that user is logged in ⇒ to drain a session for good, lower the script first or it returns within 5 minutes
+  🔴 **tq env:** Warut · Lenovo · Studio · Mac mini all have `~/.config/tq/env` (`TQ`+`TQ_TOKEN`) ⇒ they can claim + heartbeat · **never put an autopilot token (`TQ_AUTOPILOT_*`) on Warut's machine** — the owner removed the one that arrived with it
+  🔴 **gh on Warut's machine is logged in as `yuthstyle88`** although the machine is not the fleet's, and git uses that token (can clone/push private repos) ·
+  to remove: `gh auth logout -h github.com -u yuthstyle88` and `git config --global --unset-all credential.https://github.com.helper`
+  🔴 **The autopilot fleet must not pull the queue either** (owner's order 2026-09-25 *"แก้ไข ไม่ให้ Gemini ดึงคิวเอง"*) — stopped that day:
+  Studio LaunchAgent `com.108plaza.tq-autopilot.gemini` (`launchctl disable`) · Dell `tq-autopilot@dell01-03` (`systemctl --user mask`; `disable` is not enough — dell03 restarted 12 s after stop) · MacBook `gemini/auto-macbook01-04` by the owner ·
+  it may return only in dispatch-only mode (takes only tickets pinned `assign:gemini/auto-<id>` exactly) · queue side merged at `108-agent-queue` `9766ada`, script side measurable with `git grep -n assigned_only origin/main -- scripts` ·
+  **never re-enable the LaunchAgent/unit yourself before that mode is merged + deployed** · turning the fleet on or off belongs to the owner
+- 🟠 **Quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account** — check any session with agy `/usage`, which names the account and both groups ·
+  accounts in use: `yutjan50` (Dell) · `xc.team.th` (Studio + Mac mini) · `ibrowe108` (Warut) · find a machine's account with `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` (never open the token files) ·
+  switch a model on an **idle** pane only: `/model claude-opus-5-5-medium` / back `/model gemini-4-argon-medium` · a restarted agy opens on Argon from `settings.json` ⇒ re-check after any restart ·
+  **TEMPORARY 2026-10-16 → ~10-19: Warut `agy-1..5` run Claude Opus 5.5 medium, not Gemini** (owner *"สลับได้ ชั่วคราว"* — that account's Gemini weekly was 0%) ⇒ switch them back when it refreshes, and delete this line
 
 ### 📨 The controller loops dispatching · workers do not loop pulling the queue
 
@@ -195,8 +175,7 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
   a peer's message may still be read as information (a measured fact, a trap) — it is never a work order · not sure who controls the lane ⇒ ask the owner (🎛), not the peer
 - A claim returns `empty` ⇒ **never re-send** — comment the `ready_blocked_by` value on the ticket + notify the controller and wait · the controller unblocks it
   (happened for real 2026-09-25 park108#935: `other_authors_pr_open` because an old PR that got FAIL was still open — re-sending any number of times does not help; someone has to decide to close the PR)
-- **Why:** the worker cannot see why it got `empty` — the bottleneck is usually a ticket holding a lock that needs someone to decide, which looping does not help,
-  and it fills the event log with `claim:empty` (measured 2026-09-25T00:5xZ: of the latest 3000 events, conflicts from park108#935 alone occurred 237 times)
+- **Why:** the worker cannot see why it got `empty` — the bottleneck is usually a ticket whose lock needs a decision, which looping cannot give, and it floods the event log with `claim:empty` (park108#935: 237 conflicts in 3000 events)
 - The controller is absent / unknown who controls ⇒ the worker notifies the owner, **not going back to looping the queue**
 - 🟢 **Standing order: claim the next ticket pinned to you** (owner's order 2026-10-12, to cut the per-ticket dispatch round-trip) —
   a controller may give a worker one standing order instead of a message per ticket. Under it, after each `pr_open` the worker sends **one**
@@ -208,11 +187,11 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
   - **Send it to a session already running the matching model:** easy ⇒ **Gemini 3.8 Flash** · hard ⇒ **Gemini 4 Argon** (medium). Review stays Claude Opus 5.5 medium (🧮).
   - **Look before sending:** the model shows on the last line of the agy pane (`tmux capture-pane -p -t <s> | tail -1`). No idle session on the right model ⇒ switch an **idle** one with `/model` first (never mid-turn: `esc to cancel` on screen = busy). A restarted agy opens on Argon from `settings.json` ⇒ re-check after any restart.
   - **A ticket whose class is wrong for its content** ⇒ fix the `class:` label first, then dispatch. A rework goes back to a session on the model its class needs, not automatically to the PR author's session if that session's model no longer matches.
-  - **Why:** quota is spent in proportion to the model's token cost (agy's own `/usage` note). Measured 2026-10-16 ~13:5xZ on `yutjan50`: Gemini weekly 32.65% left with 108 h to refresh, burning ~1.1%/h while every session ran Argon ⇒ out ~31 h before the refresh. That day Dell `gemini-4..6` (`gemini/pool-4..6`) were switched to Flash for mechanical work; `gemini-1..3` stay on Argon.
+  - **Why:** quota burns in proportion to the model's token cost · 2026-10-16: with every session on Argon the account was due to run dry ~31 h before its refresh ⇒ Dell `gemini-4..6` went to Flash for mechanical work, `gemini-1..3` stayed on Argon.
 - 🔴 **Keep a ready backlog at least as large as your idle workers** — owner's order 2026-10-16 *"มี workers เพิ่ม ก็ต้อง มีคนจ่ายงานให้ทำ"* · *"Proposals 2 and 3 ทำให้จบ ดิ"*
   - **Every round of the controller loop:** count the idle workers your lane can use (pane shows no `esc to cancel`, and no lease or rework in `/v1/snapshot`) and your ready tickets nobody holds. **Fewer ready tickets than idle workers ⇒ cutting tickets comes before everything else that round**, including reviews that are not yet due.
   - **Pinning is the dispatch:** under the standing order (above), a worker on its own claims the next ticket pinned to its exact id. Pin ahead, so a worker that finishes picks up at once.
-  - **Why:** measured 2026-10-16 15:18Z, the fleet had 5 ready tickets nobody held against ~10 idle Gemini and ~9 idle Claude sessions. The bottleneck was ticket supply, not workers or dispatch.
+  - **Why:** 2026-10-16: 5 ready tickets nobody held against ~19 idle sessions ⇒ the bottleneck was ticket supply, not workers or dispatch.
 - 🔴 **Design work so ≥80% of workers run at once** — owner's order 2026-10-17 *"เรามี worker 30 แต่ทำงานเหมือน ไม่มี คน"* · *"ต่อไป ออกแบบ งานให้ สามารถ workers พร้อมกัน ที่ 10 8o"* (read as 80%; ask the owner if that reading is wrong)
   - **The target:** in each round, a lane keeps at least 80% of the workers it may use busy at the same time. Below that, raising concurrency is the controller's first job that round.
   - **Work runs as a team** (owner, same round: *"ให้สามารถ รันพร้อมกัน เป็น ทีม"* · *"เพื่อให้ งาน เร็ว"*).
@@ -229,7 +208,7 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
     - Example: `transfer_flow.rs` made xchange #2617 → #2704 → #2774 run strictly one after another on 2026-10-17. `blocked by #N` only orders the chain; it adds no workers.
   - **Every round, measure and write down:** busy workers ÷ usable workers, and why the rest are idle. The causes are no ready ticket, a file lock (name the holder), a dependency, or an owner decision.
     - Owner decisions that idle workers (parked umbrellas, guarded migrations, open questions) go to the owner **as one batch with the idle count attached**, not one at a time.
-  - **Why:** measured 2026-10-17 ~00:3xZ, ~30 sessions were up but 2–3 xchange tickets were dispatchable. 34 of 47 open xchange issues were outside the queue (parked, umbrella, question, or guarded migration awaiting the owner). The ready ones were chained on one file.
+  - **Why:** 2026-10-17: ~30 sessions up, 2–3 tickets dispatchable · 34 of 47 open xchange issues sat outside the queue (parked · umbrella · question · guarded migration awaiting the owner) and the ready ones chained on one file.
 - 🔴 **Idle Claude worker sessions write tickets** — same order. A Claude worker session (Dell `claude-N`, Studio `claude-N`) with no review or ticket work is **ordered by a lane controller to cut tickets for that lane**:
   - The writer surveys, then writes the 10-part ticket (📋), plus up-front tests where 🧪 requires them, with first line `> dispatched-by: claude/<writer>`. Labels stay without `ready`.
   - **The lane controller reviews the ticket** (and its tests), then adds `ready`, the `class:` and the pin. **The writer never pins or dispatches**, and decides nothing the controller owns (🎛).
@@ -272,48 +251,33 @@ Owner's order 2026-09-10 *"ปกติ ผมให้ รีวิว แล�
    - `true` ⇒ GitHub **enforces it already** (old base = `BEHIND`, cannot merge) ⇒ `update-branch` creates a new head ⇒ **a new verdict is required at that head**
      ⇒ PRs in these repos may need the verdict re-bound several times when main moves often (real incident `jh-api#747`: 3 rounds) · merge quickly after PASS
    - Measured 2026-09-24T01:33Z: `true` = `park108` · `jh-api` · `108-agent-queue` · `false` = `pos108-core` · `pos108-store` · `pos108-admin` · `pos108-orders` · `108-sell` (`claude-global-rules#3`)
-   - 🟢 **Exception: main moved only by docs.** Owner's choice 2026-10-09: *"ยกเว้นถ้าต่างแค่เอกสาร"*.
-     - **Condition:** every file changed on main since the PR's merge-base is a doc that no build or check reads (`*.md`, `docs/**`, design docs).
-     - **What it allows:** merge at the PASS head **without** `update-branch`. The CI result on the new base would be the same, so re-running it only burns a runner.
-     - **Proof before merging:** paste `git diff --name-only $(git merge-base origin/main <head>) origin/main` in a PR comment. One non-doc path ⇒ the exception is off; update-branch as usual.
-     - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head.
-     - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
-     - **Evidence:** xchange 2026-10-09. Design-doc merges every few minutes kept PASS code PRs on an update → 14-minute CI → re-verdict treadmill. PR 581 went 3 rounds while Dell's load was 200.
-   - 🟢 **Exception: main moved only outside the PR's area.** Owner's order 2026-10-10: *"A merge เลย C ตั้งเป็นกฎถาวร"* (permanent rule).
-     - **Condition:** every file main changed since the PR's merge-base is in a different top-level area from every file the PR changes (e.g. the PR touches only `api/`, main moved only `web/` and `app/`), **and** none of them is a file shared across areas.
-       - Shared = anything more than one CI job reads: root and workspace manifests and lockfiles (`Cargo.toml`, `Cargo.lock`, `package.json`, lockfiles), `.github/**`, `migrations/**`, shared crates or packages the PR's area depends on, generated types both sides commit, and build scripts.
-     - **What it allows:** merge at the PASS head **without** `update-branch`. The PR's own CI job tests only its area, and main's change cannot alter that job's result.
-     - **Proof before merging:** paste `git diff --name-only $(git merge-base origin/main <head>) origin/main` in a PR comment and say which area the PR is in. One path in the PR's area, or one shared path ⇒ the exception is off; update-branch as usual.
-     - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head. Not sure whether a path is shared ⇒ treat it as shared.
-     - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
-     - **Evidence:** xchange 2026-10-10. An `api` run takes ~10 minutes while `web`/`app` PRs merge every few minutes, so `api` PRs fell behind on every round. PR 963 needed update-branch 3 times. PR 1060 was behind again after its first update-branch (8 `web`/`app` files, 0 `api`), and merged under this rule as `54b92f3`.
-   - 🟢 **Exception: main moved only in files the PR does not touch (file level, same area).** Owner's order 2026-10-14: *"เอา B ตั้งเป็นกฎถาวร"* (permanent rule).
-     - **Condition, all of:**
-       - no file main changed since the PR's merge-base is a file the PR changes;
-       - none of main's changed files is a shared file: any `Cargo.toml` or `Cargo.lock`, any `package.json` or lockfile, any `mod.rs` / `lib.rs` / `main.rs` (module registries) **whose diff on main removes or changes a line**, `build.rs` and build scripts, `migrations/**`, `.github/**`, and generated files either side commits (e.g. generated TS);
-         - 🟢 **A module registry changed by additions only does not count as shared** (owner's order 2026-10-16: *"a mod.rs/lib.rs/main.rs on main counts as shared only if its diff removes or changes a line; additions only (new mod/pub use) don't count"*). Check it with `git diff $(git merge-base origin/main <head>) origin/main -- <file> | grep -E '^-[^-]'`, which must print nothing. Paste that in the proof. The post-merge main CI + revert below stays the safety net. Why: on xchange, 2074 added one name to a `pub use` in `money/mod.rs`, and that single line forced 9 PASSed PRs through update-branch, a fresh CI run and a re-bind.
-       - `git merge-tree --write-tree origin/main <head>` merges with no conflict.
-     - **What it allows:** merge at the PASS head **without** `update-branch`, even when both sides are in the same area (e.g. both `api/`).
-     - **Proof before merging:** a PR comment with the output of `comm -12 <(git diff --name-only $(git merge-base origin/main <head>) origin/main | sort) <(git diff --name-only $(git merge-base origin/main <head>) <head> | sort)`, which must be empty. Add main's changed-file list showing no shared file, and the `merge-tree` result. Any overlap, or any shared file ⇒ the exception is off; update-branch as usual.
-     - **Still required:** conditions 1 and 2, i.e. PASS bound to the current head and the required checks green at that head. Not sure whether a file is shared ⇒ treat it as shared.
-     - **After merging:** watch main's CI for that merge commit. If it goes red because two PRs disagree (e.g. one changed a signature the other calls), revert the later merge at once and send that PR back for update-branch. Never leave main red while you debug.
-     - **Only where GitHub lets it through:** in a `strict = true` repo GitHub still blocks a `BEHIND` PR, so this applies only where it allows the merge.
-     - **Evidence:** xchange 2026-10-13. Every backend PR is in `api/`, so each merge forced every open PR through update-branch plus a 30–60-minute Dell run, often OOM-killed. PRs 1627, 1630, 1636 and 1640 each needed two rounds, while PRs 1642 and 1643 shared no file with main.
-   - 🟢 **Batch merge: one CI on the combined head decides for every PR in the batch.** Owner's order 2026-10-16: *"รวบ มา ทำ ci รวมได้ไหม เพราะมันงาน เติม ๆ รันซ้ำ เอา ci ตัวสุดท้ายตัดสิน"* · *"ไม่ต้องต้องรอ"*
-     - **Who:** the lane controller, or the merger it names. Run one batch per repo at a time, so two batches never race on main.
-     - **Build:**
-       - Branch `batch/merge-<UTC>` from `origin/main`.
-       - `git merge --no-ff` each PR head into it, in stack order (a base PR before the PRs stacked on it).
-       - A PR that conflicts leaves this batch.
-       - Push the branch and open a PR, so the full required checks run **once** on the batch head.
-     - **Entry condition per PR:** condition 1 holds, i.e. a PASS from a session that did not write the PR, with nothing under "Must fix before merge". The PASS binds to the head that went into the batch.
-     - **What it allows:**
-       - Required checks green on the batch head stand in for conditions 2 and 3 for every PR in it. No per-PR update-branch, no per-PR CI run, no re-bind.
-       - Merge the batch PR with a **merge commit**, never squash. Each PR head then becomes an ancestor of main, so GitHub marks every PR merged and closes its `Fixes #`.
-     - **Red batch:** bisect into halves, then quarters, until you find the PR that breaks it. Send that PR to rework and re-batch the rest. Never merge a red batch.
-     - **After merging:** watch main's CI on the merge commit. If it is red, revert the batch merge at once.
-     - **Why:** each single merge moved main and forced every other open PR through update-branch, a 30–60-minute CI run and a new verdict. Ten PRs cost 30–50 runs where a batch costs 1–4. The latest commit contains all the earlier ones (🧹 More than 3 CI runs queued).
-
+   - **The four relaxations below share these terms** — they let a PASSed PR merge without `update-branch`, and nothing else:
+     **Still required:** conditions 1 and 2 — a PASS bound to the current head and the required checks green at that head ·
+     **Only where GitHub lets it through:** a `strict = true` repo still blocks a `BEHIND` PR, so they apply only where it allows the merge ·
+     **Shared file** = anything more than one CI job reads: root and workspace manifests and lockfiles (`Cargo.toml`, `Cargo.lock`, `package.json`, lockfiles), `.github/**`,
+     `migrations/**`, shared crates or packages the PR's area depends on, generated files either side commits, `build.rs` and build scripts · **not sure ⇒ treat it as shared** ·
+     **After merging:** watch main's CI on that merge commit; red because two PRs disagree ⇒ **revert at once** and send that PR back for update-branch — never leave main red while you debug ·
+     **Why all four exist:** on `xchange` every merge moved main and forced every other open PR through update-branch, a 10–60-minute run and a fresh verdict — PR 963 needed it 3 times, PR 2268's verdict was re-bound 3 times
+   - 🟢 **Exception: main moved only by docs.** Owner's choice 2026-10-09 *"ยกเว้นถ้าต่างแค่เอกสาร"* ·
+     **Condition:** every file changed on main since the PR's merge-base is a doc no build or check reads (`*.md`, `docs/**`, design docs) ·
+     **Proof:** paste `git diff --name-only $(git merge-base origin/main <head>) origin/main` in a PR comment · one non-doc path ⇒ the exception is off
+   - 🟢 **Exception: main moved only outside the PR's area.** Owner's order 2026-10-10 *"A merge เลย C ตั้งเป็นกฎถาวร"* (permanent) ·
+     **Condition:** every file main changed is in a different top-level area from every file the PR changes (PR in `api/`, main moved `web/` and `app/`), and none of them is shared ·
+     **Proof:** the same `git diff --name-only` output, plus which area the PR is in · one path in the PR's area, or one shared path ⇒ off
+   - 🟢 **Exception: main moved only in files the PR does not touch (same area allowed).** Owner's order 2026-10-14 *"เอา B ตั้งเป็นกฎถาวร"* (permanent) ·
+     **Condition, all of:** no file main changed is a file the PR changes · none of main's changed files is shared, where a module registry (`mod.rs` / `lib.rs` / `main.rs`) counts as shared **only if its diff removes or changes a line**
+     (owner's order 2026-10-16 — additions only, a new `mod` or `pub use`, do not count; check with `git diff $(git merge-base origin/main <head>) origin/main -- <file> | grep -E '^-[^-]'`, which must print nothing, and paste that) ·
+     and `git merge-tree --write-tree origin/main <head>` merges with no conflict ·
+     **Proof:** a PR comment with `comm -12 <(git diff --name-only $(git merge-base origin/main <head>) origin/main | sort) <(git diff --name-only $(git merge-base origin/main <head>) <head> | sort)`, which must be **empty**,
+     plus main's changed-file list showing no shared file, plus the `merge-tree` result · any overlap or any shared file ⇒ off
+   - 🟢 **Batch merge: one CI run on the combined head decides for every PR in it.** Owner's order 2026-10-16 *"รวบ มา ทำ ci รวมได้ไหม เพราะมันงาน เติม ๆ รันซ้ำ เอา ci ตัวสุดท้ายตัดสิน"* · *"ไม่ต้องต้องรอ"*
+     **Who:** the lane controller or a merger it names · one batch per repo at a time, so two batches never race on main ·
+     **Build:** branch `batch/merge-<UTC>` from `origin/main` → `git merge --no-ff` each PR head in stack order (a base PR before the PRs stacked on it) → a PR that conflicts leaves this batch → push and open a PR, so the required checks run **once** on the batch head ·
+     **Entry per PR:** condition 1 holds — a PASS from a session that did not write it, with nothing under "Must fix before merge"; that PASS binds to the head that went into the batch ·
+     **What it allows:** green required checks on the batch head stand in for conditions 2 and 3 for **every** PR in it — no per-PR update-branch, run or re-bind ·
+     🔴 **merge the batch PR with a merge commit, never squash**, so each PR head becomes an ancestor of main and GitHub marks every PR merged and closes its `Fixes #` ·
+     **Red batch:** bisect by halves, then quarters, to find the PR that breaks it; send that one to rework and re-batch the rest · **never merge a red batch** ·
+     **Why:** ten PRs cost 30–50 runs one at a time and 1–4 as a batch — the latest commit already contains the earlier ones (🧹 More than 3 CI runs queued)
 🔴 **Still stop and ask the owner for:**
 - verdict `FAIL`, or `PASS` with a "Must fix before merge" list
 - migration · schema change · data backfill · destructive op
@@ -1076,91 +1040,54 @@ and older workflows (measured 2026-09-21: org `pos108-core` has 13 files · `pos
 
 ### 🔴 Every job runs self-hosted — GitHub-hosted is a failure, not a fallback
 
-Owner's order 2026-09-21: *"action ให้ใช้ self-host runner"* · applies to **every workflow on both sides**, not just new ones
+Owner's order 2026-09-21 *"action ให้ใช้ self-host runner"* · applies to **every workflow on both sides**, not just new ones ·
+the source of truth is `108-Plaza/108-Ting-Ecosystem` → **`docs/CI_RUNNER_STANDARD.md` §1** (including the `# hosted-ok:` format) ⇒ edit the details there, not here
 
-- `runs-on: [self-hosted, Linux, X64]` (Linux) · `[self-hosted, macOS, ARM64]` (macOS) — **never `ubuntu-latest` ·
-  `windows-latest` · `macos-latest`**, and never pin extra specialised labels
-- 🔴 **hosted is not just "costs money" — right now it doesn't run at all** measured 2026-09-20: a job on `windows-latest` died in 2 seconds
-  before the first step `The job was not started because recent account payments have failed or your spending limit
-  needs to be increased` ⇒ a gate never runs no matter how well written, and the PR reads as if the code is broken
-- **Leftovers measured 2026-09-21** (`gh api search/code -f q='"runs-on: ubuntu-latest" user:<owner> path:.github/workflows'`):
-  personal side **30 files** still `ubuntu-latest` (worst `Livechat-Platform-dev` 3 · `pos108-admin-dev` 3 ·
-  `pos108-orders-dev` 2 · `pos108-store-dev` 2) · org side has **4** left (`jh-client` ×2 · `thai-geography` · `Livechat-sdk`)
-  · 🟢 **`windows-latest` fully swept — measured 2026-09-27T10:51Z: org 0 · personal 0** · the word `windows-latest`
-  still found in `pos108-terminal` + mirror is **a comment explaining it used to be there**, not `runs-on:` ·
-  every Windows job is now on `[self-hosted, Windows, X64]` and **really runs** — org's `windows-tests.yml`
-  ran 4 times in one day (07:17 · 08:14 · 09:04 · 09:35Z) `success` every time, on `lenovo-org-win-1`
-  ⇒ **what remains is `ubuntu-latest` only** (the numbers above were measured 09-21; re-measure before citing)
-- **The only acceptable exception** = an OS the fleet has no machine for · ⚠️ **Windows is no longer that exception** — measured 2026-09-27T08:19Z: `lenovo-org-win-1` (`self-hosted,X64,Windows`) `status=online` in the org ⇒ before claiming there is no machine, check `gh api orgs/108-Plaza/actions/runners` first ⇒
-  you must write the comment `# hosted-ok: <why the fleet has no machine for this>` above that `runs-on` **and know it will not run until billing is unblocked**
-  · to make that gate really run, a runner for that OS must be registered, which is the owner's job
-
-⚠️ **This rule is not new — the owner ordered it back on 2026-06-23** · the source of truth is
-`108-Plaza/108-Ting-Ecosystem` → **`docs/CI_RUNNER_STANDARD.md` §1** (and the `# hosted-ok:` format comes from there too)
-⇒ **edit the details in that file, not here** · here we keep only the conclusion and the latest numbers
-- **An enforcing gate exists but is not rolled out** — `108-Ting-Ecosystem/.github/workflows/hosted-runner-gate.yml`
-  is a reusable workflow that runs `scripts/check-hosted-runners.sh`, requiring every hosted job to have a marker
-  · measured 2026-09-21: **installed in one repo only** (itself) ⇒ the other 41 repos with workflows have nobody checking them
-- **Status measured 2026-09-21 (reading all 124 actual files, not code search):** the org side has 224 jobs,
-  of which **6 jobs / 4 repos** are hosted — `pos108-terminal` ×2 (Windows · has marker) · `jh-client` ×2 ·
-  `thai-geography` (public repo · runner group rejects public) · **`Livechat-sdk/ci.yml` is the only one without a marker**
-
-🔴 **Never change any other logic while copying** — copying and editing at the same time creates a third workflow nobody reviewed ·
-if you see that org's own version is wrong ⇒ open a ticket on the org side and fix it there, and let the mirror take the new copy afterwards
-- Files **not copied**: workflows tied to things that exist only on the org side (deploy to prod · secrets the mirror lacks) —
-  write the reason in that round's PR, never silently
-- **Before believing files are identical, actually compare them**, not just the file count:
+- `runs-on: [self-hosted, Linux, X64]` (Linux) · `[self-hosted, macOS, ARM64]` (macOS) · `[self-hosted, Windows, X64]` (Windows) —
+  **never `ubuntu-latest` · `windows-latest` · `macos-latest`**, and never pin extra specialised labels
+- 🔴 **hosted is not just "costs money" — it does not run at all.** A hosted job dies in about two seconds before its first step with
+  `The job was not started because recent account payments have failed or your spending limit needs to be increased` ⇒ the gate never runs however well written, and the PR reads as if the code is broken
+- **The only acceptable exception** = an OS the fleet has no machine for · ⚠️ **Windows is not that exception** — the org has a Windows runner ⇒
+  **check `gh api orgs/108-Plaza/actions/runners` before claiming there is no machine** · if the exception really holds, write `# hosted-ok: <why the fleet has no machine for this>` above that `runs-on`
+  and know the job will not run until billing is unblocked · registering a runner for a new OS is the owner's job
+- **An enforcing gate exists but is not rolled out** — `108-Ting-Ecosystem/.github/workflows/hosted-runner-gate.yml` is a reusable workflow running
+  `scripts/check-hosted-runners.sh`, which requires every hosted job to carry the marker · it is installed in **one** repo (itself) ⇒ every other repo with workflows has nobody checking it
+- **Re-measure before citing any count** — leftovers move every week:
   ```bash
-  gh api "repos/108-Plaza/<repo>/contents/.github/workflows/<f>" -H "Accept: application/vnd.github.raw" > /tmp/org.yml
-  gh api "repos/yuthstyle88/<repo>-dev/contents/.github/workflows/<f>" -H "Accept: application/vnd.github.raw" > /tmp/dev.yml
-  diff /tmp/org.yml /tmp/dev.yml
+  gh api search/code -f q='"runs-on: ubuntu-latest" user:<owner> path:.github/workflows'
   ```
-
+  and read the actual files (`grep -n "runs-on:"`), because code search also matches the word inside comments
 ## ⚙️ CI runner
 
-- 🔴 **It is no longer true that the Linux runners are on one machine** — owner's order 2026-09-27 *"เพิ่ม Runners lenovo ด้วย"* ⇒ registered
-  **`lenovo-org-ci-1` · `lenovo-org-ci-2`** at org level (runner 2.337.0 · label `self-hosted,Linux,X64` · `/home/worker/actions-runner-lenovo-{1,2}`)
-  confirmed 2026-09-27T08:19Z: both `status=online` and picked up a job within 4 seconds of starting (the queue really was starved) ·
-  · **now a systemd service** (owner enabled `[boot] systemd=true` in `/etc/wsl.conf` + `wsl --shutdown` 2026-09-27T10:12Z ⇒ `systemctl is-system-running` = `running`) ·
-  `actions.runner.108-Plaza.lenovo-org-ci-{1,2}.service` **enabled + active** · recovers on its own when WSL comes up
-  · ⚠️ **not yet fully resilient to a Windows reboot** — Windows does not start WSL on boot by itself; something must wake it ⇒ a Task Scheduler entry is needed
-  (`wsl.exe -d Ubuntu-24.04 -e true` at logon), which has not been done yet
-  · management commands must run from cmd.exe on that machine: `wsl -u root -e bash -c "systemctl restart actions.runner.108-Plaza.lenovo-org-ci-1"`
-- **Whole org pool, measured 2026-09-27T08:23Z** (`gh api orgs/108-Plaza/actions/runners --jq '.runners[] | "\(.name)\t\([.labels[].name]|join(","))"'`):
+Details and the `# hosted-ok:` format live in `108-Plaza/108-Ting-Ecosystem` → **`docs/CI_RUNNER_STANDARD.md` §1** ⇒ edit them there, not here.
+🔴 **Runner inventories go stale — `gh api orgs/108-Plaza/actions/runners --jq '.runners[]|"\(.name)\t\([.labels[].name]|join(","))"'` before citing one.**
 
-  | Pool | Runners | label |
-  |---|---|---|
-  | Linux — Dell `ibrowe.com` | `dell-org-108plaza` · `dell-org-ci-1..4` | `self-hosted,Linux,X64,pos108-ci` (+`dell-org-ci` on ci-1..4) |
-  | Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
-  | macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
-  | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
-  | macOS/ARM64 — Warut's MacBook (in the pool since 2026-10-11) | `warut-org-1..2` | `self-hosted,macOS,ARM64,fast-mac` + `warut-mbp` |
+| Pool | Runners | label |
+|---|---|---|
+| Linux — Dell `ibrowe.com` | `dell-org-108plaza` · `dell-org-ci-1..4` | `self-hosted,Linux,X64,pos108-ci` (+`dell-org-ci`) |
+| Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
+| macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
+| macOS/ARM64 — Warut's MacBook | `warut-org-1..2` | `+ fast-mac`, `warut-mbp` |
+| Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
 
-  · `ibrowe-pos108-2` is a **repo-level** runner of `pos108-core` — it doesn't show in `orgs/.../actions/runners`; query `repos/<slug>/actions/runners`
-- 🟢 **`warut-org-1..2` joined the macOS pool 2026-10-11** (owner's order *"ทำ F"* · labels `self-hosted,macOS,ARM64,fast-mac` + `warut-mbp`; parked since 2026-09-29) ·
-  the machine (`waruts-macbook-pro` · Tailscale 100.95.105.73 · user `warutjantabut` · shared from `sunrustpower@`) is Warut's, **not the fleet's** ·
-  measured 2026-10-11 before joining: Xcode license accepted · rustc 1.98.1 · node 24.21.0 (nvm) · psql 18.6 (`brew install libpq`, keg-only) · cargo-nextest 0.9.148 · cargo-deny 0.20.2 · protoc 36.2 · docker ·
-  🔴 **the runner's own PATH is `~/actions-runner-warut-org-N/.path`** — it had neither `/usr/local/bin` nor node 24 nor libpq; now it starts with
-  `/opt/homebrew/opt/libpq/bin:~/.nvm/versions/node/v24.21.0/bin:/opt/homebrew/bin:/usr/local/bin` (old file `.path.bak-20261011`) · a new tool for jobs ⇒ edit `.path` + `launchctl kickstart -k gui/$(id -u)/actions.runner.108-Plaza.warut-org-N` ·
-  ⚠️ nextest/deny there are newer than Studio's (0.9.137 · 0.19.9) — a job red only on `warut-org-*` ⇒ suspect the version first ·
-  it is a LaunchAgent (`svc.sh`) ⇒ it takes jobs only while Warut is logged in and the machine is awake (went offline twice on the day it was set up) ·
-  `~/actions-runner` on that machine is a runner for the personal repo `warut1688/testfight`, unrelated to the org — do not touch
-- 🔴 **Jobs pinned to `pos108-ci` cannot land on Lenovo** — that label exists only on Dell ⇒ those jobs still pile up on the single Dell machine even though the pool has grown ·
-  still pinned (measured 09-14 · re-measure before citing): `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`
-  ⇒ **to really spread these jobs, remove `pos108-ci` from `runs-on`, leaving `[self-hosted, Linux, X64]`** (that is a workflow change, not a runner label change)
-- New workflows/tickets use `runs-on: [self-hosted, Linux, X64]` **never pin extra specialised labels**
-- **The broadest `runs-on` (`[self-hosted, Linux, X64]`) = GitHub picks the machine itself** ⇒ load can be spread in only two ways:
-  **add machines to the pool** (as done with Lenovo 2026-09-27) and **remove specialised labels from the `runs-on` of narrowly pinned jobs** (item above)
-  · moving `runs-on` **within the same OS** (Linux→Linux) moves nothing — GitHub already picks a machine from the pool
-  · 🔴 **but moving to another OS really moves it**, if the job isn't tied to the OS — a different pool is different machines ·
-    measured 2026-09-27T07:48Z: Linux busy 5/5 while macOS had 9 idle ⇒ light gates (hash · clone · regex · text checks)
-    placed on `[self-hosted, macOS, ARM64]` got a runner immediately and did not queue behind builds (`6719b7c`) ·
-    **condition:** the job must not need a Linux-specific toolchain · real build/test jobs stay on Linux as before
-  · **Never touch runner labels** (shared resource — owner only) · Dell once measured load 61/64 cores · 2026-09-27T07:46Z measured **load 129 on 64 threads**
-- Jobs still pinned to `pos108-ci` (measured 09-14: `pos108-core` `ci.yml` + `supply-chain.yml` · `pos108-slot-front` · `pos108_slot_api`) are no longer narrower than the combined pool · find them with `grep -n "runs-on:"`, not `git grep -l <label>` (strings in comments also match) · line numbers shift with every PR — re-measure before citing:
-  `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"`
+· `ibrowe-pos108-2` is a **repo-level** runner of `pos108-core` — it does not appear in the org list; query `repos/<slug>/actions/runners`
+- **Linux is no longer one machine** (owner's order 2026-09-27 *"เพิ่ม Runners lenovo ด้วย"*) — Lenovo's two runners are a systemd service
+  (`actions.runner.108-Plaza.lenovo-org-ci-{1,2}.service`, enabled + active) and recover when WSL comes up ·
+  ⚠️ **not resilient to a Windows reboot** — Windows does not start WSL by itself and the Task Scheduler entry (`wsl.exe -d Ubuntu-24.04 -e true` at logon) **has not been made** ·
+  manage from cmd.exe on that machine: `wsl -u root -e bash -c "systemctl restart actions.runner.108-Plaza.lenovo-org-ci-1"`
+- **Warut's MacBook is not the fleet's machine**, though its runners are in the macOS pool ·
+  🔴 **the runner reads its own PATH from `~/actions-runner-warut-org-N/.path`**, not a shell profile ⇒ a new tool for jobs means editing that file plus
+  `launchctl kickstart -k gui/$(id -u)/actions.runner.108-Plaza.warut-org-N` · ⚠️ its `cargo-nextest`/`cargo-deny` are **newer than Studio's** ⇒ a job red only on `warut-org-*` ⇒ suspect the version first ·
+  it is a LaunchAgent (`svc.sh`) ⇒ it takes jobs only while Warut is logged in and the machine is awake · `~/actions-runner` there is a runner for a personal repo — do not touch
+- 🔴 **Jobs pinned to `pos108-ci` cannot land on Lenovo** — that label exists only on Dell, so they still queue on one machine
+  ⇒ **remove `pos108-ci` from `runs-on`, leaving `[self-hosted, Linux, X64]`** (a workflow change, not a runner-label change) · find them with
+  `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"` — `grep -n "runs-on:"`, never `git grep -l <label>` (comments match too)
+- New workflows and tickets use `runs-on: [self-hosted, Linux, X64]` — **never pin extra specialised labels**
+- **The broadest `runs-on` means GitHub picks the machine** ⇒ load spreads in only two ways: **add machines to the pool**, or **remove specialised labels** from narrowly pinned jobs ·
+  moving `runs-on` **within the same OS** moves nothing · 🔴 **moving to another OS really moves it** when the job is not tied to that OS — light gates (hash · clone · regex · text checks)
+  on `[self-hosted, macOS, ARM64]` get a runner while Linux is saturated (`6719b7c`) · **condition:** no Linux-specific toolchain; real build/test jobs stay on Linux
+- 🔴 **Never touch runner labels** — shared resource, owner only
 - Faster CI is not permission to push guess-fixes — local verify must still be green first
-
 
 ### 🧹 More than 3 CI runs queued = collapse into one run
 
@@ -1219,60 +1146,47 @@ Every CI run on a doc-only change is a runner taken away from code PRs waiting o
   - Its `api` job skipped correctly (37 s of work) but waited **5 min** for a Dell runner and still started a postgres container.
   - Meanwhile 6 code PRs with PASS sat waiting for the same runners.
 
-## 🖥 Big builds — Mac Studio is no longer the only option; choose by measurement
+## 🖥 Big builds — choose the machine by measurement, never by habit
 
-🔴 **Owner's order 2026-09-27 *"แบ่ง งานไปที่ Lenovo ด้วย"*** — amends the 2026-09-12 order that sent all work to Mac Studio
-because Studio was idle then · **measured 2026-09-27T14:5xZ: Studio had 195 GiB disk free of 1.8 TB (90%) · 12 users · load 16–19 on 20 cores
-while Lenovo had 953 GB free of 1007 G (1%) · load 0.00 · nobody logged in**
-
-**Before sending heavy work, measure first, then choose. Never choose out of habit:**
+Owner's order 2026-09-27 *"แบ่ง งานไปที่ Lenovo ด้วย"*, amending the 2026-09-12 order that sent everything to Mac Studio.
+⚠️ **Lenovo has been off since 2026-10-09**, so until the owner brings it back the choice is Studio or the MacBook — but still **measure first:**
 ```bash
 ssh macstudio 'df -h /System/Volumes/Data | tail -1; uptime'
 ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 ```
 
-| Machine | Spec | Suited for |
-|---|---|---|
-| **Lenovo** (WSL2 · `worker`) | i9-10885H 16 threads · 62 GB · disk 1007 G | **First choice right now** — most idle on both disk and CPU · installed 2026-09-27: rustc/cargo **1.98.1** · node **v24.21.0** (nvm · the `npm` found at first pointed to `/mnt/c/nvm4w` = the Windows one, unusable) · `claude` CLI **2.1.283** · all wired in `~/.profile` · tmux `claude-1..3` **no longer exist** (measured 2026-09-29) · the worker now is agy (see the Gemini entries under Roles) |
-| **Mac Studio** | 20 cores · 128 GB | Work that truly needs macOS/arm64 (Xcode · bundle · Apple-bound code), or when measured idle |
-| **Mac mini** | — | `park108` model measurement work only (see below) |
-| **Warut's MacBook** (`warut-mbp`) | 10 cores · 64 GB · disk 926 GiB · macOS 26.6.2 | **Not a fleet machine** — never send build work without the owner's order · has `agy` 1.2.13 (`~/.local/bin` · installed 2026-09-29), not yet logged in · ssh `warut-mbp` works from the Mac mini and the MacBook (both `yuth` and `yongyutjantaboot`) · for the runner see ⚙️ CI runner |
+| Machine | Suited for |
+|---|---|
+| **Mac Studio** (20 cores · 128 GB) | whole-workspace `cargo build/test/clippy` for `pos108-*` · `jh-api` · `park108` · `108-platform-services`, anything needing macOS/arm64 (Xcode · bundle · Apple-bound code) |
+| **Lenovo** (WSL2 · i9 16 threads · 62 GB · 1 TB) | the idle-disk choice for heavy Rust **when it is on** · has rustc 1.98.1 · node 24 · cmake · docker · psql · systemd |
+| **MacBook** | a few crates at a time |
+| **Mac mini** | `park108` model measurement only (below) |
+| **Warut's MacBook** (`warut-mbp`) | **not a fleet machine** — never send build work without the owner's order |
 
-✅ **Lenovo now has `cmake` 3.28 · docker 29.1 · psql 16 · `unzip`** (measured 2026-09-29T06:10Z)
-✅ **systemd works** since 2026-09-27T10:12Z · 🔑 **`sudo` inside WSL needs a password, but `wsl -u root` from cmd.exe on the Windows side does not** — all root work goes that way
+- 🔴 **Always `zsh -lc`** — a headless ssh has no `/opt/homebrew/bin` and no `~/.cargo/bin`:
+  `ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'`
+- 🔴 **Folder layouts differ; never copy a path between machines** — Studio has `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}` · `JH-Platform/Api` · `parking/park108`, the MacBook has `pos/` `heros/` `parking/`
+- 🔴 **`park108` model measurement runs on the Mac mini only** (`Mac-mini-khxng-ai-01` · 100.100.204.107) — the models and the 244-image plate set live there and that set's `README.md` forbids committing them to **any** repo (PDPA) ⇒
+  never copy the images off the machine · work in a worktree under `~/park108-src/.worktrees/` and delete it when done
+- Reach Studio via Tailscale `macstudio` (100.84.133.23); `macstudio-lan` works only on the same LAN · after a restart Tailscale SSH may need one browser confirmation
+- 🔴 **Commands to Lenovo go as a script over stdin** — it is reachable from Mac Studio only, its ssh lands in cmd.exe so nested quotes break every way, and **there is no sftp ⇒ `scp` cannot get in**:
+  `ssh macstudio 'ssh pos108-lenovo "bash -s"' < /path/to/script.sh` · 🔑 `sudo` inside WSL needs a password, but `wsl -u root` from cmd.exe does not ⇒ all root work goes that way
+- 🟢 **For cargo on Lenovo use `scripts/lenovo-run.sh`** (in `108-Ting-Ecosystem` · `cb764edc`) — run it from that repo's worktree on Studio:
+  `…/scripts/lenovo-run.sh -- cargo test -p <crate>` ⇒ output and exit code come straight back · **commit + push first** (pending edits or new untracked files ⇒ `rc=3`, because Lenovo cannot see them) ·
+  it reuses a per-branch worktree `~/worktrees/lr-*` for incremental builds and locks out two colliding jobs itself
 
-(Original order 2026-09-12 · still applies to Mac Studio) — `cargo build/test/clippy` over the whole workspace of `pos108-*` · `jh-api` · `park108` · `108-platform-services`
-**runs on Mac Studio** (20 cores · 128 GB) · work on a few crates can be done on the MacBook · **the Mac mini now has rustc/cargo 1.98.1** (measured 2026-09-23 · `ssh 100.100.204.107 'rustc --version'`) — the old line saying it had none nearly caused skipping the only machine that could measure park108#942
-```bash
-ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'
-```
-- 🔴 Must use `zsh -lc` — headless ssh has no `/opt/homebrew/bin` and no `~/.cargo/bin`
-- 🔴 **`park108` model measurement work must run on the Mac mini (`Mac-mini-khxng-ai-01` · 100.100.204.107) only** — the models (`~/data/det_*.onnx` · `finetuned.onnx` · `park108-province-model/`) and the 244-image plate set (`~/data/108Park-plates/`) live there, and the set's `README.md` says **never commit into any repo whatsoever** (PDPA) ⇒ never copy images off the machine · work in a worktree under `~/park108-src/.worktrees/` and delete it when done
-- 🔴 Folder layouts differ; never copy paths across machines: Studio uses `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}` · `JH-Platform/Api` · `parking/park108` · MacBook uses `pos/` `heros/` `parking/`
-- Reach it via Tailscale `macstudio` (100.84.133.23) · `macstudio-lan` works only on the same LAN · after a restart you may need to confirm Tailscale SSH in a browser once
-- 🔴 **Commands to Lenovo must always be sent as a script over stdin** — reachable from Mac Studio only · its ssh lands in cmd.exe ⇒ nested quotes break every way · **no sftp ⇒ `scp` cannot get in**
-  ```bash
-  ssh macstudio 'ssh pos108-lenovo "bash -s"' < /path/to/script.sh
-  ```
-- 🟢 **For cargo build/test on Lenovo use `scripts/lenovo-run.sh` (in `108-Ting-Ecosystem` · merged `cb764edc` 2026-09-28)** —
-  run it from inside that repo's worktree on Mac Studio: `…/108-Ting-Ecosystem/scripts/lenovo-run.sh -- cargo test -p <crate>` ⇒
-  output and exit code come straight back · must commit + push first (pending edits / new uncommitted files ⇒ rc=3 because Lenovo cannot see them) ·
-  on Lenovo it reuses a per-branch worktree `~/worktrees/lr-*` across runs (incremental) and itself locks out two jobs colliding ·
-  **whenever Studio disk is tight, use this route before building on Studio** (measured 2026-09-27: Studio free space drops ~10 GB/hr from worktree targets)
-
-**Fleet toolchain = 1.98.1, the same as the runners** (ordered 2026-09-16) — other versions cannot stand in for CI (nightly lints differ from stable)
+**Fleet toolchain = 1.98.1, the same as the runners** (ordered 2026-09-16) — no other version can stand in for CI (nightly lints differ from stable):
 ```bash
 rustup toolchain install 1.98.1 --profile minimal -c clippy -c rustfmt
 rustup default 1.98.1
 ```
-On any machine where `rustc --version` is not yet 1.98.1, run these two lines (Mac Studio done 09-16) · `1.98.0` is a different one ·
-`rustup default stable` is not the answer · a repo with `rust-toolchain.toml` — that file wins · tests that depend on time/database can still differ across machines regardless
+`1.98.0` is a different toolchain · `rustup default stable` is not the answer · a repo with `rust-toolchain.toml` — that file wins · tests that depend on time or a database can still differ across machines
 
-**Sweep `target/` periodically** (09-12 reclaimed 713G):
+**Sweep `target/` periodically:**
 ```bash
 ssh macstudio 'find ~/108-Ting-Ecosystem ~/IdeaProjects -maxdepth 6 -type d -name target -prune -print0 | xargs -0 rm -rf'
 ```
-Before sweeping check `pgrep -x cargo; pgrep -x rustc` (don't use `pgrep -f cargo` — it matches `.cargo/bin` in PATH) · after a sweep the next run is one cold build
+First check `pgrep -x cargo; pgrep -x rustc` — **not** `pgrep -f cargo`, which matches `.cargo/bin` in anyone's PATH · after a sweep the next run is one cold build
 
 ## 💽 On Dell: worktrees and everything heavy live in `/data`, not `/home`
 
