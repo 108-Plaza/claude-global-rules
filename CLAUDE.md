@@ -1158,21 +1158,19 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
   `…/scripts/lenovo-run.sh -- cargo test -p <crate>` ⇒ output and exit code come straight back · **commit + push first** (pending edits or new untracked files ⇒ `rc=3`, because Lenovo cannot see them) ·
   it reuses a per-branch worktree `~/worktrees/lr-*` for incremental builds and locks out two colliding jobs itself
 
-**Fleet toolchain — measured 2026-10-17: `rustc`/`cargo` 1.99.1 on the MacBook, Mac Studio and Dell alike**
-(ordered 2026-09-16: a machine must match what CI runs, because nightly lints differ from stable).
-🔴 **The number is a snapshot, not the contract — what the repos declare is:**
-- `pos/core` · `pos/terminal` · `heros/api` · `platform/services` · `platform/media` → `rust-toolchain.toml` `channel = "stable"` ⇒ rustup uses **stable** inside them whatever the machine default is
-- `parking` → `channel = "1.98.0"`, the one real pin ⇒ that toolchain must be installed or its build fails
-- `pos/agent-queue` → no file ⇒ the machine default applies
-- CI: `pos/core` uses `dtolnay/rust-toolchain@stable` · `heros/api` uses `@master` and `@nightly`, so its lints can differ from every other repo's
+**Fleet toolchain = one pinned number, the same in every repo** — owner's order 2026-10-17 *"คือทำให้เป็น เวอร์ชั่นแต่ ยังคง ทำงานได้"* ·
+*"เพราะ การ ใช้ เวอร์ชั่น คงที มันจะไม่พัง"* · *"แต่ต้องใช้ ตัวเลข เดียวกัน"* ⇒ **`channel = "stable"` is not acceptable**: it moves every ~6 weeks and a new clippy lint turns CI red with no code change.
 
-Keep a machine aligned — 🔴 **never `rustup default <number>`**: inside every `channel = "stable"` repo it is overridden anyway, and on a machine that is already ahead it silently **downgrades** the default:
+**The pinned number is `1.99.1`** (measured 2026-10-17: rustc/cargo 1.99.1 on the MacBook, Mac Studio and Dell).
 ```bash
-rustup update stable                                                     # same stable release on every machine
-rustup toolchain install 1.98.0 --profile minimal -c clippy -c rustfmt   # parking's pin
-rustc --version                                                          # re-measure, then update the number above
+rustup toolchain install 1.99.1 --profile minimal -c clippy -c rustfmt
 ```
-`stable` moves about every six weeks ⇒ **re-measure before citing the number above**; a repo's `rust-toolchain.toml` always wins over the machine default; tests that depend on time or a database can still differ across machines
+- 🔴 **Every repo states it in `rust-toolchain.toml` as `channel = "1.99.1"`**, and every workflow pins `dtolnay/rust-toolchain@1.99.1` — never `@stable`, `@master` or a bare `rustup default`
+- 🔴 **The one allowed exception is `heros/api`'s fmt step**: its `.rustfmt.toml` uses nightly-only options (`imports_granularity`, `group_imports`), so that **step** installs nightly and pins `RUSTFMT` to the nightly binary (`cargo +nightly fmt` alone does not work there — the wrapper resolves to the pinned toolchain and silently ignores the options). Build, test and clippy in that repo still use the pinned number.
+- Moving the number is a fleet decision: bump it in every repo in one round, or the repos disagree and "green locally" stops meaning anything
+- A repo's `rust-toolchain.toml` always wins over the machine default, which is why the pin has to live in the repos and not in `rustup default`
+
+⚠️ **Not yet true — measured 2026-10-17, do not read the rule above as the current state:** `pos/core` · `pos/terminal` · `heros/api` · `platform/services` · `platform/media` · `pos/livechat` all still say `channel = "stable"` · `parking` is pinned to a **different** number (`1.98.0`) · `pos/agent-queue` has no toolchain file · CI pins `@stable` in core/terminal/media and `@master` in `heros/api`. Until that is fixed, install `1.98.0` as well so `parking` builds.
 
 **Sweep `target/` periodically:**
 ```bash
