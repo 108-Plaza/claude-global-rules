@@ -1028,8 +1028,10 @@ the source of truth is `108-Plaza/108-Ting-Ecosystem` → **`docs/CI_RUNNER_STAN
 
 - `runs-on: [self-hosted, Linux, X64]` (Linux) · `[self-hosted, macOS, ARM64]` (macOS) · `[self-hosted, Windows, X64]` (Windows) —
   **never `ubuntu-latest` · `windows-latest` · `macos-latest`**, and never pin extra specialised labels
-- 🔴 **hosted is not just "costs money" — it does not run at all.** A hosted job dies in about two seconds before its first step with
-  `The job was not started because recent account payments have failed or your spending limit needs to be increased` ⇒ the gate never runs however well written, and the PR reads as if the code is broken
+- ⚠️ **hosted has died on billing before** — 2026-09-20 a `windows-latest` job ended in two seconds before its first step with
+  `The job was not started because recent account payments have failed or your spending limit needs to be increased`, so the gate never ran and the PR read as broken.
+  🔴 **That is no longer the state — re-measure before repeating it.** Measured 2026-10-17 from `gh api "/organizations/108-Plaza/settings/billing/usage?year=<y>&month=<m>"`:
+  October used **108 hosted Linux minutes, net $0.00** (inside the included allowance), the last on 2026-10-14 ⇒ hosted jobs do run today. The reason to stay self-hosted is cost and capacity, not a hard block
 - **The only acceptable exception** = an OS the fleet has no machine for · ⚠️ **Windows is not that exception** — the org has a Windows runner ⇒
   **check `gh api orgs/108-Plaza/actions/runners` before claiming there is no machine** · if the exception really holds, write `# hosted-ok: <why the fleet has no machine for this>` above that `runs-on`
   and know the job will not run until billing is unblocked · registering a runner for a new OS is the owner's job
