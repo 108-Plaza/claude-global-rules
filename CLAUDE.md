@@ -1141,7 +1141,7 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 | Machine | Suited for |
 |---|---|
 | **Mac Studio** (20 cores · 128 GB) | whole-workspace `cargo build/test/clippy` for `pos108-*` · `jh-api` · `park108` · `108-platform-services`, anything needing macOS/arm64 (Xcode · bundle · Apple-bound code) |
-| **Lenovo** (WSL2 · i9 16 threads · 62 GB · 1 TB) | the idle-disk choice for heavy Rust **when it is on** · has rustc 1.98.1 · node 24 · cmake · docker · psql · systemd |
+| **Lenovo** (WSL2 · i9 16 threads · 62 GB · 1 TB) | the idle-disk choice for heavy Rust **when it is on** · has the Rust toolchain · node 24 · cmake · docker · psql · systemd — **re-measure its versions when it comes back** |
 | **MacBook** | a few crates at a time |
 | **Mac mini** | `park108` model measurement only (below) |
 | **Warut's MacBook** (`warut-mbp`) | **not a fleet machine** — never send build work without the owner's order |
@@ -1158,12 +1158,21 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
   `…/scripts/lenovo-run.sh -- cargo test -p <crate>` ⇒ output and exit code come straight back · **commit + push first** (pending edits or new untracked files ⇒ `rc=3`, because Lenovo cannot see them) ·
   it reuses a per-branch worktree `~/worktrees/lr-*` for incremental builds and locks out two colliding jobs itself
 
-**Fleet toolchain = 1.98.1, the same as the runners** (ordered 2026-09-16) — no other version can stand in for CI (nightly lints differ from stable):
+**Fleet toolchain — measured 2026-10-17: `rustc`/`cargo` 1.99.1 on the MacBook, Mac Studio and Dell alike**
+(ordered 2026-09-16: a machine must match what CI runs, because nightly lints differ from stable).
+🔴 **The number is a snapshot, not the contract — what the repos declare is:**
+- `pos/core` · `pos/terminal` · `heros/api` · `platform/services` · `platform/media` → `rust-toolchain.toml` `channel = "stable"` ⇒ rustup uses **stable** inside them whatever the machine default is
+- `parking` → `channel = "1.98.0"`, the one real pin ⇒ that toolchain must be installed or its build fails
+- `pos/agent-queue` → no file ⇒ the machine default applies
+- CI: `pos/core` uses `dtolnay/rust-toolchain@stable` · `heros/api` uses `@master` and `@nightly`, so its lints can differ from every other repo's
+
+Keep a machine aligned — 🔴 **never `rustup default <number>`**: inside every `channel = "stable"` repo it is overridden anyway, and on a machine that is already ahead it silently **downgrades** the default:
 ```bash
-rustup toolchain install 1.98.1 --profile minimal -c clippy -c rustfmt
-rustup default 1.98.1
+rustup update stable                                                     # same stable release on every machine
+rustup toolchain install 1.98.0 --profile minimal -c clippy -c rustfmt   # parking's pin
+rustc --version                                                          # re-measure, then update the number above
 ```
-`1.98.0` is a different toolchain · `rustup default stable` is not the answer · a repo with `rust-toolchain.toml` — that file wins · tests that depend on time or a database can still differ across machines
+`stable` moves about every six weeks ⇒ **re-measure before citing the number above**; a repo's `rust-toolchain.toml` always wins over the machine default; tests that depend on time or a database can still differ across machines
 
 **Sweep `target/` periodically:**
 ```bash
