@@ -194,6 +194,11 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
     Before you write any code, read ~/.gemini/config/plugins/ponytail/skills/ponytail/SKILL.md and follow it for this ticket. Where it conflicts with the ticket or the fleet rules (File scope, provided tests, comment/PR/verdict formats, claim/heartbeat/transition steps), the ticket and the fleet rules win.
     ```
   - The second sentence is required: ponytail's short-reply style must never drop a `> worker:` line, a behaviour-table row, a provided test or a queue transition.
+  - **Also always-on in new sessions:** ponytail's `AGENTS.md` sits in each agy workspace: Studio, Mac mini and Warut `~/worktrees/AGENTS.md`; Dell `/data/yuth/worktrees/AGENTS.md`. The owner ordered it the same day in `claude/5cdd8d`'s session (*"แก้ไข ให้ มัน รันได้"* · *"แก้ไข ทุกตัว ด้วย"*), after the "No restarts" choice above.
+    - An agy started after 2026-10-17 ~16:40Z loads the rule plus the plugin's skills: `/skills` shows `8 skills`, including `ponytail:ponytail`.
+    - Restarted for it that day (16:43–16:56Z): Studio `agy-1/2/3/5/6/7/9`, Dell `gemini-2..6`, Mac mini `agy-1..5`, Warut `agy-2/3/5`. Measure the others with `/skills`.
+    - The dispatch line above still applies to every order.
+    - 🔴 **Never restart an agy session that holds a lease or rework.** Read `GET /v1/snapshot` in the same command as the restart, not minutes earlier. A restart drops the order and every standing order, while the queue keeps the lease. On park108#1430, `gemini/pool-4` claimed at 16:48:47Z, its session was restarted at 16:52Z, and that work was lost.
 - 🔴 **Match the model to the ticket before dispatching** — owner's order 2026-10-16 *"ในครั้งต่อไปให้ดูว่า งานยากหรืองานง่าย ก่อนจ่ายให้ ใช้model ที่เหมาะสมกับงาน"* · *"ตั้งเป็นกฏ กลาง ในการทำงาน"*
   - **Before every dispatch, decide easy or hard.** Easy = `class:mechanical` (move/rename, styling, copy a pattern, simple tests, docs). Hard = `class:logic` or `class:guarded` (money, auth, migrations, contracts, design judgement).
   - **Send it to a session already running the matching model:** easy ⇒ **Gemini 3.8 Flash** · hard ⇒ **Gemini 4 Argon** (medium). Review stays Claude Opus 5.5 medium (🧮).
