@@ -77,7 +77,6 @@ Comes before every rule below — *Autonomous Execution* says **how** work is do
 | Who | Does | Must not |
 |---|---|---|
 | **Gemini** (`gemini/*` and `antigravity/*` = the same one — the owner runs it through an IDE called Antigravity · fold the two names together before counting) | implementer — two kinds: **Gemini sessions (tmux on Dell) do not call the queue themselves**; they sit and wait for Claude to dispatch a ticket · **the autopilot fleet** (`gemini/auto-*` on MacBook/Mac Studio) pulls the queue itself as normal (see below) | review · merge · tmux sessions calling `/v1/next` to find a ticket themselves (claiming the ticket the lane controller ordered is allowed — see below) |
-| **GLM** (`glm/<8-char-id>`) | implementer — takes only tickets Claude dispatches (no work outside the ticket) · holding a ticket = finish it (PR + `pr_open`) before taking a new one · can be dispatched in any lane | review · merge |
 | **Claude** | explore/find the root cause → **design the class diagram from the owner's requirement** (📐 Class diagram before code) → **write the ticket** → dispatch → monitor → **review every PR** (including `gemini/*`) → add `reviewed` + merge when the conditions are met · maintain docs/context | merge work it wrote itself |
 | **the owner** | decides business rules · approves merge exceptions (below) | |
 
@@ -104,23 +103,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
 ⚠️ **Controller is not a permanent position** — it is the session that controls that lane per the table in 📋 Found work = open a ticket, or the one the owner directly ordered in that round
 · not sure whether you are it ⇒ **assume you are not**
 
-- Items written about "implementer" apply equally to Gemini · GLM and a Claude holding a ticket
-- 🔴 **There is no Codex any more** — the owner stopped using it 2026-09-22 *"เราไม่มี codex ผมเลิกใช้แล้ว มันทำงานมั่ว"* ·
-  never dispatch tickets to Codex · never add `codex`/`assign:codex` · never wait for a verdict from Codex (review belongs to Claude only) ·
-  find a ticket still labelled Codex ⇒ remove the label and re-dispatch per the lane table · `codex/*` in the event log/old tickets = history, not a live worker
-- **GLM** runs as ACP agent `GLM` in JetBrains Air (`~/.local/bin/glm-acp` → z.ai · key `~/.config/glm/env`) ·
-  Claude dispatches by sending a message directly (ordered 2026-09-16): `scripts/glm-worker-up.sh` starts a worker ·
-  `scripts/glm-dispatch.sh <owner/repo> <issue>` dispatches a ticket (in `108-Plaza/108-Ting-Ecosystem` · guide `docs/AGENT_MESSAGING.md`)
-  · worker role `/data/yuth/glm-work/BOOT.md` on Dell · **do not cite `~/.config/glm/queue-prompt.md` — deleted**
-  · the owner confirmed it is back 2026-09-29 *"มันกลับมาแล้ว"* · *"ให้รันได้"* (cancels the 09-28 order saying there is no GLM) ·
-  measured that day 09:2xZ: the daemon on Dell (`~/.config/glm/claude`) is running but `workers: {}` · Mac Studio has no daemon ·
-  latest jobs `glm-d*` 09-25 · `glm-m6` 09-27 ⇒ must start a new worker with `glm-worker-up.sh` before dispatching
-- **Junie** (JetBrains · owner's order 2026-10-03 *"เรามี junie ทำงาน ฟรีไม่เสียตัง"*) — implementer · worker id `junie/<เลขใบ>` ·
-  🔴 **only the `junie-lite` model works (free)** — the account has no balance; other models fail with `Insufficient account balance` ·
-  dispatch from a machine with the CLI: `junie --skip-update-check --model=junie-lite -p <worktree> --task "<ticket + rules>"` (MacBook `~/.local/bin/junie` is logged in) ·
-  the ticket must go through the queue: set `assign:junie/<n>` + `ready` → Junie claims it itself via `/v1/next` + `assigned_only` once (using `~/.config/tq/env`) ·
-  Junie commits locally only · the controller pushes + opens the PR `> worker: junie/<n>` + `pr_open` · Junie does not review ·
-  Junie in RustRover (ACP) cannot receive work from Claude; CLI only · tickets sent to Junie must satisfy all of 🧪 A ticket for an implementer
+- Items written about "implementer" apply equally to Gemini and to a Claude holding a ticket
 - **Gemini sessions wait for dispatch and do not call the queue themselves** — owner's order 2026-09-22 *"การเรียกคิวของ gemini ไม่ใช่ให้มันไปเรียกเองนะ
   เราต้องเป็นคนบอก มันแค่นั่งรอ เราบอกให้มันทำงาน"* · `agy --dangerously-skip-permissions` **without `-i`**
   (in agy 1.2.9 `-i` = `--prompt-interactive` and needs text after it; given bare, agy exits and the session is lost) ·
@@ -163,11 +146,11 @@ moving proposals onto the ticket grants no decision right — it lets the contro
 
 Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent controller ส่ง สั่งงานโดยตรง เพื่อไม่ให้ worker วนลูปไปดึงในคิว"* ·
 *"โดย agent controller จะเป็นคนวนลูปจ่ายงานแทน"* — extends the Gemini-session rule above to **workers that are sessions of every kind**
-(Claude · Gemini · GLM), for both coding and review work
+(Claude · Gemini), for both coding and review work
 
 | Who | Does | Must not |
 |---|---|---|
-| **controller** | loops itself: snapshot → pick a dispatchable ticket → set `assign:<kind>/<id>` (**also remove the kind-level `assign:<kind>` that Jev added** — both labels are merged into `assigned_to`, and then any claim without `assigned_only` from a worker of the same kind gets this ticket · `src/lua/claim/gate_assigned.lua` `assigned_matches`) → wait for `assigned_to` to sync (🔴 **removing the last `assign:` label does not clear the value** — the old value is kept on purpose #89 · to clear it add `assign:none`) → **send a direct order message** (`SendMessage` · tmux · `glm-dispatch.sh`) → follow it to the end → send the next ticket | leave a worker idle without saying why |
+| **controller** | loops itself: snapshot → pick a dispatchable ticket → set `assign:<kind>/<id>` (**also remove the kind-level `assign:<kind>` that Jev added** — both labels are merged into `assigned_to`, and then any claim without `assigned_only` from a worker of the same kind gets this ticket · `src/lua/claim/gate_assigned.lua` `assigned_matches`) → wait for `assigned_to` to sync (🔴 **removing the last `assign:` label does not clear the value** — the old value is kept on purpose #89 · to clear it add `assign:none`) → **send a direct order message** (`SendMessage` · `tmux send-keys`) → follow it to the end → send the next ticket | leave a worker idle without saying why |
 | **worker (session)** | waits for a message from the controller · on getting a ticket, claims **once** (`/v1/next` + `"wait_secs":0` + `"assigned_only":true`, or `/v1/review/next` naming the ticket) so the queue holds the lease + file lock · done (`pr_open` / verdict) ⇒ notify the controller and wait | send `/v1/next` / `/v1/review/next` in a loop looking for tickets · take a ticket it was not ordered to take |
 
 - 🔴 **A worker takes work only from the owner or its lane's controller** — owner's order 2026-10-07 *"ให้ รับงาน จากเจ้าของและcontroller สั่งเท่านั้น"* ·
@@ -583,7 +566,7 @@ Owner's order 2026-09-22 *"สร้างเป็นกฏกลางไว�
 🔴 **Never add `ready` to a code-writing ticket until the part it touches has a merged class diagram in the repo** — the ticket must cite class/module names from that diagram
 
 🔴 **The class diagram is designed by Claude (that lane's controller) from the owner's requirements** — owner's order 2026-09-22
-*"กำหนดให้ claude เป็นคนออกแบบ class diagram ที่ได้ requirement จากเจ้าของ"* · implementers (Gemini/GLM/Claude holding a ticket)
+*"กำหนดให้ claude เป็นคนออกแบบ class diagram ที่ได้ requirement จากเจ้าของ"* · implementers (Gemini, or a Claude holding a ticket)
 **do not design diagrams** — they follow the diagram · requirements unclear ⇒ the designer asks the owner before drawing (🔬 Blocked on an owner decision), not guess and draw
 
 ```
@@ -626,7 +609,7 @@ Evidence: 2026-09-22 `108-agent-queue` had 5 `ready` tickets that could not be d
 
 ### 🧪 A ticket for an implementer = diagram + behaviour table + failing tests the ticket author writes first
 
-Owner's order 2026-10-03 *"ทำเป็นกฏไว้ด้วย อาจมีผลดีกับ agent อื่นด้วย"* · applies to implementers of **every kind** (Junie · Gemini · GLM · Claude holding a ticket)
+Owner's order 2026-10-03 *"ทำเป็นกฏไว้ด้วย อาจมีผลดีกับ agent อื่นด้วย"* · applies to implementers of **every kind** (Gemini, or a Claude holding a ticket)
 
 | Layer | What it says | What it prevents |
 |---|---|---|
@@ -645,9 +628,9 @@ Owner's order 2026-10-03 *"ทำเป็นกฏไว้ด้วย อา�
   The behaviour table (layer 2) is still required · the implementer writes the tests for each row · the **reviewer** checks every row has a test that goes red when the fix is reverted (the 2. Review mutation check) — missing ⇒ FAIL.
   `class:logic` / `class:guarded` tickets keep layer 3 unchanged.
 
-Evidence 2026-10-03 `rust-project-backend`: on tickets that named the file+function clearly, Junie placed code correctly every time (#655 · #659), but #659 changed
-`AuthService::change_password` from `is_ok()` to `!= Verified::Yes` ⇒ a correct password with an old-style hash (`YesUpgrade`) could not change the password,
-and Junie reported "match the original behavior precisely" · existing tests all passed because none covered that case · every signature was right ⇒ the diagram could not catch it
+Evidence 2026-10-03 `rust-project-backend#659`: the ticket named the file and function clearly and the code landed in the right place, but the implementer changed
+`AuthService::change_password` from `is_ok()` to `!= Verified::Yes` ⇒ a correct password with an old-style hash (`YesUpgrade`) could no longer be changed, while it reported
+"match the original behavior precisely" · every existing test stayed green because none covered that case, and every signature was right ⇒ **the diagram could not catch it**
 
 ### Entering the queue
 
@@ -660,9 +643,9 @@ Add labels `ready` + `class:mechanical|logic|guarded` (+ `p0` if urgent · + `as
 |---|---|---|
 | **pos** | Claude + Gemini | all `pos108-*` |
 | **heros** | first come, first served (ordered 2026-09-09) | `jh-api` · `108heros-web` · `108heros-flutter` · legacy 108jobs-line repos |
-| **park** | GLM | `park108` · `esp32-io-node` (door board firmware for park108#813 · owner's order 2026-10-01 *"ให้อยู่เลน park"*) |
+| **park** | **Gemini** | `park108` · `esp32-io-node` (door board firmware for park108#813 · owner's order 2026-10-01 *"ให้อยู่เลน park"*) |
 | **sell** | first come, first served | `108-sell` (formerly `pos108-sell` · owner renamed it 2026-09-21 *"เพราะ มันขาย ทุกโปรดักส์ ที่มี"*) — **its own lane, not pos's**, because the storefront sells every product, not just POS · controller not yet assigned; the owner orders per round |
-| **broker** | **Gemini** (owner's order 2026-10-07 *"เปลี่ยน การจ่าย งานให้จ่ายGeminiแจ้งทุกเชสชั่นทราบ"*; GLM finishes only the tickets it already holds) · review: the controller `claude/4a6b8284` and the Claude sessions it dispatches (the MacBook sessions "รับเขียนโค้ดนายหน้า" · "รีวิวระบบนายหน้า" + its fork) | `Broker-Platform` — central broker/referral system for every 108 product (owner's order 2026-10-07 *"คุณเป็นผู้คุมเลนนี้เลย"*) · controller `claude/4a6b8284` (MacBook session "AG ระบบนายหน้า" · owner's order 2026-10-15 *"กลับมาคุมเลน broker ต่อ"*, approved for this file the same day; took back over from `claude/eb72d565`, which held it 2026-10-09 → 10-15) · design `docs/design/broker-platform.md` |
+| **broker** | **Gemini** (owner's order 2026-10-07 *"เปลี่ยน การจ่าย งานให้จ่ายGeminiแจ้งทุกเชสชั่นทราบ"*) · review: the controller `claude/4a6b8284` and the Claude sessions it dispatches (the MacBook sessions "รับเขียนโค้ดนายหน้า" · "รีวิวระบบนายหน้า" + its fork) | `Broker-Platform` — central broker/referral system for every 108 product (owner's order 2026-10-07 *"คุณเป็นผู้คุมเลนนี้เลย"*) · controller `claude/4a6b8284` (MacBook session "AG ระบบนายหน้า" · owner's order 2026-10-15 *"กลับมาคุมเลน broker ต่อ"*, approved for this file the same day; took back over from `claude/eb72d565`, which held it 2026-10-09 → 10-15) · design `docs/design/broker-platform.md` |
 | **xchange** | **Gemini** (owner's order 2026-10-07 — new implementation work goes to Gemini) | `xchange` — currency-exchange desk v3 · controller `claude/5edf7bb5` (MacBook session continuing "AG xchange" after the account switch · owner's order 2026-10-10 *"ทำต่อ AG xchange"*, approved for this file the same day *"เอาตามที่เสนอ"*; took over from `claude/608dff`) |
 | **recognize** (under xchange) | **Gemini** (same as xchange) | `Recognize-Platform` — the AI document-reader service (passport MRZ first; design `docs/design/ai-reader.md`, ticket #150 and its child tickets A0–A13) · controller = **the xchange BE controller, `claude/1656900d`** (owner's order 2026-10-16 *"ทำตาม ที่เสนอ เลย"* on the proposal that the only consumer is `xchange#542`; approved for this file the same day *"เพิ่มได้"*) · deploy on do-sgp1, secrets and the public name stay with the owner · the queue syncs only repos listed in `config.toml` on Dell — check that `Recognize-Platform` is there before releasing a ticket |
 | **bank** | **Gemini** on Mac Studio (Dell is usually overloaded) | `bank-bot` · `ScreenLink` (ESP32 finger firmware + config page; its engine now lives in bank-bot) · controller `claude/20daac6e` (MacBook session "สำรวจและสานงานต่อ Screen Link" · owner's order 2026-10-14 *"คุณ ดูแล งาน Bank Bot + screen link"*, approved for this file the same day *"เพิ่มเลน bank ลงตารางกฎได้เลย"*) · `ScreenLink` is not in the tq queue ⇒ dispatch directly, no claim · real transfers, DB migrations, deploy and secrets stay with the owner |
@@ -683,7 +666,7 @@ in the same round**, otherwise there will be a repo nobody controls without anyo
 - **One ticket = one implementer** · implementers cannot see each other's work ⇒ tickets touching the same file must go to the same implementer or state `blocked by #N`
 - 🔴 **Never remove `assign:<kind>` to "let anyone pick it up"** — `class:guarded` tickets with no assignment are all skipped · an assignment unlocks guarded
   but does not bypass the capability gate ⇒ the worker must also send `capabilities` containing `guarded` (`claim.lua:218-220` · aq#240)
-- **Worker kind labels:** `gemini` · `glm` (`#7B4FE9`, not present in every repo) · (`codex` still lingers in every repo but nobody takes it — never use it) ·
+- **Worker kind label:** `gemini` ·
   repos lacking them: run `scripts/create-labels.sh` (above) · PM dispatching to specialist agents uses `pm-dispatch`
 
 ### Taking a ticket (implementer)
@@ -770,7 +753,7 @@ After adding `ready`, confirm the queue read it correctly: `ssh Dell-server "red
 (incident `pos108-store#256`: two sessions issued FAIL → PASS → FAIL within 3 minutes)
 - Ticket opener is dead / silent more than 60 minutes after `pr_open` / ticket has no `dispatched-by` / the ticket opener wrote the PR itself (cannot review its own work) ⇒ another session may take over, but must **first post a claim comment on the PR**
   (`reviewing as <worker> — ticket opener silent N minutes`) and wait ≥1 minute · someone already claimed = add comments instead
-- Tickets that Gemini/GLM put into the queue ⇒ `dispatched-by` = the Claude that told them to open it · none = the first Claude session that sees it takes it
+- Tickets that Gemini put into the queue ⇒ `dispatched-by` = the Claude that told them to open it · none = the first Claude session that sees it takes it
 - 🔴 Conflicting verdicts must not be left hanging — the ticket opener summarises in the thread which one stands and why
 - The owner directly assigns a session to review a ticket = do as told
 - 🔴 **The owner says "review work is idle, nobody is reviewing" = hand it to a peer session to review immediately, no 60-minute wait**
@@ -948,7 +931,7 @@ run `gh issue edit --add-label` against **real tickets on GitHub** · inject a f
 ### Non-compliance = three warnings, then removal from the queue (ordered 2026-09-05)
 
 "Non-compliance" = working outside the queue without an owner order · opening a PR without `pr_open` · touching files outside the ticket's file scope · deleting/skipping tests ·
-not heartbeating until the lease drops and then pushing anyway · a new ticket without `dispatched-by` · Gemini/GLM reviewing or adding `reviewed` · anyone reviewing/merging their own work
+not heartbeating until the lease drops and then pushing anyway · a new ticket without `dispatched-by` · Gemini reviewing or adding `reviewed` · anyone reviewing/merging their own work
 1. The reviewer comments a warning naming the violation + "send back" (rework)
 2. Warning + take the ticket back to `ready` + comment `strike 2/3 <worker>`
 3. `strike 3/3` + notify the owner immediately + that worker may not take new tickets until the owner lifts it (the queue has a *kind*-level denylist `tq:policy:no_claim` — blocks the whole kind, needs an owner order · meanwhile the reviewer returns every ticket it picks up to `ready`)
