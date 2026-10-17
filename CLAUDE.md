@@ -187,6 +187,13 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
   `POST /v1/next` with `"assigned_only":true` + `"wait_secs":0`, and takes the ticket only if it is pinned to its exact id (`assign:<kind>/<id>`).
   `empty` ⇒ stop and wait (the never-re-send rule above still holds) · never take a ticket pinned to the kind only or to someone else.
   The controller still decides what is pinned to whom; this only removes the "now claim it" message.
+- 🔴 **Every agy work order and rework order tells the worker to follow the ponytail skill** — owner's orders 2026-10-17 *"ให้ agy ใช้ skill ponytail"* · *"A: every dispatch order tells the worker to read and follow the ponytail SKILL.md … No restarts."* (recorded `xchange#564` issuecomment-6236841245) · and, for every lane, *"Add it to the fleet rules"*
+  - ponytail 5.3.2 (MIT, "lazy senior dev": the smallest complete change, reuse what exists, no unrequested features, keep the tests a change breaks) is installed for agy on Mac Studio, Dell, Mac mini and Warut. agy imported its skills and commands only, not its hooks.
+  - agy loads skills **at startup only**, and running sessions are **not** restarted for it, so the order carries this line, verbatim, on every machine and in every lane:
+    ```
+    Before you write any code, read ~/.gemini/config/plugins/ponytail/skills/ponytail/SKILL.md and follow it for this ticket. Where it conflicts with the ticket or the fleet rules (File scope, provided tests, comment/PR/verdict formats, claim/heartbeat/transition steps), the ticket and the fleet rules win.
+    ```
+  - The second sentence is required: ponytail's short-reply style must never drop a `> worker:` line, a behaviour-table row, a provided test or a queue transition.
 - 🔴 **Match the model to the ticket before dispatching** — owner's order 2026-10-16 *"ในครั้งต่อไปให้ดูว่า งานยากหรืองานง่าย ก่อนจ่ายให้ ใช้model ที่เหมาะสมกับงาน"* · *"ตั้งเป็นกฏ กลาง ในการทำงาน"*
   - **Before every dispatch, decide easy or hard.** Easy = `class:mechanical` (move/rename, styling, copy a pattern, simple tests, docs). Hard = `class:logic` or `class:guarded` (money, auth, migrations, contracts, design judgement).
   - **Send it to a session already running the matching model:** easy ⇒ **Gemini 3.8 Flash** · hard ⇒ **Gemini 4 Argon** (medium). Review stays Claude Opus 5.5 medium (🧮).
