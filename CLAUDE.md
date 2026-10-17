@@ -213,6 +213,18 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
   - **Every round of the controller loop:** count the idle workers your lane can use (pane shows no `esc to cancel`, and no lease or rework in `/v1/snapshot`) and your ready tickets nobody holds. **Fewer ready tickets than idle workers ⇒ cutting tickets comes before everything else that round**, including reviews that are not yet due.
   - **Pinning is the dispatch:** under the standing order (above), a worker on its own claims the next ticket pinned to its exact id. Pin ahead, so a worker that finishes picks up at once.
   - **Why:** measured 2026-10-16 15:18Z, the fleet had 5 ready tickets nobody held against ~10 idle Gemini and ~9 idle Claude sessions. The bottleneck was ticket supply, not workers or dispatch.
+- 🔴 **Design work so ≥80% of workers run at once** — owner's order 2026-10-17 *"เรามี worker 30 แต่ทำงานเหมือน ไม่มี คน"* · *"ต่อไป ออกแบบ งานให้ สามารถ workers พร้อมกัน ที่ 10 8o"* (read as 80%; ask the owner if that reading is wrong)
+  - **The target:** in each round, a lane keeps at least 80% of the workers it may use busy at the same time. Below that, raising concurrency is the controller's first job that round.
+  - **Concurrency is designed before the tickets, not chased after them.**
+    - When a lane plans work, split it along the class diagram (📐 Class diagram before code) into tickets whose `## File scope` blocks do not intersect.
+    - A design whose tickets share a file runs one ticket at a time, however many workers there are.
+    - Before releasing a set, list every ticket's `scope_prefixes` and count how many can lease at once. That count, not the ticket count, is the lane's real capacity.
+  - **A file that chains tickets is a design defect.**
+    - Fix it at the root: the first ticket splits that file along the diagram, as a pure code move, and the rest then run in parallel.
+    - Example: `transfer_flow.rs` made xchange #2617 → #2704 → #2774 run strictly one after another on 2026-10-17. `blocked by #N` only orders the chain; it adds no workers.
+  - **Every round, measure and write down:** busy workers ÷ usable workers, and why the rest are idle. The causes are no ready ticket, a file lock (name the holder), a dependency, or an owner decision.
+    - Owner decisions that idle workers (parked umbrellas, guarded migrations, open questions) go to the owner **as one batch with the idle count attached**, not one at a time.
+  - **Why:** measured 2026-10-17 ~00:3xZ, ~30 sessions were up but 2–3 xchange tickets were dispatchable. 34 of 47 open xchange issues were outside the queue (parked, umbrella, question, or guarded migration awaiting the owner). The ready ones were chained on one file.
 - 🔴 **Idle Claude worker sessions write tickets** — same order. A Claude worker session (Dell `claude-N`, Studio `claude-N`) with no review or ticket work is **ordered by a lane controller to cut tickets for that lane**:
   - The writer surveys, then writes the 10-part ticket (📋), plus up-front tests where 🧪 requires them, with first line `> dispatched-by: claude/<writer>`. Labels stay without `ready`.
   - **The lane controller reviews the ticket** (and its tests), then adds `ready`, the `class:` and the pin. **The writer never pins or dispatches**, and decides nothing the controller owns (🎛).
