@@ -532,6 +532,14 @@ broke at just 9.9 requests/minute ⇒ the problem is the design, not the load
 **Violation signs:** reading a whole log/table and then filtering out more than half · counting by walking history instead of `COUNT`/`ZCARD` ·
 setting `refreshInterval` without looking at how often the data changes · fixing with timeouts/machines/connections instead of less work per request · every client gets exactly the same answer
 
+### 🔁 Watch loops read the tq queue, not GitHub
+Owner's order 2026-10-17: *"ทำ A"*, answering "GitHub REST hit 5000/5000 fleet-wide". Every agent posts as `yuthstyle88`, so the whole fleet shares **one** 5,000-per-hour REST quota.
+- **A loop that waits on a ticket or PR state** (merged, pr_open, in_review, verdict outcome, lease) polls `GET $TQ/v1/ticket/<owner>/<repo>/<n>` or `GET $TQ/v1/snapshot`, **not** `gh issue view` / `gh pr view` / `gh pr checks` / `gh api`. The queue already holds those states, and reading it costs no GitHub quota.
+- **GitHub only when tq can't answer:** CI check results, comment bodies, and file lists. Then poll no more often than every **5 minutes**, ask for one field (`--jq`), and stop the loop the moment its condition is met.
+- **Never leave a watch loop running past its task.** Stop it with TaskStop or `pkill` when the work is done or handed over.
+- **Measure before blaming:** `gh api rate_limit --jq .resources.core`. A `rate_limit` call does not count against the quota.
+- If the shared quota still runs out with every loop on tq, the next step is a GitHub App token per machine (separate quota). That is the owner's to set up (secrets).
+
 ## ♻️ Several variants of one job = one shared core + a `dyn Trait` or generic per variant — never a copy per variant
 
 Owner's order 2026-10-06 *"ทำเป็น กฏ ไว้ด้วย ว่า ถ้ามีงานประเภท นี้ให้ ใช้ trait dyn หรือ generic"* ·
