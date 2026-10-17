@@ -215,6 +215,11 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
   - **Why:** measured 2026-10-16 15:18Z, the fleet had 5 ready tickets nobody held against ~10 idle Gemini and ~9 idle Claude sessions. The bottleneck was ticket supply, not workers or dispatch.
 - 🔴 **Design work so ≥80% of workers run at once** — owner's order 2026-10-17 *"เรามี worker 30 แต่ทำงานเหมือน ไม่มี คน"* · *"ต่อไป ออกแบบ งานให้ สามารถ workers พร้อมกัน ที่ 10 8o"* (read as 80%; ask the owner if that reading is wrong)
   - **The target:** in each round, a lane keeps at least 80% of the workers it may use busy at the same time. Below that, raising concurrency is the controller's first job that round.
+  - **Work runs as a team** (owner, same round: *"ให้สามารถ รันพร้อมกัน เป็น ทีม"* · *"เพื่อให้ งาน เร็ว"*).
+    - One feature or fix = one design = one team: the controller cuts it into N slices with disjoint File scopes and releases all N together, pinned to N workers who start in the same minute.
+    - The team shares the merged design doc and the stub signatures it fixes, so no member waits for another's code.
+    - Reviews of the team's PRs go out together, and the team merges as one batch (🟢 merge, batch merge).
+    - Size the team to the slices the design really has, not to the idle count. If the slices are too few for the idle workers, start a second design in parallel.
   - **Concurrency is designed before the tickets, not chased after them.**
     - When a lane plans work, split it along the class diagram (📐 Class diagram before code) into tickets whose `## File scope` blocks do not intersect.
     - A design whose tickets share a file runs one ticket at a time, however many workers there are.
