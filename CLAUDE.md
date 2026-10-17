@@ -538,7 +538,8 @@ Owner's order 2026-10-17: *"ทำ A"*, answering "GitHub REST hit 5000/5000 fle
 - **GitHub only when tq can't answer:** CI check results, comment bodies, and file lists. Then poll no more often than every **5 minutes**, ask for one field (`--jq`), and stop the loop the moment its condition is met.
 - **Never leave a watch loop running past its task.** Stop it with TaskStop or `pkill` when the work is done or handed over.
 - **Measure before blaming:** `gh api rate_limit --jq .resources.core`. A `rate_limit` call does not count against the quota.
-- If the shared quota still runs out with every loop on tq, the next step is a GitHub App token per machine (separate quota). That is the owner's to set up (secrets).
+- **Since 2026-10-17 Dell's `gh` and git run as `ibrowe108`** (org member, Write; owner's second seat replacing UTD888), with its own 5,000/h quota. Every other machine is still `yuthstyle88`. So a comment or PR from Dell shows `ibrowe108` as the author; the `> claude/…` first line still names the session. Switch back with `gh auth switch -u yuthstyle88`. Dell's keyring hangs `gh auth login`, so the account was added with `~/gh-add-user.sh` (token via stdin into `hosts.yml`).
+- If both quotas still run out with every loop on tq, the next step is a GitHub App token per machine (separate quota). That is the owner's to set up (secrets).
 
 ## ♻️ Several variants of one job = one shared core + a `dyn Trait` or generic per variant — never a copy per variant
 
