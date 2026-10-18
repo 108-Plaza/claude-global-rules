@@ -89,7 +89,14 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
 
 **Steps:** read the issue before the diff (the criteria are the issue, not preference) · go through the acceptance criteria one by one with `file:line` ·
 **run verify yourself** in your own worktree · verdict `PASS` / `PASS+follow-up` / `FAIL` + list of required fixes ordered by importance, each with `file:line`
-("not good yet" without a location does not count) · never close a round with "looks probably OK" · **found something missed → open a new ticket and send it back, don't fix it yourself**
+("not good yet" without a location does not count) · never close a round with "looks probably OK" · **found something missed *outside the ticket* → open a new ticket and send it back, don't fix it yourself** · a small fix *inside* the ticket ⇒ the reviewer fixes it (below)
+
+🟢 **Small fix = the reviewer fixes it, no send-back.** Owner's order 2026-10-18 *"ถ้างานนิดเดียวไม่ต้องส่งต่อ ให้ คนรีวิว แก้ได้เลย"* · *"เช่นแก้ ไม่เกิน 30 บรรทัดให้แก้เองเลย"* · *"นี้คือสาเหตุให้กิน โควต้า และงานออกช้า"*
+- **When:** every "must fix" the reviewer finds adds up to **≤30 changed lines**, inside the ticket's File scope, and the fix is clear (no design choice left open).
+- **Do:** commit the fix on the PR branch yourself (message `fix(review): <what>`), re-run verify, then post the verdict at the new head. List the fix commit in the verdict under `Reviewer fix:` with what it changed and why.
+- **Why:** a send-back costs a rework round: a message, the worker re-reading the ticket and PR, a push, a fresh CI run and a second review, for a few lines. That is where the quota and the time go.
+- **Still send back (FAIL):** more than 30 lines · a fix outside the File scope · a design or business-rule question · anything that would edit, delete or weaken the tests the ticket author provided (🧪) · migrations, the 4 BLOCK groups and other must-ask items, which still go to the owner.
+- **Merge:** a PASS that contains a reviewer fix of ≤30 lines satisfies condition 1 of 🟢 merge. Anything larger is the reviewer's own work and needs another session's PASS.
 
 | Check | What happens if it slips |
 |---|---|
