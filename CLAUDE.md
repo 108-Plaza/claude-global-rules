@@ -1114,7 +1114,7 @@ Owner's order 2026-10-18 *"ให้ รัน runner ไว้เครื่�
 - **The switch is `108-Ting-Ecosystem/scripts/runners.sh`:** `status` · `on <machine> <runner>` · `off <machine> extras` · `auto-off`.
   - It never switches off a floor runner, a busy runner or a system unit.
   - Dell's extras have user-level twins (`gha-runner-<name>.service`), so no `sudo` is needed.
-  - `auto-off` on the Mac Studio switches off any extra idle for 30 minutes.
+  - `auto-off` on the Mac Studio (every 10 min) switches off any extra idle for 15 minutes. An extra runner that was switched on for a job must go off again after use (owner 2026-10-18 *"รันเนอร์ ตัวที่ 2 หรือ ตัวที่ 3 ใช้ แล้ว ต้องปิด ด้วย"*). The floor is never switched off: Dell's two stay on always (*"dell มัน 2 ตัว มีตลอด"*).
   - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
 - **Who switches:** the session that pushes or merges (the lane controller, or the merger or batch merger it names) switches on what its CI needs **before** the push or update-branch.
   - **One switch owner per round.** Write on the lane's notice issue what you switched on, and switch your extras off when the round ends.
