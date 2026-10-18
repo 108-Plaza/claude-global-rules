@@ -820,7 +820,7 @@ After adding `ready`, confirm the queue read it correctly: `ssh Dell-server "red
 - **Do:** commit the fix on the PR branch yourself (message `fix(review): <what>`), re-run verify, then post the verdict at the new head. List the fix commit in the verdict under `Reviewer fix:` with what it changed and why.
 - **Why:** a send-back costs a rework round: a message, the worker re-reading the ticket and PR, a push, a fresh CI run and a second review, for a few lines. That is where the quota and the time go.
 - **Still send back (FAIL):** more than 30 lines · a fix outside the File scope · a design or business-rule question · anything that would edit, delete or weaken the tests the ticket author provided (🧪) · migrations, the 4 BLOCK groups and other must-ask items, which still go to the owner.
-- **Merge:** a PASS that contains a reviewer fix of ≤30 lines satisfies condition 1 of 🟢 merge. Anything larger is the reviewer's own work and needs another session's PASS.
+- **No second review for the fix** (owner, same day: *"ไม่ต้องส่งรีวิว ให้ รัน เทส ให้ผ่าน พอ"*): the fix needs only the tests green, locally and in CI. A PASS that contains a reviewer fix of ≤30 lines satisfies condition 1 of 🟢 merge. Anything larger is the reviewer's own work and needs another session's PASS.
 
 | Check | What happens if it slips |
 |---|---|
