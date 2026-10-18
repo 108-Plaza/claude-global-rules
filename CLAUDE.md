@@ -1118,10 +1118,12 @@ Owner's order 2026-10-18 *"ให้ รัน runner ไว้เครื่�
   - **Switch on only as many as the work in this round needs.**
 - **The switch is `108-Ting-Ecosystem/scripts/runners.sh`:** `status` · `on <machine> <runner>` · `off <machine> extras` · `auto-off`.
   - It never switches off a busy runner or a system unit.
-  - No switch needs `sudo` (owner: *"ตอน รัน on/off ไม่ต้องใช้ sudo นะ ให้คุณคุมการรันได้เอง"*): runners are macOS LaunchAgents or Linux user units (`systemctl --user`). Dell's `dell-org-ci-1` / `-2` were the last system units on 2026-10-18; an owner-run handover (`runners-floor-to-user.sh`) moves them to user units once their jobs end. Until then `runners.sh` reports them as system units and won't touch them.
-  - `auto-off` on the Mac Studio (every 10 min) switches off any runner idle for 15 minutes, so a runner switched on for a job goes off again after use (owner 2026-10-18 *"รันเนอร์ ตัวที่ 2 หรือ ตัวที่ 3 ใช้ แล้ว ต้องปิด ด้วย"*).
+  - No switch needs `sudo` (owner: *"ตอน รัน on/off ไม่ต้องใช้ sudo นะ ให้คุณคุมการรันได้เอง"*): every runner is a macOS LaunchAgent or a Linux user unit (`systemctl --user`). Dell's last two system units moved over at 2026-10-18T02:52Z, and none is enabled since.
+  - On the Mac Studio, every 5 min:
+    - **`auto-on`** is the backstop when nobody switched anything on (owner: *"เมื่อมีงาน ต้องมีการเปิด runner ด้วย"*). A job queued over 2 minutes gets a runner on the machine its labels call for: Linux → Dell, macOS/light → Studio, never mini/jam/Warut, at most 3 per machine.
+    - **`auto-off`** switches off any runner idle for 15 minutes, so a runner switched on for a job goes off again after use (*"รันเนอร์ ตัวที่ 2 หรือ ตัวที่ 3 ใช้ แล้ว ต้องปิด ด้วย"*).
   - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
-- **Who switches:** the session that pushes or merges (the lane controller, or the merger or batch merger it names) switches on what its CI needs **before** the push or update-branch.
+- **Who switches:** the repo's **lane controller** (or the merger or batch merger it names) switches on what its work needs **before** dispatching or merging, because it knows which machine the work needs (owner 2026-10-18: *"controller หรือใครเป็นคนเปิด runner"*). Implementers don't switch runners.
   - **One switch owner per round.** Write on the lane's notice issue what you switched on, and switch your extras off when the round ends.
   - Don't switch off another session's extra: `auto-off` does that once it is idle.
 - **Cost:** with every runner off, **every PR's CI queues until someone switches a runner on**. That is the intended trade: jobs run only where someone chose. A repo served only by a repo-scoped runner (the `yuthstyle88/*-dev` mirrors and their `deploy/staging` lane, at least) **queues until that runner is on**.
