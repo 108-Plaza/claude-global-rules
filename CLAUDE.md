@@ -1110,16 +1110,21 @@ Owner's order 2026-10-18 *"ให้ รัน runner ไว้เครื่�
 
 - **Why:** GitHub hands a job to any idle runner with matching labels, however loaded its machine is, and labels are the owner's ⇒ the one lever left is **how many runners are on**.
   Measured 2026-10-18: Dell with 5 org runners + ~44 repo listeners on ran at load 72–92 on 64 threads, and the same `rust-project-backend` job took 32–47 min instead of 4–11.
-- **Standing state (the floor, always on):** Dell `dell-org-ci-1` + `dell-org-ci-2` · Studio `studio-org-1` · `mbp-org-1` · `warut-org-1` · `jam-org-1` · `macmini-org-1`. **Every other runner is off**, still registered, and won't start at boot or login.
+- **Standing state: every runner is off, on every machine** (owner, later the same day: *"ปิดหมด เลย ดีกว่า"* · *"ผมว่าปิดไว้ดีสุด"* · *"เพราะมันจะได้ รันถูกเครื่อง"*). An always-on runner takes any job its labels match, so a heavy build can land on a machine that won't finish it (*"ที่ไม่แรงมันจะทำงานไม่จบ"*). Every runner stays registered and won't start at boot or login.
+- **The pusher or merger picks the machine to suit the job** (*"คน push merge เลือก เครื่องได้ เอง ว่า จะรันเครื่องไหน"* · *"ตามควรเหมาะสม"*):
+  - **Heavy Linux** (cargo build/test, DB tests): Dell, `dell-org-ci-1` / `-2`. Dell holds about 2–3 heavy jobs at once (load 72–92 with 5 on, 2026-10-18).
+  - **macOS / Flutter / Xcode / light gates**: the Mac Studio, `studio-org-1..6`. Jobs pinned to `mac-studio` need it.
+  - **Never heavy work on the Mac mini, jam or Warut's MacBook.** They are small and a heavy job may not finish.
+  - **Switch on only as many as the work in this round needs.**
 - **The switch is `108-Ting-Ecosystem/scripts/runners.sh`:** `status` · `on <machine> <runner>` · `off <machine> extras` · `auto-off`.
-  - It never switches off a floor runner, a busy runner or a system unit.
-  - Dell's extras have user-level twins (`gha-runner-<name>.service`), so no `sudo` is needed.
-  - `auto-off` on the Mac Studio (every 10 min) switches off any extra idle for 15 minutes. An extra runner that was switched on for a job must go off again after use (owner 2026-10-18 *"รันเนอร์ ตัวที่ 2 หรือ ตัวที่ 3 ใช้ แล้ว ต้องปิด ด้วย"*). The floor is never switched off: Dell's two stay on always (*"dell มัน 2 ตัว มีตลอด"*).
+  - It never switches off a busy runner or a system unit.
+  - No switch needs `sudo` (owner: *"ตอน รัน on/off ไม่ต้องใช้ sudo นะ ให้คุณคุมการรันได้เอง"*): runners are macOS LaunchAgents or Linux user units (`systemctl --user`). Dell's `dell-org-ci-1` / `-2` were the last system units on 2026-10-18; an owner-run handover (`runners-floor-to-user.sh`) moves them to user units once their jobs end. Until then `runners.sh` reports them as system units and won't touch them.
+  - `auto-off` on the Mac Studio (every 10 min) switches off any runner idle for 15 minutes, so a runner switched on for a job goes off again after use (owner 2026-10-18 *"รันเนอร์ ตัวที่ 2 หรือ ตัวที่ 3 ใช้ แล้ว ต้องปิด ด้วย"*).
   - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
 - **Who switches:** the session that pushes or merges (the lane controller, or the merger or batch merger it names) switches on what its CI needs **before** the push or update-branch.
   - **One switch owner per round.** Write on the lane's notice issue what you switched on, and switch your extras off when the round ends.
   - Don't switch off another session's extra: `auto-off` does that once it is idle.
-- **Cost:** a repo served only by a repo-scoped runner (the `yuthstyle88/*-dev` mirrors and their `deploy/staging` lane, at least) **queues until that runner is on**.
+- **Cost:** with every runner off, **every PR's CI queues until someone switches a runner on**. That is the intended trade: jobs run only where someone chose. A repo served only by a repo-scoped runner (the `yuthstyle88/*-dev` mirrors and their `deploy/staging` lane, at least) **queues until that runner is on**.
   - A queued job never goes red; GitHub cancels it after 24 h.
   - So a check that sits `queued` with nothing on ⇒ switch its runner on. It is not broken code.
 - **Linux is no longer one machine** (owner's order 2026-09-27 *"เพิ่ม Runners lenovo ด้วย"*) — Lenovo's two runners are a systemd service
