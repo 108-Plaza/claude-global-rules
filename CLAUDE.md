@@ -164,6 +164,16 @@ Owner's order 2026-10-17 *"แจ้งในกฏ ว่าcontroller จะ�
   - in 90 minutes, four takeover messages came from out-of-quota sessions, each contradicting the owner's latest answer in the controller's session;
   - one session killed another's watcher without telling it.
 
+### 🧭 Big work = one sub-controller session per feature branch, one function per worker
+
+Owner's order 2026-10-18 *"คุณต้องแยก คนคุมงาน แต่ละสาขา เพื่อคุม การจ่ายฟั่งชั่น"* · *"ทำคุ่มือ การทำงานไว้ ด้วย"* · *"เพื่อให้ คนอื่น ทำตาม"*
+- **The playbook is the `lane-controllers` skill** (`skills/lane-controllers/SKILL.md`). Read it before planning, staffing, reviewing or closing a feature branch.
+- **Who does what:**
+  - the lane controller opens one sub-controller session per feature branch, gives its orders, and closes it when it is done;
+  - the sub-controller writes the skeleton on `feat/<x>`, releases function tickets together, reviews them, merges them into `feat/<x>`, and runs the full suite early;
+  - the merger lands `feat/<x>` on main in one PR with one CI run.
+- **Every proposal to the owner states controllers × workers** (count, machine, model) and the done line of each lane.
+
 ### 📨 The controller loops dispatching · workers do not loop pulling the queue
 
 Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent controller ส่ง สั่งงานโดยตรง เพื่อไม่ให้ worker วนลูปไปดึงในคิว"* ·
