@@ -1102,6 +1102,26 @@ Details and the `# hosted-ok:` format live in `108-Plaza/108-Ting-Ecosystem` →
 | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
 
 · `ibrowe-pos108-2` is a **repo-level** runner of `pos108-core` — it does not appear in the org list; query `repos/<slug>/actions/runners`
+
+### 🔴 Runners stay off · whoever pushes or merges switches on what its CI needs
+
+Owner's order 2026-10-18 *"ให้ รัน runner ไว้เครื่องละ ตัว จะใช้ค่อยเปิด"* · *"เพราะ คุม git hub ไม่ได้"* · *"ไม่อยากให้ รัน ก็ปิดไว้"* ·
+*"คนpush merge ต้องคุมการ เปิด runner ด้วย"* · *"เพื่อให้มันสัมพันธ์กัน"* · Dell keeps two.
+
+- **Why:** GitHub hands a job to any idle runner with matching labels, however loaded its machine is, and labels are the owner's ⇒ the one lever left is **how many runners are on**.
+  Measured 2026-10-18: Dell with 5 org runners + ~44 repo listeners on ran at load 72–92 on 64 threads, and the same `rust-project-backend` job took 32–47 min instead of 4–11.
+- **Standing state (the floor, always on):** Dell `dell-org-ci-1` + `dell-org-ci-2` · Studio `studio-org-1` · `mbp-org-1` · `warut-org-1` · `jam-org-1` · `macmini-org-1`. **Every other runner is off**, still registered, and won't start at boot or login.
+- **The switch is `108-Ting-Ecosystem/scripts/runners.sh`:** `status` · `on <machine> <runner>` · `off <machine> extras` · `auto-off`.
+  - It never switches off a floor runner, a busy runner or a system unit.
+  - Dell's extras have user-level twins (`gha-runner-<name>.service`), so no `sudo` is needed.
+  - `auto-off` on the Mac Studio switches off any extra idle for 30 minutes.
+  - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
+- **Who switches:** the session that pushes or merges (the lane controller, or the merger or batch merger it names) switches on what its CI needs **before** the push or update-branch.
+  - **One switch owner per round.** Write on the lane's notice issue what you switched on, and switch your extras off when the round ends.
+  - Don't switch off another session's extra: `auto-off` does that once it is idle.
+- **Cost:** a repo served only by a repo-scoped runner (the `yuthstyle88/*-dev` mirrors and their `deploy/staging` lane, at least) **queues until that runner is on**.
+  - A queued job never goes red; GitHub cancels it after 24 h.
+  - So a check that sits `queued` with nothing on ⇒ switch its runner on. It is not broken code.
 - **Linux is no longer one machine** (owner's order 2026-09-27 *"เพิ่ม Runners lenovo ด้วย"*) — Lenovo's two runners are a systemd service
   (`actions.runner.108-Plaza.lenovo-org-ci-{1,2}.service`, enabled + active) and recover when WSL comes up ·
   ⚠️ **not resilient to a Windows reboot** — Windows does not start WSL by itself and the Task Scheduler entry (`wsl.exe -d Ubuntu-24.04 -e true` at logon) **has not been made** ·
@@ -1114,7 +1134,7 @@ Details and the `# hosted-ok:` format live in `108-Plaza/108-Ting-Ecosystem` →
   ⇒ **remove `pos108-ci` from `runs-on`, leaving `[self-hosted, Linux, X64]`** (a workflow change, not a runner-label change) · find them with
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"` — `grep -n "runs-on:"`, never `git grep -l <label>` (comments match too)
 - New workflows and tickets use `runs-on: [self-hosted, Linux, X64]` — **never pin extra specialised labels**
-- **The broadest `runs-on` means GitHub picks the machine** ⇒ load spreads in only two ways: **add machines to the pool**, or **remove specialised labels** from narrowly pinned jobs ·
+- **The broadest `runs-on` means GitHub picks the machine** ⇒ load is controlled by **which runners are switched on** (above), and spreads further only by **adding machines to the pool** or **removing specialised labels** from narrowly pinned jobs ·
   moving `runs-on` **within the same OS** moves nothing · 🔴 **moving to another OS really moves it** when the job is not tied to that OS — light gates (hash · clone · regex · text checks)
   on `[self-hosted, macOS, ARM64]` get a runner while Linux is saturated (`6719b7c`) · **condition:** no Linux-specific toolchain; real build/test jobs stay on Linux
 - 🔴 **Never touch runner labels** — shared resource, owner only
