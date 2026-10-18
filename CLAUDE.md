@@ -1229,6 +1229,14 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 | **MacBook** | a few crates at a time |
 | **Mac mini** | `park108` model measurement only (below) |
 | **Warut's MacBook** (`warut-mbp`) | **not a fleet machine** — never send build work without the owner's order |
+| **Dell** | **never a worker's local build or test** — Dell is the only Linux CI machine (Lenovo off), so a session's own `cargo` there takes CPU from every lane's CI · if a Linux-only build truly has to run there: `CARGO_BUILD_JOBS=8` and nothing else heavy at once |
+
+🔴 **A session's own builds: run only what the work needs, on the right machine.** Owner's order 2026-10-18 (session claude/bb65c5d9), widening the xchange lane's 2026-10-17 rule to every lane: *"ใส่ ทุกเลน"*.
+- **Why:** measured 2026-10-18T03:27Z: Dell at load **109 on 64 threads** with only 3 CI runners on. Three Dell `claude-N` sessions were building and testing all of `xchange` in their own worktrees (`w-da` · `lg6-r45` · `tw-1023`), and 6 Linux CI jobs of other lanes sat queued. The Mac Studio was at load 6.5 on 20 cores.
+- **Reviewing or writing tests:** run **only the tests the ticket names or the PR adds**, by name (`cargo test -p <crate> --test <file> <name>`). Never the crate suite or the workspace: the PR's CI and `main` run the rest.
+  - Mutation checks still apply: revert the fix and the named test must go red.
+  - A ticket that names `cargo test -p <crate>` as a criterion: run what the ticket says.
+- **A full build or test a session truly needs:** run it on the **Mac Studio**, not on Dell.
 
 - 🔴 **Always `zsh -lc`** — a headless ssh has no `/opt/homebrew/bin` and no `~/.cargo/bin`:
   `ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'`
@@ -1406,6 +1414,9 @@ Frontend depends on backend ⇒ check the real contract/DTO/API client/permissio
 - The harness compacts context automatically — no need to rush a summary to close the session · the model cannot open a new session itself and cannot read the context % precisely ⇒ "90%" is a behavioural threshold
 - **Near full / before a big piece of work:** checkpoint into `.ai_context` (if absent use `HANDOFF.md`): task/goal/scope · branch + git status · Done ·
   **ordered Next steps** · key files/tests · open decisions · how to verify · commit safe work to avoid loss (no push/merge if it falls under Must Stop And Ask)
+- 🔴 **A session reads these rules once, when it starts; it never sees a later change.** Measured 2026-10-18: three Dell sessions that started on 10-17 00:56Z kept building on Dell 26 h later, under rules that had changed that evening.
+  - Before claiming new work, a long-running session re-reads `~/.claude/CLAUDE.md` (at least the sections its work touches) when `git -C ~/.claude/rules-repo log -1 --format=%cI` is newer than its own start.
+  - A controller that changes how work is done also announces it on the lane's notice issue, because some sessions don't read the file.
 - **Starting a new round / after compaction:** read the checkpoint → check branch/status → continue from the Next step immediately without re-asking → clear completed checkpoints
 - Installed hooks: `PreCompact` → `~/.claude/hooks/precompact-checkpoint.sh` saves a git snapshot at `~/.claude/checkpoints/<project>.md` ·
   `SessionStart` → `sessionstart-checkpoint.sh` injects it back · hooks capture only mechanical state — Done/Next steps/decisions remain the model's job
