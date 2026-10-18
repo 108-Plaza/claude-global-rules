@@ -1133,7 +1133,16 @@ Owner's order 2026-10-18 *"ให้ รัน runner ไว้เครื่�
 - 🔴 **Jobs pinned to `pos108-ci` cannot land on Lenovo** — that label exists only on Dell, so they still queue on one machine
   ⇒ **remove `pos108-ci` from `runs-on`, leaving `[self-hosted, Linux, X64]`** (a workflow change, not a runner-label change) · find them with
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"` — `grep -n "runs-on:"`, never `git grep -l <label>` (comments match too)
-- New workflows and tickets use `runs-on: [self-hosted, Linux, X64]` — **never pin extra specialised labels**
+- 🔴 **`runs-on` names the OS plus what the machine must have, never a preferred runner.** Owner's order 2026-10-18:
+  *"ตอนนี้มันน่าจะไปติด ที่เราปักหมุด ไว้"* · *"แทนที่จะปัก หมุด แต่ไปคุมการ เปิด รันเนอร์รันงานแทน"*.
+  - Where and how many jobs run is decided by **which runners are switched on** (above), not by labels.
+  - A placement pin makes a job wait for the few runners carrying it while others sit idle. These are placement pins and must go: `pos108-ci` · `light` · `fast-mac` · `warut-mbp` · `heavy-build` · any machine name.
+  - **Capability labels stay**, because without them the job lands on a machine that can't run it:
+    - `k3s-node`: the job runs `helm`/`kubectl` against the k3s cluster on Dell.
+    - `mac-studio`: Flutter lives at `/Users/yuth/develop/flutter` there, until another Mac has it.
+  - A new capability label needs a reason written beside it in the workflow; adding labels to runners stays the owner's.
+  - New workflows and tickets use `[self-hosted, Linux, X64]` / `[self-hosted, macOS, ARM64]` (+ a capability label only if the job needs it).
+  - Measured 2026-10-18 at each repo's `main`: placement pins sat in 6 repos (`jh-api` · `pos108-core` · `pos108-slot-front` · `pos108_slot_api` · `xchange` · `note-front-end-main`); one ticket per repo removes them.
 - **The broadest `runs-on` means GitHub picks the machine** ⇒ load is controlled by **which runners are switched on** (above), and spreads further only by **adding machines to the pool** or **removing specialised labels** from narrowly pinned jobs ·
   moving `runs-on` **within the same OS** moves nothing · 🔴 **moving to another OS really moves it** when the job is not tied to that OS — light gates (hash · clone · regex · text checks)
   on `[self-hosted, macOS, ARM64]` get a runner while Linux is saturated (`6719b7c`) · **condition:** no Linux-specific toolchain; real build/test jobs stay on Linux
