@@ -172,6 +172,7 @@ Owner's order 2026-10-18 *"คุณต้องแยก คนคุมงา�
   - the lane controller opens one sub-controller session per feature branch, gives its orders, and closes it when it is done;
   - the sub-controller writes the skeleton on `feat/<x>`, releases function tickets together, reviews them, merges them into `feat/<x>`, and runs the full suite early;
   - the merger lands `feat/<x>` on main in one PR with one CI run.
+- 🔴 **Function tickets, including setup fixes, are implemented by Gemini workers.** Claude sessions only control, write the skeleton and up-front tests, and review (owner 2026-10-18 *"งาน ระดับ ฟั่งชั่นต้องให้ Gemini รับงานไปนะ"*).
 - **Every proposal to the owner states controllers × workers** (count, machine, model) and the done line of each lane.
 
 ### 📨 The controller loops dispatching · workers do not loop pulling the queue

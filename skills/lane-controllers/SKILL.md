@@ -25,9 +25,11 @@ Owner's orders, 2026-10-18, xchange (BE controller session claude/c81c8986):
 | Lane controller | one Claude session per lane | picks the next feature; opens a sub-controller session per feature branch; gives it orders; rules on cross-branch conflicts; brings owner decisions in one batch; checks main after each merge; closes finished sub-controllers | dispatch, review or merge inside a sub-controller's branch |
 | Sub-controller ("AG controller &lt;X&gt;") | one session per feature branch | skeleton, function tickets, dispatch, review, merge into `feat/<x>`, early full suite, the `feat/<x>` → main PR | merge into main; touch another branch's files without agreeing the order |
 | Merger | one session per repo | merges into main (single PRs and `feat/*` PRs), one CI run each, merge commit | review its own work |
-| Worker | Gemini (or Claude) session | one function, its own test only, PR into `feat/<x>` | build on Dell; take an unpinned ticket; edit provided tests |
+| Worker | **Gemini** session (owner 2026-10-18: *"งาน ระดับ ฟั่งชั่นต้องให้ Gemini รับงานไปนะ"*) | one function, its own test only, PR into `feat/<x>`. Setup-fix tickets from the early full suite count as function tickets too | build on Dell; take an unpinned ticket; edit provided tests |
 
 The lane controller hands work over with a handoff on the lane's notice issue (first line `> claude/<id> — handoff (<X>)`), then stops acting on it.
+
+🔴 **Function tickets go to Gemini, never to a Claude session or a Claude subagent.** Claude sessions do control, the skeleton, the up-front tests and review. That keeps Claude quota for judgement and puts the volume work on Gemini.
 
 ## 2. A sub-controller's life
 
