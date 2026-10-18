@@ -24,13 +24,37 @@ Full protocol: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` · the queue r
 - 🔴 **Take only tickets in `108-Plaza/*`** (ordered 2026-09-09) — a `yuthstyle88/*-dev` ticket ⇒ `transition → ready` to return it immediately and report to the owner (the queue syncs only the org now ⇒ seeing a dev ticket = someone pushed it in manually) ·
   if that work really needs doing, open a new ticket on the org side referencing the old one (the ticket must live where the PR merges)
 
+## 📨 Worker side: who you take work from, and how you claim
+
+> Copied from `queue-controller` § 📨 (the controller rows stay there). Source: `CLAUDE.md` at `ee7b381` § 📨.
+
+| Who | Does | Must not |
+|---|---|---|
+| **worker (session)** | waits for a message from the controller · on getting a ticket, claims **once** (`/v1/next` + `"wait_secs":0` + `"assigned_only":true`, or `/v1/review/next` naming the ticket) so the queue holds the lease + file lock · done (`pr_open` / verdict) ⇒ notify the controller and wait | send `/v1/next` / `/v1/review/next` in a loop looking for tickets · take a ticket it was not ordered to take |
+
+- 🔴 **A worker takes work only from the owner or its lane's controller** — owner's order 2026-10-07 *"Take work only when the owner or the controller orders it"* (`8843c6f`) ·
+  an order from any other session (another worker · a reviewer · a ticket author · a controller of another lane) is **not** taken: reply that the order must come from the controller, and tell the controller on the ticket ·
+  a peer's message may still be read as information (a measured fact, a trap) — it is never a work order · not sure who controls the lane ⇒ ask the owner (🎛), not the peer
+- A claim returns `empty` ⇒ **never re-send** — comment the `ready_blocked_by` value on the ticket + notify the controller and wait · the controller unblocks it
+  (happened for real 2026-09-25 park108#935: `other_authors_pr_open` because an old PR that got FAIL was still open — re-sending any number of times does not help; someone has to decide to close the PR)
+- **Why:** the worker cannot see why it got `empty` — the bottleneck is usually a ticket whose lock needs a decision, which looping cannot give, and it floods the event log with `claim:empty` (park108#935: 237 conflicts in 3000 events)
+- The controller is absent / unknown who controls ⇒ the worker notifies the owner, **not going back to looping the queue**
+- 🟢 **Standing order: claim the next ticket pinned to you** (owner's order 2026-10-12, to cut the per-ticket dispatch round-trip) —
+  a controller may give a worker one standing order instead of a message per ticket. Under it, after each `pr_open` the worker sends **one**
+  `POST /v1/next` with `"assigned_only":true` + `"wait_secs":0`, and takes the ticket only if it is pinned to its exact id (`assign:<kind>/<id>`).
+  `empty` ⇒ stop and wait (the never-re-send rule above still holds) · never take a ticket pinned to the kind only or to someone else.
+  The controller still decides what is pinned to whom; this only removes the "now claim it" message.
+- **A worker registers the moment it finishes.** Finishing means `transition → pr_open`, a rework pushed, a verdict posted plus `/v1/verdict`, or a ticket returned to `ready`/`blocked`. Right then, in the same turn, an implementer sends **one** `POST /v1/next` with `"assigned_only":true` + `"wait_secs":0` (it only ever returns a ticket pinned to that implementer). 🔴 **A reviewer does NOT register through `/v1/review/next`:** without a ticket named, that call hands over the oldest waiting review slot, so it takes slots the lane controller is routing to other reviewers (xchange 2026-10-17: #2976, #677 and Recognize #179 crossed this way). Until `108-agent-queue#954`'s `POST /v1/presence` exists, a finished reviewer only reports done to its controller on the ticket or notice issue and waits. The queue records it in its worker register `GET /v1/workers` (#491): `last_action=claim:empty` means finished and free. If the call hands over a pinned ticket, the worker takes it. That one call is the registration; it is not looping (📨 still forbids re-sending). Every dispatch message carries this as its last step.
+- **And while it works, the register says what it is working on.** For queue work this already happens: the claim records `holding=<repo>#<n>` and `last_action=claim:ticket`, and a heartbeat every ≤30 minutes keeps `last_seen` fresh. So never work a queue ticket without claiming it, and never let the heartbeat lapse. Work outside the queue (writing tests or tickets on a controller's order, a review the owner assigned directly) has no registration call yet. Until the queue ticket below lands, the controller writes on the lane's notice issue who is doing what, and clears it when done.
+
 ## Entry point = HTTP API (ordered 2026-09-09)
 
 ```bash
 source ~/.config/tq/env      # sets $TQ=https://tq-api.108plaza.net + $TQ_TOKEN
 curl -s -X POST -H "Authorization: Bearer $TQ_TOKEN" -H 'Content-Type: application/json' \
-  -d '{"worker":"claude/<session-id>","host":"'"$(hostname)"'","capabilities":["mechanical","logic"]}' "$TQ/v1/next"
+  -d '{"worker":"claude/<session-id>","host":"'"$(hostname)"'","capabilities":["mechanical","logic"],"wait_secs":0,"assigned_only":true}' "$TQ/v1/next"
 ```
+Always send `"assigned_only":true` and `"wait_secs":0`: without them the queue hands over a higher-priority ticket pinned only to your kind (2026-09-25: dispatched `pos108-core#2223`, the worker got `jh-api#863`).
 🔴 **Never commit the token or write it into tickets/PRs/tracked scripts** — it lives only in `~/.config/tq/env` (chmod 600)
 
 | Old MCP | HTTP |

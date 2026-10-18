@@ -43,6 +43,17 @@ trap 'rmdir "$LOCK" 2>/dev/null' EXIT
 
 g() { git -C "$REPO" "$@"; }
 
+# Skills: link every rules-repo/skills/<name> into ~/.claude/skills/ (missing links only; see
+# `claude-rules skills`). Runs on every pass, not only after a pull, so a machine already at
+# origin still gets skills that arrived before this step existed. Silent when nothing changes.
+sync_skills() {
+  local out
+  [ -x "$REPO/bin/claude-rules" ] || return 0
+  out="$("$REPO/bin/claude-rules" skills 2>&1)" || true
+  [ -n "$out" ] && log "skills: $(printf '%s' "$out" | tr '\n' ' ' | cut -c1-300)"
+  return 0
+}
+
 if [ -n "$(g status --porcelain)" ]; then
   log_every dirty 360 "ข้าม: มีของค้างยังไม่ commit ในเวิร์กทรี (ให้คนตัดสินว่าจะ push หรือทิ้ง)"
   exit 0
@@ -62,6 +73,7 @@ if [ "$ahead" -gt 0 ]; then
 fi
 
 if [ "$behind" -eq 0 ]; then
+  sync_skills
   # ตรงกันอยู่แล้ว — เขียน heartbeat วันละครั้งพอ (1380 นาที = 23 ชม. กันเลื่อนจนข้ามวัน)
   log_every heartbeat 1380 "heartbeat: ตรงกับ origin ($(g rev-parse --short HEAD)) — ไม่มีอะไรต้องดึง"
   exit 0
@@ -71,6 +83,7 @@ before="$(g rev-parse --short HEAD)"
 if g merge -q --ff-only origin/main 2>/dev/null; then
   log "อัปเดต: $before -> $(g rev-parse --short HEAD) ($behind commit)"
   : > "$HOME/.claude/.rules-sync.stamp-heartbeat"
+  sync_skills
 else
   log "🔴 ff-only ไม่ผ่านทั้งที่ ahead=0 — ประวัติถูกเขียนใหม่? ต้องแก้ด้วยมือ: git -C $REPO reset --hard origin/main"
   exit 0
