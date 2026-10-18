@@ -6,6 +6,8 @@
 #   claude-rules push     ส่งกฎที่แก้ขึ้น origin (rebase ก่อนเสมอ)
 #                         โชว์ diff ที่จะขึ้นไปก่อนเสมอ · ต้องยืนยัน (-y/--yes หรือ CLAUDE_RULES_YES=1)
 #   claude-rules doctor   ซ่อม symlink ที่ถูกเขียนทับเป็นไฟล์ธรรมดา
+#                         and link every skill in rules-repo/skills/ into ~/.claude/skills/
+#   claude-rules skills   link the skills only (safe to re-run)
 #   claude-rules link     ติดตั้งครั้งแรก: สำรองไฟล์เดิมแล้วทำ symlink
 set -euo pipefail
 
@@ -22,6 +24,56 @@ md5_of() { if command -v md5 >/dev/null 2>&1; then md5 -q "$1"; else md5sum "$1"
 [ -d "$CLONE/.git" ] || die "ยังไม่มีสำเนาที่ $CLONE — โคลนก่อน: git clone $REMOTE_HINT $CLONE"
 
 is_linked() { [ -L "$LIVE" ] && [ "$(readlink "$LIVE")" = "$SRC" ]; }
+
+# Skills: every rules-repo/skills/<name>/SKILL.md is linked as ~/.claude/skills/<name>.
+# Only creates missing links and removes links into rules-repo/skills/ whose skill is gone.
+# Never touches a real directory or a link that points somewhere else: it reports those instead.
+SKILLS_SRC="$CLONE/skills"
+SKILLS_LIVE="$HOME/.claude/skills"
+
+link_skills() {
+  local src name dst bad=0
+  mkdir -p "$SKILLS_LIVE"
+  for src in "$SKILLS_SRC"/*/; do
+    src="${src%/}"
+    [ -f "$src/SKILL.md" ] || continue
+    name="${src##*/}"
+    dst="$SKILLS_LIVE/$name"
+    if [ -L "$dst" ]; then
+      if [ "$(readlink "$dst")" = "$src" ]; then continue; fi
+      echo "🔴 skill $name: $dst points to $(readlink "$dst"), not $src. Left as is; fix it by hand."
+      bad=1
+    elif [ -e "$dst" ]; then
+      echo "🔴 skill $name: $dst is a real directory, not a link. Left as is; move it aside, then re-run."
+      bad=1
+    else
+      ln -s "$src" "$dst"
+      echo "linked skill: $dst -> $src"
+    fi
+  done
+  for dst in "$SKILLS_LIVE"/*; do
+    [ -L "$dst" ] || continue
+    case "$(readlink "$dst")" in
+      "$SKILLS_SRC"/*)
+        if [ ! -f "$dst/SKILL.md" ]; then
+          rm "$dst"
+          echo "removed stale skill link: $dst (its skill is no longer in the repo)"
+        fi ;;
+    esac
+  done
+  return "$bad"
+}
+
+skills_state() {
+  local total=0 linked=0 src
+  for src in "$SKILLS_SRC"/*/; do
+    src="${src%/}"
+    [ -f "$src/SKILL.md" ] || continue
+    total=$((total + 1))
+    [ -L "$SKILLS_LIVE/${src##*/}" ] && [ "$(readlink "$SKILLS_LIVE/${src##*/}")" = "$src" ] && linked=$((linked + 1))
+  done
+  if [ "$linked" = "$total" ]; then echo "$linked/$total linked"; else echo "🔴 $linked/$total linked — run: claude-rules skills"; fi
+}
 
 link_it() {
   if is_linked; then echo "symlink ถูกต้องอยู่แล้ว"; return 0; fi
@@ -62,6 +114,7 @@ cmd_status() {
   else
     printf '  %-22s %s\n' "symlink:" "🔴 ขาด — รัน: claude-rules doctor"
   fi
+  printf '  %-22s %s\n' "skills:" "$(skills_state)"
 }
 
 cmd_pull() {
@@ -178,6 +231,7 @@ Co-Authored-By: Claude Opus 5 <noreply@anthropic.com>"
 }
 
 cmd_doctor() {
+  link_skills || true
   if is_linked; then echo "symlink ปกติ — ไม่มีอะไรต้องซ่อม"; cmd_status; return 0; fi
   if [ -f "$LIVE" ] && [ ! -L "$LIVE" ]; then
     if cmp -s "$LIVE" "$SRC"; then
@@ -196,7 +250,8 @@ case "${1:-status}" in
   pull)   cmd_pull ;;
   push)   cmd_push "$@" ;;
   doctor) cmd_doctor ;;
+  skills) link_skills ;;
   link)   link_it ;;
-  -h|--help|help) sed -n '2,9p' "$0" | sed 's/^# \{0,1\}//' ;;
+  -h|--help|help) sed -n '2,11p' "$0" | sed 's/^# \{0,1\}//' ;;
   *) die "ไม่รู้จักคำสั่ง '$1' (ดู --help)" ;;
 esac

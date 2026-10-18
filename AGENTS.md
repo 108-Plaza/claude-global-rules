@@ -12,6 +12,21 @@ cat ~/.claude/rules-repo/CLAUDE.md
 This file is short on purpose. **Never copy rules into it** — Claude Code loads both `CLAUDE.md`
 and `AGENTS.md` into context ⇒ a copy here = paying the tokens twice every session.
 
+## Procedures by role: read the skill file
+
+Claude Code loads these as skills on demand; other agents (agy) do not, so read the file for your role before you start:
+
+| Your work | Read |
+|---|---|
+| Holding a queue ticket (implementer) | `~/.claude/rules-repo/skills/tq-worker/SKILL.md` |
+| Reviewing a PR, verdict format, merging | `~/.claude/rules-repo/skills/review-and-merge/SKILL.md` |
+| Writing a ticket or a design doc | `~/.claude/rules-repo/skills/ticket-writing/SKILL.md` |
+| Workflows, CI queue, deploy lanes | `~/.claude/rules-repo/skills/fleet-ci/SKILL.md` |
+| Heavy builds, disk, cleanup | `~/.claude/rules-repo/skills/fleet-builds/SKILL.md` |
+| Lane controller (dispatch, monitoring) | `~/.claude/rules-repo/skills/queue-controller/SKILL.md` |
+
+Machines, sessions, lanes and runners as measured: `~/.claude/rules-repo/FLEET.md`.
+
 ## Never write rules into this file
 
 New or changed rule ⇒ edit `~/.claude/rules-repo/CLAUDE.md` + commit + `claude-rules push`

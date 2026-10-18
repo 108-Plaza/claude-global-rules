@@ -45,6 +45,30 @@ trap 'rmdir "$LOCK" 2>/dev/null; rm -f "$BUNDLE"' EXIT
 
 g() { git -C "$REPO" "$@"; }
 
+# Skills: on the Windows side, give every skill in the repo a junction <DEST>/../skills/<name>
+# -> <DEST>/skills/<name>, the same layout `claude-rules doctor` makes with symlinks elsewhere.
+# Creates missing junctions only; never replaces an existing entry. Logs only when cmd prints something.
+skills_cmd() {
+  local rev="$1" n win_repo win_skills cmd
+  win_repo="${DEST//\//\\}"
+  win_skills="${win_repo%\\*}\\skills"
+  cmd="if not exist \"$win_skills\" mkdir \"$win_skills\""
+  for n in $(g ls-tree -d --name-only "$rev" skills/ 2>/dev/null | sed 's|^skills/||'); do
+    g cat-file -e "$rev:skills/$n/SKILL.md" 2>/dev/null || continue
+    cmd="$cmd & if not exist \"$win_skills\\$n\" mklink /J \"$win_skills\\$n\" \"$win_repo\\skills\\$n\""
+  done
+  printf '%s' "$cmd"
+}
+
+link_skills_remote() {
+  local out
+  out="$("${SSH[@]}" "$(skills_cmd "$1")" 2>&1 </dev/null | tr -d '\r')"
+  [ -n "$out" ] && log "skills on $HOST: $(printf '%s' "$out" | tr '\n' ' ' | cut -c1-200)"
+  return 0
+}
+
+[ "${MIRROR_PRINT_SKILLS_CMD:-}" = 1 ] && { skills_cmd "${MIRROR_REV:-origin/main}"; echo; exit 0; }
+
 if ! g fetch -q origin main 2>/dev/null; then
   log_every fetchfail 360 "ข้าม: fetch origin ไม่ผ่านบนเครื่องต้นทาง"
   exit 0
@@ -58,6 +82,7 @@ if [ -z "$have" ]; then
 fi
 
 if [ "$have" = "$want" ]; then
+  link_skills_remote "$want"
   log_every heartbeat 1380 "heartbeat: $HOST ตรงกับ origin (${want:0:7}) — ไม่มีอะไรต้องส่ง"
   exit 0
 fi
@@ -86,6 +111,7 @@ got="$(printf '%s\n' "$out" | grep -E '^[0-9a-f]{40}$' | tail -1)"
 if [ "$got" = "$want" ]; then
   log "อัปเดต $HOST: ${have:0:7} -> ${want:0:7} ($(g rev-list --count "$have..$want") commit)"
   : > "$HOME/.claude/.rules-mirror-$HOST.stamp-heartbeat"
+  link_skills_remote "$want"
 else
   log_every applyfail 360 "ข้าม: $HOST ไม่ได้ขยับ (มีของค้างในเวิร์กทรี หรือ ff ไม่ผ่าน) — $(printf '%s' "$out" | tr '\n' ' ' | cut -c1-200)"
 fi
