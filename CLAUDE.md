@@ -234,6 +234,11 @@ Owner's order 2026-09-25 *"สร้างกฏใหม่ ให้ agent con
   - **A file that chains tickets is a design defect.**
     - Fix it at the root: the first ticket splits that file along the diagram, as a pure code move, and the rest then run in parallel.
     - Example: `transfer_flow.rs` made xchange #2617 → #2704 → #2774 run strictly one after another on 2026-10-17. `blocked by #N` only orders the chain; it adds no workers.
+  - **One business core, functions fanned out** (owner's order 2026-10-17 *"รวบ business ไว้จุดเดียว กระจาย ฟั่งชั่น ให้ worker เขียน"* · *"ไม่ใช่ มารอกัน"* · *"เทส ระดับฟั่งชั่น แล้ว เทส ระดับ logic"*; made fleet-wide 2026-10-18 *"public เลย"*).
+    - A feature's business rules live in **one core ticket**. Every function that uses them is **its own ticket** with a disjoint File scope, written in parallel against the core's stub signatures, so no function waits for another's code.
+    - **Two test levels.** The function level runs **only that function's own tests** (*"รับดับ ฟั่ง ชั่น แค่ เทส ฟั่งนั้น ไม่ใช่ รันเทสหมด"*). The logic level runs the full suite on the combined branch.
+    - 🔴 **Run the logic level early**: on a stacked branch with the core's first draft plus the function stubs, right away, on the Mac Studio. Do not wait until every function has passed. Cut the setup tickets it finds **alongside** the function tickets.
+    - **Why:** 2026-10-17 xchange CA-10: 9 function PRs were written and passed within 2.5 h, but the first logic-level run came 8 h later and found 364 failing tests (old setups the new rule forbids), which cost another 8 h before the batch merged.
   - **Every round, measure and write down:** busy workers ÷ usable workers, and why the rest are idle. The causes are no ready ticket, a file lock (name the holder), a dependency, or an owner decision.
     - Owner decisions that idle workers (parked umbrellas, guarded migrations, open questions) go to the owner **as one batch with the idle count attached**, not one at a time.
   - **Why:** 2026-10-17: ~30 sessions up, 2–3 tickets dispatchable · 34 of 47 open xchange issues sat outside the queue (parked · umbrella · question · guarded migration awaiting the owner) and the ready ones chained on one file.
