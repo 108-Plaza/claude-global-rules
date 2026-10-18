@@ -1132,6 +1132,11 @@ Owner's order 2026-10-18 *"ให้ รัน runner ไว้เครื่�
     - **`auto-off`** switches off any runner idle for 15 minutes, so a runner switched on for a job goes off again after use (*"รันเนอร์ ตัวที่ 2 หรือ ตัวที่ 3 ใช้ แล้ว ต้องปิด ด้วย"*).
   - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
 - **Who switches:** the repo's **lane controller** (or the merger or batch merger it names) switches on what its work needs **before** dispatching or merging, because it knows which machine the work needs (owner 2026-10-18: *"controller หรือใครเป็นคนเปิด runner"*). Implementers don't switch runners.
+  - 🔴 **Every lane manages its own runners, every round** (owner 2026-10-18 *"ทุกเลน ต้องจัดการ รันเนอร์ ด้วย"*). `auto-on` is a backstop, not the plan: it waits 2 minutes and runs every 5, so a lane that leaves it to `auto-on` waits up to ~7 minutes per job.
+    - Each controller-loop round: list your repos' queued jobs (`gh api "repos/<slug>/actions/runs?status=queued"` → each run's jobs and their `labels`) and switch on a runner on the matching machine for every job waiting more than a minute.
+    - Before a push, a batch build or a merge that will start CI, switch the runners on first.
+    - All lanes share one pool, so a runner you switched on may take another lane's job first. Count what is busy and with which repo before deciding you have enough (`ps -eo args | grep -oE 'actions-runner[^/ ]*/_work/[^/ ]+'` on the machine).
+    - Why: 2026-10-18 05:08–05:12Z an xchange PR's macOS jobs waited 4 minutes while the one macOS runner on ran another lane's job and the Studio runners sat off.
   - **One switch owner per round.** Write on the lane's notice issue what you switched on, and switch your extras off when the round ends.
   - Don't switch off another session's extra: `auto-off` does that once it is idle.
 - **Cost:** with every runner off, **every PR's CI queues until someone switches a runner on**. That is the intended trade: jobs run only where someone chose. A repo served only by a repo-scoped runner (the `yuthstyle88/*-dev` mirrors and their `deploy/staging` lane, at least) **queues until that runner is on**.
