@@ -171,6 +171,7 @@ Re-measure: `ssh macstudio 'df -h /System/Volumes/Data | tail -1; uptime'` and `
 | **MacBook** | A few crates at a time. |
 | **Mac mini** (`Mac-mini-khxng-ai-01` · 100.100.204.107) | `park108` model measurement only: the models and the 244-image plate set live there and must never leave it (PDPA). Worktrees under `~/park108-src/.worktrees/`. |
 | **Warut's MacBook** (`warut-mbp`) | Not a fleet machine: no build work without the owner's order. |
+| **Dell** | Never a worker's local build or test: it is the only Linux CI machine while Lenovo is off. A Linux-only build that truly must run there: `CARGO_BUILD_JOBS=8`, nothing else heavy at once (`e541b83`). |
 
 Folder layouts differ; never copy a path between machines. Studio: `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}`, `JH-Platform/Api`, `parking/park108`. MacBook: `pos/`, `heros/`, `parking/`.
 

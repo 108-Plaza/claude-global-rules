@@ -42,12 +42,53 @@ Lenovo's runner service and Warut's runner PATH: `FLEET.md` § CI runners.
 - 🔴 **Jobs pinned to `pos108-ci` cannot land on Lenovo** — that label exists only on Dell, so they still queue on one machine
   ⇒ **remove `pos108-ci` from `runs-on`, leaving `[self-hosted, Linux, X64]`** (a workflow change, not a runner-label change) · find them with
   `gh api "repos/<slug>/contents/.github/workflows/<file>" -H "Accept: application/vnd.github.raw" | grep -n "runs-on:"` — `grep -n "runs-on:"`, never `git grep -l <label>` (comments match too)
-- New workflows and tickets use `runs-on: [self-hosted, Linux, X64]` — **never pin extra specialised labels**
-- **The broadest `runs-on` means GitHub picks the machine** ⇒ load spreads in only two ways: **add machines to the pool**, or **remove specialised labels** from narrowly pinned jobs ·
+- 🔴 **`runs-on` names the OS plus what the machine must have, never a preferred runner.** Owner's order 2026-10-18:
+  *"It's probably stuck on the labels we pinned"* (`26c62f2`) · *"Instead of pinning, control which runners are switched on to run the work"* (`26c62f2`).
+  - Where and how many jobs run is decided by **which runners are switched on** (§ 🔴 Runners stay off, below), not by labels.
+  - A placement pin makes a job wait for the few runners carrying it while others sit idle. These are placement pins and must go: `pos108-ci` · `light` · `fast-mac` · `warut-mbp` · `heavy-build` · any machine name.
+  - **Capability labels stay**, because without them the job lands on a machine that can't run it:
+    - `k3s-node`: the job runs `helm`/`kubectl` against the k3s cluster on Dell.
+    - `mac-studio`: Flutter lives at `/Users/yuth/develop/flutter` there, until another Mac has it.
+  - A new capability label needs a reason written beside it in the workflow; adding labels to runners stays the owner's.
+  - New workflows and tickets use `[self-hosted, Linux, X64]` / `[self-hosted, macOS, ARM64]` (+ a capability label only if the job needs it).
+  - Measured 2026-10-18 at each repo's `main`: placement pins sat in 6 repos (`jh-api` · `pos108-core` · `pos108-slot-front` · `pos108_slot_api` · `xchange` · `note-front-end-main`); one ticket per repo removes them.
+- **The broadest `runs-on` means GitHub picks the machine** ⇒ load is controlled by **which runners are switched on** (below), and spreads further only by **adding machines to the pool** or **removing specialised labels** from narrowly pinned jobs ·
   moving `runs-on` **within the same OS** moves nothing · 🔴 **moving to another OS really moves it** when the job is not tied to that OS — light gates (hash · clone · regex · text checks)
-  on `[self-hosted, macOS, ARM64]` get a runner while Linux is saturated (`6719b7c`) · **condition:** no Linux-specific toolchain; real build/test jobs stay on Linux
+  on `[self-hosted, macOS, ARM64]` get a runner while Linux is saturated (`6719b7c`) · **condition:** no Linux-specific toolchain · 🔴 **a test job that runs on both OSes is not pinned to Linux.** Owner 2026-10-18: *"Who decided that?"* (`ad87c1b`) · *"You have to look at what is running there too"* (`ad87c1b`). The old "real build/test jobs stay on Linux" was an agent's line from when Lenovo gave several Linux machines. With Lenovo off, Linux means Dell alone, and it piled every api test there while the Mac Studio sat idle (xchange 2026-10-18). Before switching a runner on, look at what each machine is running and its load (`uptime`; the busy `_work/<repo>` list), and put the job on the idle one. A long test suite is split into partitions so it can spread over several machines.
 - 🔴 **Never touch runner labels** — shared resource, owner only
 - Faster CI is not permission to push guess-fixes — local verify must still be green first
+
+## 🔴 Runners stay off · whoever pushes or merges switches on what its CI needs
+
+Owner's order 2026-10-18 *"Keep one runner per machine; switch on when needed"* (`0346979`) · *"Because we can't control GitHub"* (`0346979`) · *"If we don't want it to run, keep it off"* (`0346979`) ·
+*"Whoever pushes or merges must also control switching the runner on"* (`0346979`) · *"So the two go together"* (`0346979`) · Dell keeps two.
+
+- **Why:** GitHub hands a job to any idle runner with matching labels, however loaded its machine is, and labels are the owner's ⇒ the one lever left is **how many runners are on**.
+  Measured 2026-10-18: Dell with 5 org runners + ~44 repo listeners on ran at load 72–92 on 64 threads, and the same `rust-project-backend` job took 32–47 min instead of 4–11.
+- **Standing state: every runner is off, on every machine** (owner, later the same day: *"Better to switch them all off"* (`d72e467`) · *"I think keeping them off is best"* (`d72e467`) · *"Because then it runs on the right machine"* (`d72e467`)). An always-on runner takes any job its labels match, so a heavy build can land on a machine that won't finish it (*"the weak ones won't finish the work"*, `d72e467`). Every runner stays registered and won't start at boot or login.
+- **The pusher or merger picks the machine to suit the job** (*"Whoever pushes or merges can choose which machine to run on"* (`d72e467`) · *"as is suitable"* (`d72e467`)):
+  - **Heavy Linux** (cargo build/test, DB tests): Dell, `dell-org-ci-1` / `-2`. Dell holds about 2–3 heavy jobs at once (load 72–92 with 5 on, 2026-10-18).
+  - **macOS / Flutter / Xcode / light gates**: the Mac Studio, `studio-org-1..6`. Jobs pinned to `mac-studio` need it.
+  - **Never heavy work on the Mac mini, jam or Warut's MacBook.** They are small and a heavy job may not finish.
+  - **Switch on only as many as the work in this round needs.**
+- **The switch is `108-Ting-Ecosystem/scripts/runners.sh`:** `status` · `on <machine> <runner>` · `off <machine> extras` · `auto-off`.
+  - It never switches off a busy runner or a system unit.
+  - No switch needs `sudo` (owner: *"Switching on/off needs no sudo; you control the runners yourself"*, `d72e467`): every runner is a macOS LaunchAgent or a Linux user unit (`systemctl --user`). Dell's last two system units moved over at 2026-10-18T02:52Z, and none is enabled since.
+  - On the Mac Studio, every 5 min:
+    - **`auto-on`** is the backstop when nobody switched anything on (owner: *"When there is work, a runner must be switched on too"*, `16ba415`). A job queued over 2 minutes gets a runner on the machine its labels call for: Linux → Dell, macOS/light → Studio, never mini/jam/Warut, at most 3 per machine.
+    - **`auto-off`** switches off any runner idle for 15 minutes, so a runner switched on for a job goes off again after use (*"The 2nd or 3rd runner must be switched off after use too"*, `f58643f`).
+  - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
+- **Who switches:** the repo's **lane controller** (or the merger or batch merger it names) switches on what its work needs **before** dispatching or merging, because it knows which machine the work needs (owner 2026-10-18: *"The controller, or whoever, is the one who switches the runner on"*, `16ba415`). Implementers don't switch runners.
+  - 🔴 **Every lane manages its own runners, every round** (owner 2026-10-18 *"Every lane must manage its runners too"*, `b9af5f7`). `auto-on` is a backstop, not the plan: it waits 2 minutes and runs every 5, so a lane that leaves it to `auto-on` waits up to ~7 minutes per job.
+    - Each controller-loop round: list your repos' queued jobs (`gh api "repos/<slug>/actions/runs?status=queued"` → each run's jobs and their `labels`) and switch on a runner on the matching machine for every job waiting more than a minute.
+    - Before a push, a batch build or a merge that will start CI, switch the runners on first.
+    - All lanes share one pool, so a runner you switched on may take another lane's job first. Count what is busy and with which repo before deciding you have enough (`ps -eo args | grep -oE 'actions-runner[^/ ]*/_work/[^/ ]+'` on the machine).
+    - Why: 2026-10-18 05:08–05:12Z an xchange PR's macOS jobs waited 4 minutes while the one macOS runner on ran another lane's job and the Studio runners sat off.
+  - **One switch owner per round.** Write on the lane's notice issue what you switched on, and switch your extras off when the round ends.
+  - Don't switch off another session's extra: `auto-off` does that once it is idle.
+- **Cost:** with every runner off, **every PR's CI queues until someone switches a runner on**. That is the intended trade: jobs run only where someone chose. A repo served only by a repo-scoped runner (the `yuthstyle88/*-dev` mirrors and their `deploy/staging` lane, at least) **queues until that runner is on**.
+  - A queued job never goes red; GitHub cancels it after 24 h.
+  - So a check that sits `queued` with nothing on ⇒ switch its runner on. It is not broken code.
 
 ## 🧹 More than 3 CI runs queued = collapse into one run
 
