@@ -8,7 +8,7 @@ description: >-
 
 > Moved from `~/.claude/CLAUDE.md` at `ee7b381` (slimming step 2). Text is unchanged except: translated into English
 > (each owner quote keeps the commit that first added the original), and infra-state tables replaced by pointers to `FLEET.md`.
-> Until step 4 removes these sections from `CLAUDE.md`, an edit to one must be made in both files.
+> Since step 4 (2026-10-19) this skill is the source of truth; `CLAUDE.md` keeps only a headline summary that points here. Edit the rule here, and the summary only if a headline changes.
 
 ## 🖥 Big builds — choose the machine by measurement, never by habit
 
@@ -20,6 +20,14 @@ ssh macstudio 'ssh pos108-lenovo "bash -s"' <<< 'df -h /; uptime'
 ```
 
 Which machine suits which build (cores, memory, what lives there): `FLEET.md` § Build machines.
+**Dell is never a worker's local build or test machine** — Dell is the only Linux CI machine (Lenovo off), so a session's own `cargo` there takes CPU from every lane's CI · if a Linux-only build truly has to run there: `CARGO_BUILD_JOBS=8` and nothing else heavy at once.
+
+🔴 **A session's own builds: run only what the work needs, on the right machine.** Owner's order 2026-10-18 (session claude/bb65c5d9), widening the xchange lane's 2026-10-17 rule to every lane: *"Put it in every lane"* (`e541b83`).
+- **Why:** measured 2026-10-18T03:27Z: Dell at load **109 on 64 threads** with only 3 CI runners on. Three Dell `claude-N` sessions were building and testing all of `xchange` in their own worktrees (`w-da` · `lg6-r45` · `tw-1023`), and 6 Linux CI jobs of other lanes sat queued. The Mac Studio was at load 6.5 on 20 cores.
+- **Reviewing or writing tests:** run **only the tests the ticket names or the PR adds**, by name (`cargo test -p <crate> --test <file> <name>`). Never the crate suite or the workspace: the PR's CI and `main` run the rest.
+  - Mutation checks still apply: revert the fix and the named test must go red.
+  - A ticket that names `cargo test -p <crate>` as a criterion: run what the ticket says.
+- **A full build or test a session truly needs:** run it on the **Mac Studio**, not on Dell.
 
 - 🔴 **Always `zsh -lc`** — a headless ssh has no `/opt/homebrew/bin` and no `~/.cargo/bin`:
   `ssh macstudio 'zsh -lc "cd ~/108-Ting-Ecosystem/Commerce-Platform/pos108/core && cargo test -p <crate>"'`

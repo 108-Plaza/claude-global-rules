@@ -324,7 +324,7 @@ It also includes **everything `main` brought in through the merge commit**
 
 > Moved from `~/.claude/CLAUDE.md` at `ee7b381` (slimming step 2). Text is unchanged except: translated into English
 > (each owner quote keeps the commit that first added the original), and infra-state tables replaced by pointers to `FLEET.md`.
-> Until step 4 removes these sections from `CLAUDE.md`, an edit to one must be made in both files.
+> Since step 4 (2026-10-19) this skill is the source of truth; `CLAUDE.md` keeps only a headline summary that points here. Edit the rule here, and the summary only if a headline changes.
 
 ## 🎛 The controller decides · working sessions may propose **only on the ticket they hold, never in chat**
 
@@ -469,6 +469,11 @@ Owner's order 2026-09-25 *"Make a new rule: the agent controller sends work orde
   - **A file that chains tickets is a design defect.**
     - Fix it at the root: the first ticket splits that file along the diagram, as a pure code move, and the rest then run in parallel.
     - Example: `transfer_flow.rs` made xchange #2617 → #2704 → #2774 run strictly one after another on 2026-10-17. `blocked by #N` only orders the chain; it adds no workers.
+  - **One business core, functions fanned out** (owner's order 2026-10-17 *"Gather the business logic in one place; fan the functions out for workers to write"* (`114dfc7`) · *"not waiting on each other"* (`114dfc7`) · *"Test at function level, then at logic level"* (`114dfc7`); made fleet-wide 2026-10-18 *"Make it public"* (`114dfc7`)).
+    - A feature's business rules live in **one core ticket**. Every function that uses them is **its own ticket** with a disjoint File scope, written in parallel against the core's stub signatures, so no function waits for another's code.
+    - **Two test levels.** The function level runs **only that function's own tests** (*"At function level, test only that function, not the whole suite"*, `114dfc7`). The logic level runs the full suite on the combined branch.
+    - 🔴 **Run the logic level early**: on a stacked branch with the core's first draft plus the function stubs, right away, on the Mac Studio. Do not wait until every function has passed. Cut the setup tickets it finds **alongside** the function tickets.
+    - **Why:** 2026-10-17 xchange CA-10: 9 function PRs were written and passed within 2.5 h, but the first logic-level run came 8 h later and found 364 failing tests (old setups the new rule forbids), which cost another 8 h before the batch merged.
   - **Every round, measure and write down:** busy workers ÷ usable workers, and why the rest are idle. The causes are no ready ticket, a file lock (name the holder), a dependency, or an owner decision.
     - Owner decisions that idle workers (parked umbrellas, guarded migrations, open questions) go to the owner **as one batch with the idle count attached**, not one at a time.
   - **Why:** 2026-10-17: ~30 sessions up, 2–3 tickets dispatchable · 34 of 47 open xchange issues sat outside the queue (parked · umbrella · question · guarded migration awaiting the owner) and the ready ones chained on one file.

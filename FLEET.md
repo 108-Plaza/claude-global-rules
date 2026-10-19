@@ -7,10 +7,10 @@ It syncs to every machine through `108-Plaza/claude-global-rules`, the same way 
 **Everything here is a measurement, not a rule.** Each table carries a `measured:` line (date and source)
 and the command that re-measures it. Older than you can trust ⇒ re-measure before you act on it, and update the table.
 
-> **Migration status (step 1 of the plan in `108-Ting-Ecosystem/docs/proposals/global-claude-md-slimming.md`):**
+> **Migration status (steps 1 and 4 of the plan in `108-Ting-Ecosystem/docs/proposals/global-claude-md-slimming.md`):**
 > these tables are a pure move from `CLAUDE.md` at `ee7b381`, translated to English. `CLAUDE.md` still carries
-> the same tables until step 4 replaces them with a pointer here. Until then, **an edit to one of these tables must
-> be made in both files**, or they drift.
+> pointers to these tables since step 4 (2026-10-19), so **this file is the only copy: edit it here.** (The repo-name
+> aliases still appear in one line of `CLAUDE.md` § Merged Branch Auto-Cleanup; change both if they move.)
 
 Owner quotes are translated into English. The commit ref after each one is where the original first appears in
 `CLAUDE.md` (`git log -p <sha> -- CLAUDE.md`).
@@ -171,6 +171,7 @@ Re-measure: `ssh macstudio 'df -h /System/Volumes/Data | tail -1; uptime'` and `
 | **MacBook** | A few crates at a time. |
 | **Mac mini** (`Mac-mini-khxng-ai-01` · 100.100.204.107) | `park108` model measurement only: the models and the 244-image plate set live there and must never leave it (PDPA). Worktrees under `~/park108-src/.worktrees/`. |
 | **Warut's MacBook** (`warut-mbp`) | Not a fleet machine: no build work without the owner's order. |
+| **Dell** | Never a worker's local build or test: it is the only Linux CI machine while Lenovo is off. A Linux-only build that truly must run there: `CARGO_BUILD_JOBS=8`, nothing else heavy at once (`e541b83`). |
 
 Folder layouts differ; never copy a path between machines. Studio: `~/108-Ting-Ecosystem/Commerce-Platform/pos108/{core,terminal}`, `JH-Platform/Api`, `parking/park108`. MacBook: `pos/`, `heros/`, `parking/`.
 
