@@ -8,7 +8,7 @@ description: >-
 
 > Moved from `~/.claude/CLAUDE.md` at `ee7b381` (slimming step 2). Text is unchanged except: translated into English
 > (each owner quote keeps the commit that first added the original), and infra-state tables replaced by pointers to `FLEET.md`.
-> Until step 4 removes these sections from `CLAUDE.md`, an edit to one must be made in both files.
+> Since step 4 (2026-10-19) this skill is the source of truth; `CLAUDE.md` keeps only a headline summary that points here. Edit the rule here, and the summary only if a headline changes.
 
 ## 🖥 Big builds — choose the machine by measurement, never by habit
 

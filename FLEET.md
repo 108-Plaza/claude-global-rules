@@ -7,10 +7,10 @@ It syncs to every machine through `108-Plaza/claude-global-rules`, the same way 
 **Everything here is a measurement, not a rule.** Each table carries a `measured:` line (date and source)
 and the command that re-measures it. Older than you can trust ⇒ re-measure before you act on it, and update the table.
 
-> **Migration status (step 1 of the plan in `108-Ting-Ecosystem/docs/proposals/global-claude-md-slimming.md`):**
+> **Migration status (steps 1 and 4 of the plan in `108-Ting-Ecosystem/docs/proposals/global-claude-md-slimming.md`):**
 > these tables are a pure move from `CLAUDE.md` at `ee7b381`, translated to English. `CLAUDE.md` still carries
-> the same tables until step 4 replaces them with a pointer here. Until then, **an edit to one of these tables must
-> be made in both files**, or they drift.
+> pointers to these tables since step 4 (2026-10-19), so **this file is the only copy: edit it here.** (The repo-name
+> aliases still appear in one line of `CLAUDE.md` § Merged Branch Auto-Cleanup; change both if they move.)
 
 Owner quotes are translated into English. The commit ref after each one is where the original first appears in
 `CLAUDE.md` (`git log -p <sha> -- CLAUDE.md`).
