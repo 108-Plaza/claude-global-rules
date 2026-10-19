@@ -86,6 +86,8 @@ git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # not ~
 ## 🧹 Clean up what you created for a ticket before reporting it done
 
 Owner's order 2026-09-27 *"Workers tend to leave things running, never clean up, and keep creating more"* (`a1f986c`) · *"Otherwise everything fills up"* (`a1f986c`) ·
+widened 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"*: **every role, every machine used, every kind of work** (not only tickets). Reports end with `cleanup: removed <what> on <machine>; kept <what> because <why>`. Delete with `rm -rf`, never into the Finder Trash. Never create folders directly under `~`.
+Measured 2026-10-19 on Mac Studio: 9 GB free of 1.8 TB, `~/worktrees` 420 GB, `target/` in leftover worktrees ~520 GB; clearing old worktrees brought it to 512 GB free ·
 Principle: **anything holding one ticket's data = use once and discard · anything expensive to recreate that holds nobody's data = reuse**
 
 | Item | What to do |

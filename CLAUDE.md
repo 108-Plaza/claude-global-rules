@@ -497,7 +497,14 @@ Claiming a ticket cannot prevent collisions because **different tickets can touc
 - 🔴 **Review or test-writing runs only the tests the ticket names or the PR adds, by name** — never the crate suite or the workspace (owner 2026-10-18 *"ใส่ ทุกเลน"*)
 - 🔴 **On Dell, worktrees go to `/data/yuth/worktrees/<slug>`**, never `/home` · **never delete things on Dell yourself** — measure and report
 - 🔴 **Fleet Rust toolchain is one pinned number** (`rust-toolchain.toml` + `dtolnay/rust-toolchain@<n>`, never `stable`) — the number is in `FLEET.md`
-- 🔴 **Clean up before reporting done**: test containers `docker run --rm --label fleet.worker=<kind>/<id> …`, never `--restart`; the ticket's worktree and its `target/` deleted · reviewers use one worktree per PR and `CARGO_INCREMENTAL=0`
+- 🔴 **Whoever finishes a piece of work cleans the disk it used, before reporting done** (owner 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"*). This applies to every role: implementer, reviewer, controller, ticket writer, a one-off investigation, and an owner-direct task.
+  - "Finished" = your last action on it: `pr_open` (keep only the worktree, for rework), verdict posted, ticket returned or blocked, investigation reported, PR merged or closed.
+  - Remove what **you** created on **every machine you used**: `target/` and build output · test containers and their volumes (`docker run --rm --label fleet.worker=<kind>/<id>`, never `--restart`) · scratch clones and copies · downloaded artifacts · temp dirs.
+  - Delete with `rm -rf`. **Never move it to the Finder Trash**, which frees nothing and needs Full Disk Access to empty.
+  - Never create folders directly under `~` (`~/review-*`, `~/wt*`, `~/tmp-*`). Work in `~/worktrees/<slug>` or the repo's `.worktrees/`, so a sweeper can find it.
+  - **The report states it:** one line `cleanup: removed <what> on <machine>; kept <what> because <why>`. No line = not done.
+  - Reviewers use one worktree per PR and `CARGO_INCREMENTAL=0`.
+  - **Why:** 2026-10-19 Mac Studio reached 100% (9 GB free of 1.8 TB). Measured that day: `~/worktrees` held 420 GB and `target/` folders in leftover worktrees held ~520 GB. Clearing old worktrees brought free space to 512 GB. Details: skill `fleet-builds` § 🧹
 - 🔴 **Whoever merges or closes a PR removes its worktrees in the same turn** (owner 2026-10-19 *"ใครทำงาน merge แล้วต้อง ทำความสะอาด worktree ด้วย"*). That covers the merger's own machine and, where reachable, the worker's machine. Leave a folder only if a process is in it or it holds unpushed work, and say so on the PR. Reviewers delete their review worktree once the verdict is posted. Every dispatch order ends with "delete your worktree once your PR is merged or closed". Why the old rule failed: the worker must keep its worktree at `pr_open` (rework), the merge happens later in another session, and no step owned cleanup ⇒ Studio hit 100% on 2026-10-19 with ~520 GB in leftover worktrees. Details: skill `fleet-builds` § 🧹 Merged or closed
 
 # Autonomous Execution Policy
