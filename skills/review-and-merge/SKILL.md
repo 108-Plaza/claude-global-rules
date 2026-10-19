@@ -65,7 +65,7 @@ Owner's order 2026-09-10 *"Normally I have you review, then merge once CI is gre
 
 **`reviewed` = a label saying the review passed, not a merge button** — the owner removed the `tq train` pipeline on 2026-09-15
 (`108-agent-queue` `989396a` · PR #466) ⇒ nothing merges automatically · after adding the label you **must run `gh pr merge` yourself**,
-otherwise the PR sits · `tq report` is a read-only report (the `--apply` text in `--help` is stale) ·
+otherwise the PR sits · 🔴 **right after `gh pr merge` (or closing a PR unmerged), remove that PR's worktrees in the same turn**: your machine, and the worker's where you can reach it. Skip a folder a process is in or one holding unpushed work, and say so on the PR (owner 2026-10-19; skill `fleet-builds` § 🧹 Merged or closed) · reviewers delete their own review worktree once the verdict is posted · `tq report` is a read-only report (the `--apply` text in `--help` is stale) ·
 the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.txt`
 
 ## 2. Review — ticket closed / `pr_open` = start reviewing

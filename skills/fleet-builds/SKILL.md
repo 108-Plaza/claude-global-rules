@@ -98,6 +98,30 @@ Principle: **anything holding one ticket's data = use once and discard · anythi
 
 **Before reporting done, these must be empty:** `docker ps -a --filter label=fleet.worker=<kind>/<id>` · the ticket's worktree deleted together with `target/`
 
+### 🧹 Merged or closed ⇒ whoever merges or closes it removes the worktrees
+
+Owner's order 2026-10-19 *"สร้างกฏ ว่า ใครทำงาน merge แล้วต้อง ทำความสะอาด worktree ด้วย"* · *"ผมเคยทำกฏไว้แล้ว ทำไม มันไม่ทำงาน"*
+
+**Why the rule above did not work:**
+- A worker "finishes" at `pr_open`, but it must **keep** the worktree then, because a FAIL sends the PR back for rework.
+- The merge happens later, in **another session** (reviewer or merger), and no merge step said to clean up. So nobody owned the worktree after merge.
+- Dispatch messages never carried a cleanup step, and agy workers do not read this file.
+- `git-gone` refuses to delete a branch that is checked out in a worktree, so the leftover worktrees also kept their merged branches alive.
+- **Measured 2026-10-19 on Mac Studio:** the disk was at 100% (9 GB free of 1.8 TB). Leftover worktrees held ~520 GB of `target/`, and `~/worktrees` had 575 entries.
+
+**The rule:**
+1. **The session that runs `gh pr merge`, or closes a PR without merging, removes that PR's worktrees in the same turn**: on its own machine and, where it can reach it, on the worker's machine. Find the machine in `GET /v1/workers` (row of the PR's `> worker:`) or in the take-ticket comment.
+   ```bash
+   git -C <repo> worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/<branch>$/{print w}'
+   git -C <repo> worktree remove --force <path> && git -C <repo> worktree prune
+   ```
+   A worker folder that is a full clone rather than a worktree (`~/worktrees/<slug>` with its own `.git` directory): `rm -rf` it once `git -C <path> status --porcelain` is empty and its branch tip is on `origin`.
+2. **Never remove a folder in use:** a process has its cwd inside it (`lsof -a -d cwd | grep <path>`), or it has uncommitted changes or commits not on `origin`. Leave it, and write on the PR which folder was kept and why.
+3. **Reviewers remove their own review worktree** as soon as the verdict is posted (PASS or FAIL). A re-review makes a new one; it is cheap.
+4. **Every dispatch order ends with:** *"When your PR is merged or closed, delete your worktree for it. Also delete any worktree of yours whose PR is already merged before you start the next ticket."*
+5. **On Dell**, removing the worktree of a PR you merged is allowed (`/data/yuth/worktrees/<slug>`). It belongs to that ticket, not to the shared machine. Everything else there stays "measure and report".
+6. **Backstop:** the fleet-sweep **worktree pass** removes worktrees that are idle and whose work is pushed or merged. It catches what a dead session left. It is not a reason to skip step 1.
+
 **Reviewers specifically** (owner's order 2026-09-28 — measured that day: one review session's targets totalled ~260 GB on Studio · a single one 144 GB = `incremental` 84 + `deps` 60):
 - **base and head of the same PR use one worktree, one target** — `git checkout <base>` → test → `git checkout <head>` → test · never create separate `…-base` / `…-head` (previously 2–3 per PR)
 - **builds for review set `CARGO_INCREMENTAL=0`** — the incremental cache is for edit-rebuild loops, not one build per commit · leaving it on = accumulates every reviewed commit

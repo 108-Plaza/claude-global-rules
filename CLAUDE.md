@@ -498,6 +498,7 @@ Claiming a ticket cannot prevent collisions because **different tickets can touc
 - 🔴 **On Dell, worktrees go to `/data/yuth/worktrees/<slug>`**, never `/home` · **never delete things on Dell yourself** — measure and report
 - 🔴 **Fleet Rust toolchain is one pinned number** (`rust-toolchain.toml` + `dtolnay/rust-toolchain@<n>`, never `stable`) — the number is in `FLEET.md`
 - 🔴 **Clean up before reporting done**: test containers `docker run --rm --label fleet.worker=<kind>/<id> …`, never `--restart`; the ticket's worktree and its `target/` deleted · reviewers use one worktree per PR and `CARGO_INCREMENTAL=0`
+- 🔴 **Whoever merges or closes a PR removes its worktrees in the same turn** (owner 2026-10-19 *"ใครทำงาน merge แล้วต้อง ทำความสะอาด worktree ด้วย"*). That covers the merger's own machine and, where reachable, the worker's machine. Leave a folder only if a process is in it or it holds unpushed work, and say so on the PR. Reviewers delete their review worktree once the verdict is posted. Every dispatch order ends with "delete your worktree once your PR is merged or closed". Why the old rule failed: the worker must keep its worktree at `pr_open` (rework), the merge happens later in another session, and no step owned cleanup ⇒ Studio hit 100% on 2026-10-19 with ~520 GB in leftover worktrees. Details: skill `fleet-builds` § 🧹 Merged or closed
 
 # Autonomous Execution Policy
 
@@ -529,7 +530,7 @@ doc-only or low-risk work with a clear scope: carry it through to an open PR, th
 10. **Ready → CI** only once green locally · CI red due to env differences ⇒ reproduce + fix locally before pushing again
 11. **Merge** per 🟢 merge (verdict PASS from another session + checks green + CLEAN) · exception cases need approval
 12. **Close context** — `.ai_context`/`HANDOFF.md` records the outcome, clears expired Next steps
-13. **Cleanup** — delete branch local/remote (+ worktree if any) + `git fetch --prune`
+13. **Cleanup** — delete branch local/remote + `git fetch --prune` + **the PR's worktrees, done by whoever merged or closed it** (skill `fleet-builds` § 🧹 Merged or closed)
 14. **Report** — summary + PR URL + test/CI + confirm context closed and branch deleted + **งานต่อเนื่องที่เสนอ** (proposed follow-up work · 🔭 — not for a worker under a controller)
 
 **Do not stop to ask** for steps 1–10 and 12–14 (branch · in-scope edits · test · commit · push · PR · fix CI · cleanup after merge)
