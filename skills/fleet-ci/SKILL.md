@@ -68,14 +68,19 @@ Owner's order 2026-10-18 *"Keep one runner per machine; switch on when needed"* 
 - **Standing state: every runner is off, on every machine** (owner, later the same day: *"Better to switch them all off"* (`d72e467`) · *"I think keeping them off is best"* (`d72e467`) · *"Because then it runs on the right machine"* (`d72e467`)). An always-on runner takes any job its labels match, so a heavy build can land on a machine that won't finish it (*"the weak ones won't finish the work"*, `d72e467`). Every runner stays registered and won't start at boot or login.
 - **The pusher or merger picks the machine to suit the job** (*"Whoever pushes or merges can choose which machine to run on"* (`d72e467`) · *"as is suitable"* (`d72e467`)):
   - **Heavy Linux** (cargo build/test, DB tests): Dell, `dell-org-ci-1` / `-2`. Dell holds about 2–3 heavy jobs at once (load 72–92 with 5 on, 2026-10-18).
-  - **macOS / Flutter / Xcode / light gates**: the Mac Studio, `studio-org-1..6`. Jobs pinned to `mac-studio` need it.
+  - **macOS / Flutter / Xcode / light gates**: the Mac Studio, `studio-org-1..6`, or MacBook Yong, `mbp-org-1..2`, whichever has more load room. Jobs pinned to `mac-studio` need the Studio.
   - **Never heavy work on the Mac mini, jam or Warut's MacBook.** They are small and a heavy job may not finish.
   - **Switch on only as many as the work in this round needs.**
 - **The switch is `108-Ting-Ecosystem/scripts/runners.sh`:** `status` · `on <machine> <runner>` · `off <machine> extras` · `auto-off`.
   - It never switches off a busy runner or a system unit.
   - No switch needs `sudo` (owner: *"Switching on/off needs no sudo; you control the runners yourself"*, `d72e467`): every runner is a macOS LaunchAgent or a Linux user unit (`systemctl --user`). Dell's last two system units moved over at 2026-10-18T02:52Z, and none is enabled since.
   - On the Mac Studio, every 5 min:
-    - **`auto-on`** is the backstop when nobody switched anything on (owner: *"When there is work, a runner must be switched on too"*, `16ba415`). A job queued over 2 minutes gets a runner on the machine its labels call for: Linux → Dell, macOS/light → Studio, never mini/jam/Warut, at most 3 per machine.
+    - **`auto-on`** is the backstop when nobody switched anything on (owner: *"When there is work, a runner must be switched on too"*, `16ba415`). A job queued over 2 minutes gets a runner on **the machine with the most load room** among those its labels allow (owner 2026-10-20 *"Load balance for runner"* · *"กระจาย รันเนอร์ ตามเครื่อง"*, 108-Ting-Ecosystem PR 251):
+      - Pools: Linux → Dell · macOS/light/no OS → Mac Studio or MacBook Yong. Never mini/jam/Warut. A label only one machine's runners carry (`mac-studio`, `fast-mac`) pins the job there.
+      - Room = 0.8 × cpus − 5-min load, read once per round; each runner switched on spends its job's share (Dell 12, Mac 4) for the rest of the round, and a machine with no room for one more job gets nothing. Unreadable load ⇒ at most 3 on, ranked last.
+      - First live round 2026-10-19T20:28Z: Studio 3 runners, MacBook 2, then it waited at Studio room 0.23 instead of piling on.
+      - Repos in `RUNNERS_SKIP_REPOS` (default `pos108-terminal`, owner 2026-10-20 *"terminal ไม่ต้อง รัน"*, PR 252) never get a runner switched on.
+      - Details and env knobs: `docs/CI_RUNNER_STANDARD.md` § 5.1.
     - **`auto-off`** switches off any runner idle for 15 minutes, so a runner switched on for a job goes off again after use (*"The 2nd or 3rd runner must be switched off after use too"*, `f58643f`).
   - Details: `docs/CI_RUNNER_STANDARD.md` § 5.1.
 - **Who switches:** the repo's **lane controller** (or the merger or batch merger it names) switches on what its work needs **before** dispatching or merging, because it knows which machine the work needs (owner 2026-10-18: *"The controller, or whoever, is the one who switches the runner on"*, `16ba415`). Implementers don't switch runners.
