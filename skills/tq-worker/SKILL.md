@@ -18,9 +18,10 @@ Full protocol: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md` · the queue r
 - `empty`/`backpressure` ⇒ tell the controller and wait, never loop re-requesting (see 📨 The controller loops dispatching · workers do not loop pulling the queue) · never pick up work outside the queue · at most 6 jobs at once system-wide · one worker holds one ticket at a time
 - heartbeat every ≤30 minutes (lease 90 minutes) · got `revoked` ⇒ stop immediately · never touch files outside `file_scope`
 - 🔴 **Opening a PR ⇒ `transition → pr_open` with `pr_url` immediately = the review request** (the only way, no substitute) · a PR without the transition counts as not done ·
-  cannot continue ⇒ `ready` (return the ticket) or `blocked` + `reason` · 🔴 **a `blocked` ticket must keep the `ready` label** — the queue adds `blocked` itself and deliberately does not remove `ready` (108-agent-queue #300) ·
-  removing `ready` ⇒ sync never reads that ticket again (`gh issue list --label ready`), edits to the ticket body/scope do not reach the queue, and removing `blocked` later does not unblock it ·
-  **unblock a ticket = remove `blocked`** (on a ticket that still has `ready`) · for a ticket blocked because someone removed `ready` (reason `label ready removed`) the queue **also adds `blocked`** (#523) ⇒ unblock = **add `ready` back first, then remove `blocked`** · details 108-agent-queue #713
+  cannot continue ⇒ `ready` (return the ticket) or `blocked` + `reason` · 🔴 **the queue writes the status labels from its own state** (108-agent-queue `docs/design/ready-label.md`, running since `0ee479f`, 2026-10-20):
+  `ready` → `ready` · `leased` → `in-progress` · `pr_open` → `needs-review` · `in_review` → `in-review` · `rework` → `rework` · `blocked` → `blocked` · merged into a feature branch, issue open → `merged-to-branch` ⇒ `label:ready` on GitHub = the dashboard's ready list ·
+  people do only three things: **add `ready`** to release a ticket · **add `blocked`** to hold a waiting one · **remove `blocked`** to release a hold (also for a ticket withdrawn by removing `ready`) · removing `ready` from a waiting ticket still withdraws it ·
+  never re-add `ready` to an in-flight or blocked ticket by hand — the queue removes it again next round · details `docs/AGENT_PROTOCOL.md` §2
 - 🔴 **Take only tickets in `108-Plaza/*`** (ordered 2026-09-09) — a `yuthstyle88/*-dev` ticket ⇒ `transition → ready` to return it immediately and report to the owner (the queue syncs only the org now ⇒ seeing a dev ticket = someone pushed it in manually) ·
   if that work really needs doing, open a new ticket on the org side referencing the old one (the ticket must live where the PR merges)
 

@@ -372,7 +372,7 @@ Owner's order 2026-09-01 / 2026-09-03 — the default destination of a ticket is
 → skill **`tq-worker`** (HTTP API table and response codes, heartbeats, transitions, monitoring your own work). Full protocol: `108-Plaza/108-agent-queue/docs/AGENT_PROTOCOL.md`. Headlines:
 - 🔴 **Every piece of implementation work comes from the queue** (or directly from the owner) · worker id `<kind>/<session-id>` · take only `108-Plaza/*` tickets
 - Entry point: `source ~/.config/tq/env` then `$TQ/v1/...` with `$TQ_TOKEN` · 🔴 **never commit or paste the token**
-- heartbeat ≤30 min · `revoked` ⇒ stop · 🔴 **opening a PR ⇒ `transition → pr_open` with `pr_url` immediately** · a `blocked` ticket keeps its `ready` label
+- heartbeat ≤30 min · `revoked` ⇒ stop · 🔴 **opening a PR ⇒ `transition → pr_open` with `pr_url` immediately** · the queue writes the status labels from its own state (`ready` only while waiting); people add `ready` to release, add/remove `blocked` to hold/release
 - `200` + `empty`/`backpressure`/`denied` = normal, wait · **`500` = the queue is down — tell the owner, never read it as "no work"**
 
 ### 🤖 Jev (TypeSafe System One) — who calls it, how, and what leaves the org
