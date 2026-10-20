@@ -153,6 +153,33 @@ Every CI run on a doc-only change is a runner taken away from code PRs waiting o
   - Its `api` job skipped correctly (37 s of work) but waited **5 min** for a Dell runner and still started a postgres container.
   - Meanwhile 6 code PRs with PASS sat waiting for the same runners.
 
+## 🎯 Tests run only what a change can affect · every test runner takes a filter
+
+Owner's order 2026-10-20 (xchange, BE controller claude/a90ab16c) *"ตัวเทส เราแยกเป็น แต่ละ crate แล้วใช่ไหม crate ไม่ได้ แต่ ก็ไม่ต้องรันเทส"* ·
+*"ระบบ เทส ควรมี การ filter ได้ มันจะได้ สะดวกต่อการรัน เทส"* · *"ใส่ไว้ในกฏกลาง เพื่อเป็น มาตรฐานการเทส ต่อไป"* · applies to **every repo, every language**
+
+**1. The scope follows the change.**
+- A CI run that tests computes the **affected set**: the packages whose files changed, plus every package that depends on them (reverse dependencies from `cargo metadata`, or the JS/Dart workspace graph).
+- It tests only that set. A crate nothing touched runs no tests.
+- 🔴 **Unknown means everything.** An unreadable diff, a metadata failure, or a change to the workflow, toolchain, lockfile or shared test fixtures runs the full suite. A plan that guesses "nothing affected" hides breaks.
+- The plan is a script with its own self-test, not inline YAML.
+
+**2. Every test entry point takes a filter, with the same shape locally and in CI.**
+- **By package:** `-p <crate>` · `--filter <pkg>` (pnpm) · the package directory (Flutter).
+- **By test name:** `cargo nextest run -E 'test(<name>)'` · `vitest run <path> -t <name>` · `flutter test --plain-name <name>` · `playwright test -g <name>`.
+- **A manual CI run** (`workflow_dispatch`) takes `packages` and `filter` inputs. Empty means the plan's default. Checking one change must not cost the whole suite.
+- **A re-run of a failed run** runs only the tests that failed (read the previous attempt's junit), never the whole set again.
+
+**3. The full suite still runs somewhere.** A nightly schedule, and the PR that lands a feature branch or batch on main, run everything. Scoping must never hide a break for more than a day.
+
+**Check:** on a PR or push that touches one leaf crate, the test job names only that crate and its dependents. A dispatch with `filter=test(<one test>)` runs that test alone.
+A repo without part 1 or 2 ⇒ open a ticket in that repo. That is part of every controller's bottleneck survey (same as 📄 Doc-only).
+
+**Evidence 2026-10-20 `xchange`:**
+- Parts 1 and the re-run half of 2 exist: `.github/scripts/api-test-plan.sh` (reverse-dependency plan), `api-ci-plan.sh`, `api-rerun-filter.sh`, each with a `.test.sh`.
+- Part 2's manual filter does not: `api.yml`'s `workflow_dispatch` has no inputs, and `api-ci-plan.sh` plans `--workspace` for every non-PR, non-push event.
+- So checking one CI change (run 39366389664) cost the whole 4-partition suite.
+
 ## 🚀 Deploy lanes — personal ships staging · org ships prod
 
 Owner's order 2026-09-21: *"Have the personal-side git deploy staging, and adjust its actions by copying them from the org"* (`a55bf22`) · *"Have the org deploy prod"* (`a55bf22`)

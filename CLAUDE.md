@@ -489,6 +489,7 @@ Claiming a ticket cannot prevent collisions because **different tickets can touc
 - **More than 3 runs queued in a repo ⇒ cancel down to the latest per line** (never `in_progress`, deploy/release, or owner-triggered runs)
 - 🔴 **Doc-only changes run no build/test** — required checks still report green through a fast path, never `paths-ignore` on a required workflow
 - Faster CI is not permission to push guess-fixes — local verify must still be green first
+- 🔴 **Tests run only what a change can affect, and every test runner takes a filter** (owner 2026-10-20 *"ใส่ไว้ในกฏกลาง เพื่อเป็น มาตรฐานการเทส ต่อไป"*) — a crate nothing touched runs no tests (changed packages + their dependents; unknown ⇒ full suite) · `-p <pkg>` and a test-name filter work locally and as `workflow_dispatch` inputs · a re-run runs only what failed · the full suite still runs nightly and on feature-branch → main · details: skill `fleet-ci` § 🎯
 
 ## 🖥 Builds, disks and cleanup
 
