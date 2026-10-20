@@ -148,7 +148,7 @@ Re-measure: `gh api orgs/108-Plaza/actions/runners --jq '.runners[]|"\(.name)\t\
 |---|---|---|
 | Linux — Dell `ibrowe.com` | `dell-org-108plaza` · `dell-org-ci-1..4` | `self-hosted,Linux,X64,pos108-ci` (+`dell-org-ci`) |
 | Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
-| macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
+| macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1..2` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
 | macOS/ARM64 — Warut's MacBook | `warut-org-1..2` | `+ fast-mac`, `warut-mbp` |
 | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
 
@@ -156,6 +156,8 @@ Re-measure: `gh api orgs/108-Plaza/actions/runners --jq '.runners[]|"\(.name)\t\
 - Lenovo's two Linux runners are a systemd service (`actions.runner.108-Plaza.lenovo-org-ci-{1,2}.service`, enabled + active) and recover when WSL comes up. ⚠️ Not resilient to a Windows reboot: Windows does not start WSL by itself, and the Task Scheduler entry (`wsl.exe -d Ubuntu-24.04 -e true` at logon) has not been made. Manage from cmd.exe: `wsl -u root -e bash -c "systemctl restart actions.runner.108-Plaza.lenovo-org-ci-1"`.
 - Warut's runners read their PATH from `~/actions-runner-warut-org-N/.path`, not a shell profile; a new tool means editing that file plus `launchctl kickstart -k gui/$(id -u)/actions.runner.108-Plaza.warut-org-N`. Its `cargo-nextest`/`cargo-deny` are **newer than Studio's** ⇒ a job red only on `warut-org-*` ⇒ suspect the version first. It is a LaunchAgent (`svc.sh`), so it takes jobs only while Warut is logged in and the machine is awake. `~/actions-runner` there is a runner for a personal repo; do not touch it.
 - The `pos108-ci` label exists only on Dell.
+- `macmini-org-2` was added 2026-10-20 (owner: *"ทำตามที่เสนอ"* (do as proposed), on the proposal of a second runner for the Mac mini's spare room). It is a copy of `macmini-org-1`: `~/actions-runner-org-macmini-2`, runner 2.337.0, the same labels (`+ fast-mac`), group `108-Ting-Ecosystem`, the same `.env`/`.path`. Verified on a real job: xchange `changes` Succeeded 08:03–08:04:57Z. Off by default like every runner.
+- **Linux has only Dell** (4 runners, cap 4) while the Lenovo is off: on 2026-10-20 `ssh pos108-lenovo` timed out and `lenovo-org-win-1` was offline. Every Mac is ARM64, so none can take `Linux, X64` jobs.
 
 Hosted-runner billing: measured 2026-10-17 from `gh api "/organizations/108-Plaza/settings/billing/usage?year=<y>&month=<m>"`: October used **108 hosted Linux minutes, net $0.00** (inside the included allowance), the last on 2026-10-14. On 2026-09-20 a `windows-latest` job had died on a billing block.
 
