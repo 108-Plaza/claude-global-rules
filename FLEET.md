@@ -61,7 +61,7 @@ Auto-restart and machine notes (same source, same date):
   | Mac mini | LaunchAgent `com.108plaza.agy-sessions` (added 2026-10-21 on the owner's order), tmux `agy-1..5`, cwd `~/worktrees`; tq-deliver stays on cron | `~/Library/Logs/agy-sessions.log` | 1–5 Flash |
 
   The previous script on each Mac is kept beside it as `agy-sessions-up.sh.bak-20261021*`.
-- **Order delivery (`/v1/dispatch`):** every worker machine runs the delivery agent, installed 2026-10-21 on the owner's order: Studio, Dell, the Mac mini, Warut and jam. Each runs `~/.local/share/tq-deliver/tq-deliver.sh` (copied from `108-agent-queue` `635d017`) in a session named `tq-deliver`, and keeps its cursor in `~/.cache/tq-deliver/cursor`. `~/.local/bin/tq-deliver-up.sh` starts the session when it is missing.
+- **Order delivery (`/v1/dispatch`):** every worker machine runs the delivery agent, installed 2026-10-21 on the owner's order: Studio, Dell, the Mac mini, Warut and jam. Each runs `~/.local/share/tq-deliver/tq-deliver.sh` (copied from `108-agent-queue` `6893e0f`, 2026-10-21 04:37Z, with #1088's fix: paste as one block, "delivered" only when the pane goes busy, token never on curl's argv; `lib/tq-http.sh` and `lib/deliver/{mux,pane}.sh` beside it; `~/.local/bin/tq-presence.sh` is now a wrapper that execs `~/.local/share/tq-deliver/tq-presence.sh`; the previous copy is kept as `tq-deliver.bak-<stamp>`) in a session named `tq-deliver`, and keeps its cursor in `~/.cache/tq-deliver/cursor`. `~/.local/bin/tq-deliver-up.sh` starts the session when it is missing.
 
   | Machine | Session | Kept alive by | Log |
   |---|---|---|---|
