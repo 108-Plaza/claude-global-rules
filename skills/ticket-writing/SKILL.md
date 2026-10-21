@@ -85,7 +85,7 @@ Owner's order 2026-10-03 *"Make it a rule too; it may help other agents as well"
 
 - 🔴 **A diagram alone is not enough** — the diagram makes code land **in the right place** · the behaviour table and tests make it **mean the right thing**
 - **Procedure:** the ticket author branches from `origin/main` → commits failing tests (failing on wrong results, not on compile errors, where possible) → pushes →
-  the ticket names the branch + test names · the implementer makes them pass and may add tests, but 🔴 **must not edit/delete/weaken the provided tests**
+  the ticket names the branch + test names, and 🔴 **carries the machine-read line `Test branch: test/<n>` on a line of its own** (108-agent-queue reads it since #1095 and writes "branch from test/<n>" into the dispatch order; without it the order says "branch from main" and contradicts the ticket — happened to #1105/#1107 on 2026-10-21) · the implementer makes them pass and may add tests, but 🔴 **must not edit/delete/weaken the provided tests**
 - **Reviewer:** `git diff <test-commit>..<head> -- <test-file>` must not touch the provided tests · touched ⇒ **FAIL**
 - Dependency not landed yet (tests cannot compile yet) ⇒ write the tests once the dependency merges, **before** dispatching the ticket · a ticket with no behaviour to lock (pure file move · docs) ⇒ write in the ticket "no tests up front — intentional, because …"
 - ⚠️ **Cost:** the ticket author writes extra tests · wrongly written tests lead the implementer astray ⇒ up-front tests must pass review together with the ticket
