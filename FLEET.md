@@ -100,9 +100,9 @@ Re-measure: agy `/usage` in an idle session (names the account and both model gr
 
 | Account | Used by | Notes |
 |---|---|---|
-| agy `yutjan50` | Dell + Mac Studio (measured with `/usage` 2026-10-21 on Studio agy-1,3,6,7,10,11,13 and Dell gemini-1,4,6) | Quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account. |
+| agy `yutjan50` | Mac Studio, via the macOS keychain (measured with `/usage` 2026-10-21T05:25Z on agy-2 after a fresh login wrote `ibrowe108` to the token file) | Weekly Gemini quota at 0 until about 2026-10-24. The owner closed this account for agent use on 2026-10-21 (*"yutjan50 ปิด"* · *"ใช้ ibrowe108"*). The Studio keeps loading it because agy reads the keychain item before `~/.gemini/antigravity-cli/antigravity-oauth-token`; the owner removes that keychain item, then idle sessions are restarted. |
 | agy `xc.team.th` | Mac mini + jam (measured 2026-10-21: Mac mini agy-2,5, jam agy-2,3,4) | same |
-| agy `ibrowe108` | Warut's MacBook | same |
+| agy `ibrowe108` | Warut's MacBook · Dell (measured with `/usage` 2026-10-21T05:30Z on gemini-1,3,4,6 after the owner's login; Dell reads the token file) | Quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account. Once the Studio moves too, three machines share one quota. |
 | GitHub `ibrowe108` | Dell's `gh` and git (since 2026-10-17) | Org member, Write; owner's second seat replacing UTD888. Own 5,000/h REST quota. Switch back with `gh auth switch -u yuthstyle88`. Added with `~/gh-add-user.sh` because Dell's keyring hangs `gh auth login`. |
 | GitHub `yuthstyle88` | every other machine | One 5,000/h REST quota shared by the whole fleet. |
 
