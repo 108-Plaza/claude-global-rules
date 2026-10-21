@@ -40,6 +40,13 @@ under_scratch_root() { # <realpath>
   return 1
 }
 
+# head_on_origin <worktree> — a single-branch (--depth) clone keeps no tracking ref for a branch it pushed,
+# so ask origin itself whether any of its refs points at HEAD.
+head_on_origin() {
+  local h; h=$(git -C "$1" rev-parse HEAD 2>/dev/null) || return 1
+  timeout 60 git -C "$1" ls-remote origin 2>/dev/null | awk -v h="$h" '$1==h {f=1} END {exit !f}'
+}
+
 # content_on_default <worktree> — a squash merge leaves the worker's commits on no remote, yet everything in
 # them is on the default branch. True when merging HEAD into a freshly fetched origin/<default> changes nothing.
 content_on_default() {
@@ -69,7 +76,7 @@ for arg in "$@"; do
     if [ -n "$(git -C "$real" status --porcelain --ignored=no 2>/dev/null)" ]; then
       kept+=("$arg (uncommitted changes)"); continue
     fi
-    if [ -n "$(git -C "$real" rev-list -n1 HEAD --not --remotes 2>/dev/null)" ] && ! content_on_default "$real"; then
+    if [ -n "$(git -C "$real" rev-list -n1 HEAD --not --remotes 2>/dev/null)" ] && ! head_on_origin "$real" && ! content_on_default "$real"; then
       kept+=("$arg (commits on no remote)"); continue
     fi
     if [ "$DRY" = 1 ]; then removed+=("$arg [dry-run: git worktree]"); continue; fi
