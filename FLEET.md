@@ -49,6 +49,7 @@ Re-measure: `tmux ls` (or `screen -ls` on Warut's MacBook) on each machine, and 
 Auto-restart and machine notes (same source, same date):
 
 - Studio and Warut have LaunchAgent `com.108plaza.agy-sessions` → `~/.local/bin/agy-sessions-up.sh` (at login and every 5 minutes; starts only missing sessions; log `~/Library/Logs/agy-sessions.log`).
+- **Order delivery (`/v1/dispatch`):** only Studio runs the delivery agent (installed 2026-10-21 on the owner's order). `agy-sessions-up.sh` calls `~/.local/bin/tq-deliver-up.sh`, which keeps tmux session `tq-deliver` running `~/.local/share/tq-deliver/tq-deliver.sh` (copied from `108-agent-queue` `635d017`). It logs to `~/Library/Logs/tq-deliver.log` and keeps its cursor in `~/.cache/tq-deliver/cursor`. **Stopgap:** a `shim/hostname` printing `studio` comes first on its `PATH`, because `GET /v1/orders` does not canonicalise the host (108-agent-queue#1079); remove the shim once that fix is deployed. Other machines have no agent, so an order to their workers must be typed by hand and acked within 180 s.
 - Studio also has `com.108plaza.claude-sessions` for `claude-1..5`. Since 2026-10-16 Studio comes back by itself after a reboot (FileVault off + auto-login).
 - **A reboot kills every running turn** ⇒ re-check the panes before assuming a dispatched ticket is still being worked.
 - The agents run only while that user is logged in ⇒ to drain a session for good, lower the script first, or it returns within 5 minutes.
