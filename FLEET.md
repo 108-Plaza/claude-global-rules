@@ -50,7 +50,17 @@ Re-measure: `tmux ls` (or `screen -ls` on Warut's MacBook) on each machine, and 
 
 Auto-restart and machine notes (same source, same date):
 
-- Studio and Warut have LaunchAgent `com.108plaza.agy-sessions` → `~/.local/bin/agy-sessions-up.sh` (at login and every 5 minutes; starts only missing sessions; log `~/Library/Logs/agy-sessions.log`).
+- **agy session keeper**: `~/.local/bin/agy-sessions-up.sh`. It starts only missing sessions and never restarts a live one, and it starts each session **on the model in `~/.config/tq/agy-models`**. That file has one line per session, `<n> <model id from agy models>`, for example `4 gemini-3.8-flash-medium`; a session with no line starts on agy's default. Change a session's model there and in the pane (`/model`); otherwise the next restart puts the old model back. Measured 2026-10-21 ~03:45Z (`cat ~/.config/tq/agy-models` on each machine):
+
+  | Machine | Kept alive by | Log | `agy-models` |
+  |---|---|---|---|
+  | Studio | LaunchAgent `com.108plaza.agy-sessions` (at login and every 5 min), tmux; keeps the Gatekeeper/Terminal hand-off | `~/Library/Logs/agy-sessions.log` | 1–14 Argon |
+  | Warut | LaunchAgent `com.108plaza.agy-sessions`, screen | `~/Library/Logs/agy-sessions.log` | 1, 4 Flash · 2, 3, 5 Argon |
+  | jam | LaunchAgent `com.108plaza.agy-sessions`, screen; starts agy with `env -u GEMINI_API_KEY -u GOOGLE_API_KEY` | `~/Library/Logs/agy-sessions.log` | 1–5 Argon |
+  | Dell | cron `@reboot` + `*/5` (added 2026-10-21; crontab backup `~/.cache/crontab.bak-202610210246`), tmux `gemini-1..6`, `flock` so runs never overlap, cwd `/data/yuth/worktrees` | `~/.local/state/agy-sessions.log` | 1–6 Argon |
+  | Mac mini | **none**, and no `agy-models` file | — | — |
+
+  The previous script on each Mac is kept beside it as `agy-sessions-up.sh.bak-20261021*`.
 - **Order delivery (`/v1/dispatch`):** every worker machine runs the delivery agent, installed 2026-10-21 on the owner's order: Studio, Dell, the Mac mini, Warut and jam. Each runs `~/.local/share/tq-deliver/tq-deliver.sh` (copied from `108-agent-queue` `635d017`) in a session named `tq-deliver`, and keeps its cursor in `~/.cache/tq-deliver/cursor`. `~/.local/bin/tq-deliver-up.sh` starts the session when it is missing.
 
   | Machine | Session | Kept alive by | Log |
