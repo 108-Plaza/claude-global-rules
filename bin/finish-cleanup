@@ -1,0 +1,91 @@
+#!/usr/bin/env bash
+# finish-cleanup.sh — the "clean the disk you used" step of the fleet rules (🖥 Builds, disks and cleanup),
+# made safe enough to allow for AI sessions by path instead of allowing `rm -rf` everywhere.
+#
+#   bash ~/.claude/rules-repo/bin/finish-cleanup <path>...            # remove each path if it is safe to
+#   bash ~/.claude/rules-repo/bin/finish-cleanup --dry-run <path>...  # say what would happen, delete nothing
+#
+# Every machine that carries the rules allows exactly this command in ~/.claude/settings.json, so an AI
+# session can clean up at the end of its work without a prompt (owner 2026-10-21). Never widen that rule
+# to bare `rm`; widen the checks below instead.
+#
+# A path is removed only when every check passes; otherwise it is kept and the reason is printed:
+#   - it resolves (symlinks followed) to somewhere under a scratch root: ~/worktrees/, /data/yuth/worktrees/
+#     (Dell), a repo's .worktrees/ or .claude/worktrees/ under ~ or /data, or this user's claude-<uid>
+#     session dirs in /private/tmp or /tmp;
+#   - it is not a scratch root itself;
+#   - no running process has its working directory inside it;
+#   - if it is a git worktree: nothing uncommitted, and no commit that is on no remote (unpushed work).
+# A git worktree is removed with `git worktree remove` so its parent repo forgets it; anything else with rm -rf.
+# Ends with the one `cleanup:` line the rules ask every report to carry.
+set -uo pipefail
+
+DRY=0
+[ "${1:-}" = "--dry-run" ] && { DRY=1; shift; }
+[ "$#" -gt 0 ] || { echo "usage: $0 [--dry-run] <path>..." >&2; exit 2; }
+
+ROOTS=("$HOME/worktrees" "/data/yuth/worktrees" "/private/tmp/claude-$(id -u)" "/tmp/claude-$(id -u)")
+removed=() kept=()
+
+under_scratch_root() { # <realpath>
+  local p="$1" r
+  for r in "${ROOTS[@]}"; do
+    r=$(cd "$r" 2>/dev/null && pwd -P) || continue
+    [ "$p" = "$r" ] && return 1
+    case "$p" in "$r"/*) return 0 ;; esac
+  done
+  case "$p" in
+    "$HOME"/*/.worktrees/?*|"$HOME"/*/.claude/worktrees/?*|/data/*/.worktrees/?*|/data/*/.claude/worktrees/?*) return 0 ;;
+  esac
+  return 1
+}
+
+# content_on_default <worktree> — a squash merge leaves the worker's commits on no remote, yet everything in
+# them is on the default branch. True when merging HEAD into a freshly fetched origin/<default> changes nothing.
+content_on_default() {
+  local w="$1" def main_tree merged
+  def=$(git -C "$w" symbolic-ref -q --short refs/remotes/origin/HEAD 2>/dev/null | sed 's#^origin/##')
+  [ -n "$def" ] || def=main
+  timeout 60 git -C "$w" fetch -q origin "$def" 2>/dev/null || return 1
+  main_tree=$(git -C "$w" rev-parse "FETCH_HEAD^{tree}" 2>/dev/null) || return 1
+  merged=$(git -C "$w" merge-tree --write-tree FETCH_HEAD HEAD 2>/dev/null | head -1) || return 1
+  [ -n "$merged" ] && [ "$merged" = "$main_tree" ]
+}
+
+busy() { # <realpath> — prints the first process whose cwd is inside it
+  lsof -a -d cwd -Fpcn 2>/dev/null | awk -v p="$1" '
+    /^p/ {pid=substr($0,2)} /^c/ {cmd=substr($0,2)}
+    /^n/ {n=substr($0,2); if (n==p || index(n, p "/")==1) {print pid " " cmd; exit}}'
+}
+
+for arg in "$@"; do
+  if [ ! -e "$arg" ]; then kept+=("$arg (does not exist)"); continue; fi
+  real=$(cd "$arg" 2>/dev/null && pwd -P) || real=$(cd "$(dirname "$arg")" && printf '%s/%s' "$(pwd -P)" "$(basename "$arg")")
+  if ! under_scratch_root "$real"; then kept+=("$arg (not under a scratch root)"); continue; fi
+  if b=$(busy "$real") && [ -n "$b" ]; then kept+=("$arg (process in it: $b)"); continue; fi
+
+  if [ -d "$real" ] && git -C "$real" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
+     && [ "$(git -C "$real" rev-parse --show-toplevel 2>/dev/null)" = "$real" ]; then
+    if [ -n "$(git -C "$real" status --porcelain --ignored=no 2>/dev/null)" ]; then
+      kept+=("$arg (uncommitted changes)"); continue
+    fi
+    if [ -n "$(git -C "$real" rev-list -n1 HEAD --not --remotes 2>/dev/null)" ] && ! content_on_default "$real"; then
+      kept+=("$arg (commits on no remote)"); continue
+    fi
+    if [ "$DRY" = 1 ]; then removed+=("$arg [dry-run: git worktree]"); continue; fi
+    common=$(git -C "$real" rev-parse --path-format=absolute --git-common-dir 2>/dev/null)
+    if [ -f "$real/.git" ] && [ -n "$common" ]; then
+      git --git-dir="$common" worktree remove --force "$real" 2>/dev/null || true
+    fi
+  elif [ "$DRY" = 1 ]; then
+    removed+=("$arg [dry-run]"); continue
+  fi
+  [ -e "$real" ] && rm -rf -- "$real"
+  if [ -e "$real" ]; then kept+=("$arg (rm failed)"); else removed+=("$arg"); fi
+done
+
+host=$(hostname -s 2>/dev/null || hostname)
+printf 'cleanup: removed %s on %s' "${removed[*]:-nothing}" "$host"
+if [ "${#kept[@]}" -gt 0 ]; then printf '; kept %s' "$(IFS=';'; echo "${kept[*]}")"; fi
+echo
+[ "${#kept[@]}" -eq 0 ]

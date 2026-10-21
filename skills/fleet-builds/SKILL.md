@@ -86,7 +86,7 @@ git worktree add /data/yuth/worktrees/<slug> -b <branch> origin/main     # not ~
 ## 🧹 Clean up what you created for a ticket before reporting it done
 
 Owner's order 2026-09-27 *"Workers tend to leave things running, never clean up, and keep creating more"* (`a1f986c`) · *"Otherwise everything fills up"* (`a1f986c`) ·
-widened 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"*: **every role, every machine used, every kind of work** (not only tickets). Reports end with `cleanup: removed <what> on <machine>; kept <what> because <why>`. Delete with `rm -rf`, never into the Finder Trash. Never create folders directly under `~`.
+widened 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"*: **every role, every machine used, every kind of work** (not only tickets). Reports end with `cleanup: removed <what> on <machine>; kept <what> because <why>`. Delete folders with `bash ~/.claude/rules-repo/bin/finish-cleanup <dir>...` (allowed in every machine's settings; it runs the safety checks in rule 2 below and prints that line), never into the Finder Trash. Never create folders directly under `~`.
 Measured 2026-10-19 on Mac Studio: 9 GB free of 1.8 TB, `~/worktrees` 420 GB, `target/` in leftover worktrees ~520 GB; clearing old worktrees brought it to 512 GB free ·
 Principle: **anything holding one ticket's data = use once and discard · anything expensive to recreate that holds nobody's data = reuse**
 
@@ -115,9 +115,9 @@ Owner's order 2026-10-19 *"สร้างกฏ ว่า ใครทำงา
 1. **The session that runs `gh pr merge`, or closes a PR without merging, removes that PR's worktrees in the same turn**: on its own machine and, where it can reach it, on the worker's machine. Find the machine in `GET /v1/workers` (row of the PR's `> worker:`) or in the take-ticket comment.
    ```bash
    git -C <repo> worktree list --porcelain | awk '/^worktree /{w=$2} /^branch refs\/heads\/<branch>$/{print w}'
-   git -C <repo> worktree remove --force <path> && git -C <repo> worktree prune
+   bash ~/.claude/rules-repo/bin/finish-cleanup <path>...
    ```
-   A worker folder that is a full clone rather than a worktree (`~/worktrees/<slug>` with its own `.git` directory): `rm -rf` it once `git -C <path> status --porcelain` is empty and its branch tip is on `origin`.
+   The script handles worktrees (`git worktree remove`) and full clones (`~/worktrees/<slug>` with its own `.git`) alike, and keeps any folder that fails rule 2.
 2. **Never remove a folder in use:** a process has its cwd inside it (`lsof -a -d cwd | grep <path>`), or it has uncommitted changes or commits not on `origin`. Leave it, and write on the PR which folder was kept and why.
 3. **Reviewers remove their own review worktree** as soon as the verdict is posted (PASS or FAIL). A re-review makes a new one; it is cheap.
 4. **Every dispatch order ends with:** *"When your PR is merged or closed, delete your worktree for it. Also delete any worktree of yours whose PR is already merged before you start the next ticket."*
