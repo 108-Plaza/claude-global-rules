@@ -162,7 +162,7 @@ Re-measure: `gh api orgs/108-Plaza/actions/runners --jq '.runners[]|"\(.name)\t\
 | Linux — Dell `ibrowe.com` | `dell-org-108plaza` · `dell-org-ci-1..4` | `self-hosted,Linux,X64,pos108-ci` (+`dell-org-ci`) |
 | Linux — Lenovo | `lenovo-org-ci-1..2` | `self-hosted,Linux,X64` |
 | macOS/ARM64 | `studio-org-1..6` · `mbp-org-1..2` · `macmini-org-1..2` · `108-Ting-Ecosystem-R2` | `self-hosted,macOS,ARM64` |
-| macOS/ARM64 — Warut's MacBook | `warut-org-1..2` | `+ fast-mac`, `warut-mbp`; `warut-org-1` also `heavy-build` (owner added 2026-10-21, so it takes xchange `api` tests) |
+| macOS/ARM64 — Warut's MacBook | `warut-org-1..2` | `+ fast-mac`, `warut-mbp`; both also `heavy-build` (owner added 2026-10-21, so they take xchange `api` tests) |
 | Windows | `lenovo-org-win-1` | `self-hosted,X64,Windows` |
 
 - `ibrowe-pos108-2` is a **repo-level** runner of `pos108-core`; it does not appear in the org list.
