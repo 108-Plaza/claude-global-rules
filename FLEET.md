@@ -86,12 +86,12 @@ It may return only in dispatch-only mode (takes only tickets pinned `assign:gemi
 ## Accounts and quota
 
 measured: as recorded in `CLAUDE.md` § 🎛 and § 🔁 Watch loops (2026-10-17).
-Re-measure: agy `/usage` in any session (names the account and both model groups); `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` on a machine (never open the token files); `gh auth status` and `gh api rate_limit --jq .resources.core` for GitHub.
+Re-measure: agy `/usage` in an idle session (names the account and both model groups; this is the authority). `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` can show an older login, and on 2026-10-21 it misnamed the Studio's account; never open the token files. `gh auth status` and `gh api rate_limit --jq .resources.core` for GitHub.
 
 | Account | Used by | Notes |
 |---|---|---|
-| agy `yutjan50` | Dell | Quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account. |
-| agy `xc.team.th` | Mac Studio + Mac mini | same |
+| agy `yutjan50` | Dell + Mac Studio (measured with `/usage` 2026-10-21 on Studio agy-1,3,6,7,10,11,13 and Dell gemini-1,4,6) | Quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account. |
+| agy `xc.team.th` | Mac mini + jam (measured 2026-10-21: Mac mini agy-2,5, jam agy-2,3,4) | same |
 | agy `ibrowe108` | Warut's MacBook | same |
 | GitHub `ibrowe108` | Dell's `gh` and git (since 2026-10-17) | Org member, Write; owner's second seat replacing UTD888. Own 5,000/h REST quota. Switch back with `gh auth switch -u yuthstyle88`. Added with `~/gh-add-user.sh` because Dell's keyring hangs `gh auth login`. |
 | GitHub `yuthstyle88` | every other machine | One 5,000/h REST quota shared by the whole fleet. |

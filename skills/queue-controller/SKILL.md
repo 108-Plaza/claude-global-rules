@@ -373,7 +373,7 @@ moving proposals onto the ticket grants no decision right — it lets the contro
   it may return only in dispatch-only mode (takes only tickets pinned `assign:gemini/auto-<id>` exactly) · queue side merged at `108-agent-queue` `9766ada`, script side measurable with `git grep -n assigned_only origin/main -- scripts` ·
   **never re-enable the LaunchAgent/unit yourself before that mode is merged + deployed** · turning the fleet on or off belongs to the owner
 - 🟠 **Quota is per account, per model group (Gemini vs Claude/GPT), shared by every machine on that account** — check any session with agy `/usage`, which names the account and both groups ·
-  accounts in use: `yutjan50` (Dell) · `xc.team.th` (Studio + Mac mini) · `ibrowe108` (Warut) · find a machine's account with `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` (never open the token files) ·
+  accounts in use: `yutjan50` (Dell + Studio) · `xc.team.th` (Mac mini + jam) · `ibrowe108` (Warut), measured with `/usage` 2026-10-21 (`FLEET.md` § Accounts and quota) · find a machine's account with `grep -h 'authenticated successfully as' ~/.gemini/antigravity-cli/cli.log` (never open the token files) ·
   switch a model on an **idle** pane only: `/model claude-opus-5-5-medium` / back `/model gemini-4-argon-medium` · a restarted agy opens on the model in `settings.json`, and **`/model` rewrites that default** (the last switch on a machine wins), so finish a round of switches with the model you want as the restart default, and re-check after any restart
 
 ## 🔄 The controller changes hands when its account's quota runs low · the new one reads the handoff first
