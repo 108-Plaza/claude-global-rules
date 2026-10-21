@@ -49,7 +49,17 @@ Re-measure: `tmux ls` (or `screen -ls` on Warut's MacBook) on each machine, and 
 Auto-restart and machine notes (same source, same date):
 
 - Studio and Warut have LaunchAgent `com.108plaza.agy-sessions` → `~/.local/bin/agy-sessions-up.sh` (at login and every 5 minutes; starts only missing sessions; log `~/Library/Logs/agy-sessions.log`).
-- **Order delivery (`/v1/dispatch`):** only Studio runs the delivery agent (installed 2026-10-21 on the owner's order). `agy-sessions-up.sh` calls `~/.local/bin/tq-deliver-up.sh`, which keeps tmux session `tq-deliver` running `~/.local/share/tq-deliver/tq-deliver.sh` (copied from `108-agent-queue` `635d017`). It logs to `~/Library/Logs/tq-deliver.log` and keeps its cursor in `~/.cache/tq-deliver/cursor`. **Stopgap:** a `shim/hostname` printing `studio` comes first on its `PATH`, because `GET /v1/orders` does not canonicalise the host (108-agent-queue#1079); remove the shim once that fix is deployed. Other machines have no agent, so an order to their workers must be typed by hand and acked within 180 s.
+- **Order delivery (`/v1/dispatch`):** every worker machine runs the delivery agent, installed 2026-10-21 on the owner's order: Studio, Dell, the Mac mini, Warut and jam. Each runs `~/.local/share/tq-deliver/tq-deliver.sh` (copied from `108-agent-queue` `635d017`) in a session named `tq-deliver`, and keeps its cursor in `~/.cache/tq-deliver/cursor`. `~/.local/bin/tq-deliver-up.sh` starts the session when it is missing.
+
+  | Machine | Session | Kept alive by | Log |
+  |---|---|---|---|
+  | Studio | tmux | `agy-sessions-up.sh` (LaunchAgent `com.108plaza.agy-sessions`) | `~/Library/Logs/tq-deliver.log` |
+  | Dell, Mac mini | tmux | cron `@reboot` + `*/5` (crontab backup `~/.cache/tq-deliver/crontab.bak-20261021`) | `~/.cache/tq-deliver/deliver.log` |
+  | Warut | screen | `agy-sessions-up.sh` (LaunchAgent `com.108plaza.agy-sessions`) | `~/.cache/tq-deliver/deliver.log` |
+  | jam | screen | LaunchAgent `com.108plaza.tq-deliver` | `~/.cache/tq-deliver/deliver.log` |
+
+  **Stopgap:** a `shim/hostname` printing the canonical host (`studio` · `dell` · `mac-mini` · `warut` · `jam`) comes first on the agent's `PATH`, because `GET /v1/orders` does not canonicalise the host (108-agent-queue#1079). Remove the shims once that fix is deployed.
+- **jam** (`ssh jam`, user `Direwolves`) has 5 Gemini 4 Argon sessions in screen, `agy-1..5`, worker ids `gemini/jam-1..5`, cwd `~/worktrees`, ponytail installed. Its presence reporter `~/.local/bin/tq-presence.sh` (a copy of Warut's) runs from LaunchAgent `com.108plaza.tq-presence`, and its map `~/.config/tq/presence.map` was added 2026-10-21. Nothing restarts its agy sessions yet.
 - Studio also has `com.108plaza.claude-sessions` for `claude-1..5`. Since 2026-10-16 Studio comes back by itself after a reboot (FileVault off + auto-login).
 - **A reboot kills every running turn** ⇒ re-check the panes before assuming a dispatched ticket is still being worked.
 - The agents run only while that user is logged in ⇒ to drain a session for good, lower the script first, or it returns within 5 minutes.
