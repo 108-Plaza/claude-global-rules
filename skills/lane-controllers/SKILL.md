@@ -48,10 +48,11 @@ The lane controller hands work over with a handoff on the lane's notice issue (f
 
 ## 3. Dispatching a function ticket (until `POST /v1/dispatch` exists)
 
-1. Pick a worker: idle pane (no `esc to cancel`), right model (Flash = mechanical, Argon = logic/guarded), **never Dell for builds**
+1. Pick a worker: idle pane (no spinner line just above the input box, and the box is a bare `>`; the footer `esc to cancel` shows whenever any background task runs, so it is not a busy signal, measured 2026-10-21), right model (Flash = mechanical, Argon = logic/guarded), **never Dell for builds**
    (rules `e541b83`), not held by another sub-controller (`GET /v1/snapshot`).
 2. One `gh issue edit`: `ready` + `class:` + `assign:<kind>/<id>`.
-3. Send the order: ponytail line · **wait ~90 s for the pin to sync, then claim once** with `"assigned_only":true` · heartbeat loop ·
+3. Send the order. Prefer `POST /v1/dispatch`: the queue pins, leases and generates the order, and the worker **must not claim** (skill `tq-worker` § 📨, owner 2026-10-21).
+   Only for an order sent as a message: ponytail line · **wait ~90 s for the pin to sync, then claim once** with `"assigned_only":true` · heartbeat loop ·
    new folder · branch from `origin/feat/<x>` · only the ticket's file · only the item-1 command · PR `--base feat/<x>` · `pr_open` ·
    one standing claim for the next pinned ticket.
 4. Within 10 minutes check `GET /v1/ticket/...` shows `leased`. Not leased ⇒ read the pane; a claim sent before the pin synced
