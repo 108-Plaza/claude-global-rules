@@ -35,7 +35,9 @@ Re-measure: on each machine, `git -C ~/.claude/rules-repo log -1 --format=%h` an
 ## Implementer sessions per machine
 
 measured: as recorded in `CLAUDE.md` § 🎛 (last changed 2026-10-17). The table there is marked *what is intended, not what is running*.
-Re-measure: `tmux ls` (or `screen -ls` on Warut's MacBook) on each machine, and the pane's last line for the model: `tmux capture-pane -p -t <s> | tail -1`.
+Re-measure: `tmux ls` (or `screen -ls` on Warut's MacBook) on each machine, and the pane's last line for the model: `tmux capture-pane -p -t <s> | tail -1`. Or read `model` per worker from `GET /v1/workers`.
+
+**Workers by model, measured 2026-10-21 ~01:05Z from `/v1/workers`:** **Gemini 3.8 Flash** (easy, `class:mechanical`) = `gemini/mini-1..5`, `gemini/warut-1`, `gemini/warut-4`. **Gemini 4 Argon** (hard, `class:logic`/`guarded`) = `gemini/studio-1..10`, `gemini/pool-1..6` (Dell), `gemini/warut-2/3/5`, `gemini/jam-1..5`. A session's model changes with `/model`; re-measure before relying on this line.
 
 | Machine | Reach · sessions · worker id | Must know |
 |---|---|---|
