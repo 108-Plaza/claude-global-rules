@@ -180,6 +180,14 @@ Evidence: `park108#664`/`#735` traced the root cause fully ⇒ answered in ~4 mi
 - After asking, say what you will do while waiting (can proceed = proceed, and write which path you took · cannot = say where it stops and who is blocked)
 - **Never re-ask something already answered**
 
+## 🕒 Every time you write is Thai time (ICT, UTC+7)
+
+Owner's order 2026-10-22 *"เพิ่ม กฏ ให้ บอกเวลาเป็น ไทย"*
+- **Every clock time you write** is Thai time with the zone named: `09:20 ICT`, `2026-10-22 09:20 ICT`. That covers replies, notifications, reports, tickets, comments, PR bodies and docs. Never write a bare `02:20Z` or an unlabelled time.
+- **Tools speak UTC** (`date -u`, GitHub `createdAt`, the tq queue, CI, `journalctl` on Dell). Convert before you write: ICT = UTC + 7 h, and the date rolls over at 17:00 UTC.
+- **A pasted log line or command output stays as it is**; it is evidence (🧾). Put the ICT time beside it when the sentence relies on the time.
+- Durations and relative times ("in 30 min", "2 h ago") need no zone.
+
 ## ✍️ The first line of every comment says who wrote it
 
 Owner's order 2026-09-14 — every agent posts through the same GitHub account (`yuthstyle88`) ⇒ the web page cannot tell who is speaking
