@@ -26,6 +26,7 @@ Re-measure: on each machine, `git -C ~/.claude/rules-repo log -1 --format=%h` an
 |---|---|---|
 | MacBook · Mac Studio · Mac mini | `macstudio` · `macmini` (user `yuth`) | LaunchAgent `com.108ting.claude-rules-autopull` |
 | Dell (`ibrowe.com`) | `Dell-server` | cron `*/15` |
+| Warut's MacBook (`waruts-MacBook-Pro`, user `warutjantabut`, installed 2026-10-22 for `finish-cleanup`) | `warut` (direct from Mac Studio) | LaunchAgent `com.108ting.claude-rules-autopull` |
 | **Lenovo — WSL2 on `DESKTOP-ENCHS4F`** (user `worker`) | `pos108-lenovo`, **reachable only from Mac Studio** | cron `*/15` (read-only deploy key id `164563018`) |
 
 - **Lenovo uses its own deploy key** (`~/.ssh/id_ed25519_rules`; the repo's `core.sshCommand` points to that key), so the remote is `git@github.com:`, not https.
