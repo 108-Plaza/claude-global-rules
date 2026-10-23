@@ -29,6 +29,7 @@ Re-measure: on each machine, `git -C ~/.claude/rules-repo log -1 --format=%h` an
 | Warut's MacBook (`waruts-MacBook-Pro`, user `warutjantabut`, installed 2026-10-22 for `finish-cleanup`) | `warut` (direct from Mac Studio) | LaunchAgent `com.108ting.claude-rules-autopull` |
 | **Lenovo — WSL2 on `DESKTOP-ENCHS4F`** (user `worker`) | `pos108-lenovo`, **reachable only from Mac Studio** | cron `*/15` (read-only deploy key id `164563018`) |
 
+- 🔴 **Every machine fetches the rules over HTTPS, with no key:** `remote.origin.url = https://github.com/108-Plaza/claude-global-rules.git` (the repo is public). Only the push URL (`remote.origin.pushurl`) keeps an SSH key, for the machine where the rules are edited. Why: on 2026-10-23 the repo listed 0 deploy keys and the MacBook's GitHub SSH key was refused, so Dell and the Mac mini stopped syncing at `e703f3d` (10-21) and the MacBook at `bd03839`, each logging `fetch ไม่ผ่าน`. The owner chose HTTPS fetch (option A) the same day; it was set on the MacBook, Dell and the Mac mini. A new machine sets the same two URLs.
 - **Lenovo uses its own deploy key** (`~/.ssh/id_ed25519_rules`; the repo's `core.sshCommand` points to that key), so the remote is `git@github.com:`, not https.
 - Lenovo's ssh lands in **cmd.exe**, not WSL: call through `bash -s` or `bash -c "…"` (single quotes don't work; cmd doesn't strip them). There is **no sftp**, so `scp` cannot get in; send over stdin only.
 - `legion-utd-1` (100.98.93.83) is a different machine: port 22 closed, **no rules yet**.
