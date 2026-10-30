@@ -54,7 +54,7 @@ The lane controller hands work over with a handoff on the lane's notice issue (f
 3. Send the order. Prefer `POST /v1/dispatch`: the queue pins, leases and generates the order, and the worker **must not claim** (skill `tq-worker` § 📨, owner 2026-10-21).
    Only for an order sent as a message: ponytail line · **wait ~90 s for the pin to sync, then claim once** with `"assigned_only":true` · heartbeat loop ·
    new folder · branch from `origin/feat/<x>` · only the ticket's file · only the item-1 command · PR `--base feat/<x>` · `pr_open` ·
-   one standing claim for the next pinned ticket.
+   then wait for the next order. **No standing claim, and never `/v1/next` again** (owner 2026-10-30). A standing claim takes the next pinned ticket before its dispatch, even while the pane is busy: gemini/jam-3 and jam-4 did this to xchange#5688 and #5689 on 2026-10-30.
 4. Within 10 minutes check `GET /v1/ticket/...` shows `leased`. Not leased ⇒ read the pane; a claim sent before the pin synced
    returns `not_pinned` and the worker stops — tell it to claim once more.
 
