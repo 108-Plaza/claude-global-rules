@@ -142,6 +142,7 @@ Owner, 2026-11-04 ~12:10 ICT, in the xchange controller session `claude/608dff`:
   - Never take or restart a worker that holds another lane's lease or rework (`holding` is set in `GET /v1/workers`).
   - The jam cap still applies: at most 3 `gemini/jam-*` busy at once.
   - No builds on Dell. An xchange order to a `pool-*` worker builds on the Mac Studio.
+  - **Exception, owner 2026-11-05 (bank lane session, answer "Narrow tests on Dell"):** Dell cannot reach the Mac Studio. Measured 2026-11-05: `macstudio` does not resolve from Dell, and `100.84.133.23` times out. So a `pool-*` worker may run, on Dell under `/data/yuth/worktrees/`, **only** the ticket's named test filters plus `cargo fmt --check` and `cargo clippy`. Never the whole suite, never a release build. Every dispatch order to a `pool-*` worker says this.
   - Warut is a light machine, so give it small single-crate tickets.
   - Flash workers are not covered.
 - **Lasts:** until the owner says otherwise. When it ends, delete this subsection; never strike it through.
