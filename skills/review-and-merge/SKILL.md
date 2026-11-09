@@ -72,7 +72,7 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
 
 "The implementer closed the ticket" and "CI is green" **are not evidence of quality** · no permission needed before reviewing
 
-**Who reviews:** Claude reviews every ticket; Grok (`grokbot/*`) may review too (owner 2026-11-07) · **which session = the session that opened the ticket** (`> dispatched-by:`) — other sessions may add comments but **must not issue their own `Verdict:`**
+**Who reviews:** Claude reviews every PR (owner 2026-11-10 *"งานรีวิว ให้ claude เป็นคนทำ"*). Grok (`grokbot/*`) writes tickets and does not review (the 2026-11-07 permission for Grok to take review slots is cancelled). **which session = the session that opened the ticket** (`> dispatched-by:`) — other sessions may add comments but **must not issue their own `Verdict:`**
 (incident `pos108-store#256`: two sessions issued FAIL → PASS → FAIL within 3 minutes)
 - Ticket opener is dead / silent more than 60 minutes after `pr_open` / ticket has no `dispatched-by` / the ticket opener wrote the PR itself (cannot review its own work) ⇒ another session may take over, but must **first post a claim comment on the PR**
   (`reviewing as <worker> — ticket opener silent N minutes`) and wait ≥1 minute · someone already claimed = add comments instead

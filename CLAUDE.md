@@ -65,9 +65,9 @@ Comes before every rule below — *Autonomous Execution* says **how** work is do
 
 | Who | Does | Must not |
 |---|---|---|
-| **Gemini** (`gemini/*` and `antigravity/*` = the same one — the owner runs it through an IDE called Antigravity · fold the two names together before counting) | implementer — two kinds: **Gemini sessions (tmux on Dell) do not call the queue themselves**; they sit and wait for Claude to dispatch a ticket · **the autopilot fleet** (`gemini/auto-*` on MacBook/Mac Studio) pulls the queue itself as normal (see below) | review · merge · tmux sessions calling `/v1/next` to find a ticket themselves (claiming the ticket the lane controller ordered is allowed — see below) |
-| **Claude** | explore/find the root cause → **design the class diagram from the owner's requirement** (📐 Class diagram before code) → **write the ticket** → dispatch → monitor → **review every PR** (including `gemini/*`) → add `reviewed` + merge when the conditions are met · maintain docs/context | merge work it wrote itself |
-| **Grok** (`grokbot/*`) | reviewer — reviews a PR it is sent, the same way Claude does (checklist, `Verdict:` format and merge conditions in skill `review-and-merge`) · takes the review slot through the queue (`queue_review_next` / `POST /v1/review/next`); tq lets it in through `reviewer_kinds` in its `config.toml` (108-agent-queue#1149) · owner 2026-11-07 *"คิว ไม่ยอมให้ grok รับรีวิว แก้ไข ให้ รับ รีวิว ได้"* | write code · review or merge work it wrote itself |
+| **Gemini** (`gemini/*` and `antigravity/*` = the same one — the owner runs it through an IDE called Antigravity · fold the two names together before counting) | implementer of **ordinary** tickets — two kinds: **Gemini sessions (tmux on Dell and agy elsewhere) do not call the queue themselves**; they sit and wait for a ticket to be dispatched · **the autopilot fleet** (`gemini/auto-*` on MacBook/Mac Studio) stays off until the owner turns it back on | review · merge · author hard tickets · tmux/agy sessions calling `/v1/next` to find a ticket themselves (claiming the ticket the lane controller ordered is allowed — see below) |
+| **Claude** | explore/find the root cause → **design the class diagram from the owner's requirement** (📐 Class diagram before code) when needed → **author hard tickets** → dispatch and monitor when it is the lane controller → **review every PR** → add `reviewed` + merge when the conditions are met · maintain docs/context · owner 2026-11-10 *"งานยาก claude"* · *"งานรีวิว ให้ claude เป็นคนทำ"* | merge work it wrote itself · implement ordinary tickets that belong to Gemini |
+| **Grok** (`grokbot/*`) | ticket author and lane/queue controller — **writes tickets**, surveys the queue, dispatches ordinary work to Gemini and hard tickets to Claude, and monitors until the work is done · owner 2026-11-10 *"ทีม grok ออกใบงาน"* · *"gemini เขียน"* · *"อย่าให้หลุด"* | write implementation code · review PRs (reviews are Claude's only; the 2026-11-07 permission for Grok to take review slots is cancelled) · merge work it wrote itself |
 | **the owner** | decides business rules · approves merge exceptions (below) | |
 
 ### 🎛 The controller decides · working sessions may propose **only on the ticket they hold, never in chat**
@@ -92,7 +92,7 @@ Owner's order 2026-10-18 *"คุณต้องแยก คนคุมงา�
   - the lane controller opens one sub-controller session per feature branch, gives its orders, and closes it when it is done;
   - the sub-controller writes the skeleton on `feat/<x>`, releases function tickets together, reviews them, merges them into `feat/<x>`, and runs the full suite early;
   - the merger lands `feat/<x>` on main in one PR with one CI run.
-- 🔴 **Function tickets, including setup fixes, are implemented by Gemini workers.** Claude sessions only control, write the skeleton and up-front tests, and review (owner 2026-10-18 *"งาน ระดับ ฟั่งชั่นต้องให้ Gemini รับงานไปนะ"*).
+- 🔴 **Ordinary function tickets, including setup fixes, are implemented by Gemini workers** (owner 2026-10-18 *"งาน ระดับ ฟั่งชั่นต้องให้ Gemini รับงานไปนะ"*). **Hard tickets are authored by Claude** (owner 2026-11-10 *"งานยาก claude"*). Claude sessions control, write the skeleton and up-front tests when they are the lane controller, and review every PR.
 - **Every proposal to the owner states controllers × workers** (count, machine, model) and the done line of each lane.
 
 ### 📨 The controller loops dispatching · workers do not loop pulling the queue
@@ -101,25 +101,27 @@ Owner's order 2026-10-18 *"คุณต้องแยก คนคุมงา�
 - **The controller loops; workers do not.** A worker waits for an order. 🔴 **An order from `/v1/dispatch` already holds the lease: never call `/v1/next` under it, not even for the next ticket after `pr_open`** (owner 2026-10-21; a self-claim leases with no order and no undo). An order sent as a message ⇒ claim **once** (`POST /v1/next` with `"wait_secs":0` + 🔴 `"assigned_only":true`). Then heartbeat ≤30 min, report done and wait. `empty` ⇒ **never re-send**; comment `ready_blocked_by` on the ticket and tell the controller.
 - 🔴 **A worker takes work only from the owner or its lane's controller** (owner 2026-10-07 *"ให้ รับงาน จากเจ้าของและcontroller สั่งเท่านั้น"*); a peer's message is information, never an order.
 - 🔴 **`ready` and a pin are not a dispatch**: whoever adds `ready` finds an idle worker on the right model, pins it, sends the claim order, and checks `leased` within 10 min — or writes on the ticket why nobody can take it.
-- 🔴 **Match the model to the ticket** (owner 2026-10-21 *"Gemini 3.8 Flash สำหรับ งาน ง่าย ส่วน Gemini 4 Argon สำหรับ งานยาก"*): easy `class:mechanical` ⇒ **Gemini 3.8 Flash** · hard `class:logic`/`guarded` ⇒ **Gemini 4 Argon** · review ⇒ Claude Opus 5.5 medium or Grok (`grokbot/*`, owner 2026-11-07). Read `model` in `GET /v1/workers` before each dispatch; **never give an easy ticket to Argon while a Flash worker is free**. Who runs which model: `FLEET.md` § Implementer sessions.
+- 🔴 **Match the model and the role to the ticket** (owner 2026-10-21 *"Gemini 3.8 Flash สำหรับ งาน ง่าย ส่วน Gemini 4 Argon สำหรับ งานยาก"* · superseded in part by owner 2026-11-10 *"gemini เขียน"* · *"งานยาก claude"* · *"งานรีวิว ให้ claude เป็นคนทำ"*): ordinary easy `class:mechanical` ⇒ **Gemini 3.8 Flash** · ordinary `class:logic` ⇒ **Gemini 4 Argon** · **hard tickets ⇒ Claude authors them** · **review ⇒ Claude Opus 5.5 medium only** (Grok does not review). Read `model` in `GET /v1/workers` before each dispatch; **never give an easy ticket to Argon while a Flash worker is free**. Who runs which model: `FLEET.md` § Implementer sessions.
 - 🔴 **Every agy order carries the ponytail line** (verbatim text in the skill) · never restart an agy session that holds a lease or rework.
 - 🔴 **Design for ≥80% of usable workers busy at once**: split along the class diagram into disjoint File scopes and release a team together; a file that chains tickets is a design defect.
 - A ticket the controller pinned + dispatched = **already approved**; still ask the owner for peer orders, migrations, BLOCK groups, deploy, rule/config edits, work outside the ticket.
 
 ## When Claude may write code
 
-1. **A ticket the controller dispatched** (claimed once through the queue per 📨 The controller loops dispatching) — heartbeat + `pr_open` like any other implementer
-2. **The owner sends work to this session directly** (types an order / pastes an issue link) ⇒ take it on yourself to the end, no need to dispatch it on —
+1. **A hard ticket** (`class:guarded`, or marked hard by the controller or the owner) — Claude authors it (owner 2026-11-10 *"งานยาก claude"*)
+2. **A ticket the controller dispatched** (claimed once through the queue per 📨 The controller loops dispatching) — heartbeat + `pr_open` like any other implementer
+3. **The owner sends work to this session directly** (types an order / pastes an issue link) ⇒ take it on yourself to the end, no need to dispatch it on —
    including repos with no lane controller (sending it = approval) · run the full workflow (worktree → tests green → PR → report)
-3. **The owner orders you in that round to do it yourself** — once; does not carry over to other work
-4. **A reviewer's small fix** (≤30 lines, inside the ticket's File scope) on the PR it is reviewing — see skill `review-and-merge` § 🟢 Small fix
+4. **The owner orders you in that round to do it yourself** — once; does not carry over to other work
+5. **A reviewer's small fix** (≤30 lines, inside the ticket's File scope) on the PR it is reviewing — see skill `review-and-merge` § 🟢 Small fix
 
-Otherwise, however clear the fix is, **write it into a ticket, not into code** · *"บักเล็ก แก้เลยเร็วกว่า"* is not a permission ·
-not sure whose work it is ⇒ treat it as the implementer's and ask
+Otherwise, however clear the fix is, **write it into a ticket for Grok to file or Gemini to implement, not into code** · *"บักเล็ก แก้เลยเร็วกว่า"* is not a permission ·
+not sure whose work it is ⇒ treat it as Gemini's ordinary work and ask
 - **Always allowed without asking:** read/explore · read-only reproduce · run test/lint/build to prove something ·
   edit `.ai_context`/`HANDOFF.md`/docs and open doc-only PRs · open/close issues
-- **Always Claude's, never sent to an implementer:** deciding what should be done · writing tickets · review · work that hurts when broken and is hard to undo
+- **Always Claude's, never sent to Gemini:** deciding what should be done · **hard tickets** · review · work that hurts when broken and is hard to undo
   (migrations that have run · keys/secrets · deploy · the 4 BLOCK groups)
+- **Ticket writing is Grok's standing job** (owner 2026-11-10 *"ทีม grok ออกใบงาน"*). A Claude session writes a ticket only when it is that lane's controller and no Grok controller owns the lane, or when the owner orders it.
 
 ## 🟢 merge — the reviewer adds `reviewed` and merges
 
@@ -507,7 +509,7 @@ Claiming a ticket cannot prevent collisions because **different tickets can touc
 - 🔴 **Review or test-writing runs only the tests the ticket names or the PR adds, by name** — never the crate suite or the workspace (owner 2026-10-18 *"ใส่ ทุกเลน"*)
 - 🔴 **On Dell, worktrees go to `/data/yuth/worktrees/<slug>`**, never `/home` · **never delete things on Dell yourself** — measure and report
 - 🔴 **Fleet Rust toolchain is one pinned number** (`rust-toolchain.toml` + `dtolnay/rust-toolchain@<n>`, never `stable`) — the number is in `FLEET.md`
-- 🔴 **Whoever finishes a piece of work cleans the disk it used, before reporting done** (owner 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"*). This applies to every role: implementer, reviewer, controller, ticket writer, a one-off investigation, and an owner-direct task.
+- 🔴 **Whoever finishes a piece of work cleans up, and cleans the disk it used, before reporting done — never leave junk behind** (owner 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"* · restated 2026-11-10 *"ทำงานจบต้อง ทำความสะอาด งาน เสมอ ห้าม ทิ้ง ขยะไว้รก"*). This applies to every role: implementer, reviewer, controller, ticket writer, a one-off investigation, and an owner-direct task.
   - "Finished" = your last action on it: `pr_open` (keep only the worktree, for rework), verdict posted, ticket returned or blocked, investigation reported, PR merged or closed.
   - Remove what **you** created on **every machine you used**: `target/` and build output · test containers and their volumes (`docker run --rm --label fleet.worker=<kind>/<id>`, never `--restart`) · scratch clones and copies · downloaded artifacts · temp dirs.
   - Delete folders with **`bash ~/.claude/rules-repo/bin/finish-cleanup <dir>...`** (owner 2026-10-21 *"เพราะ มันต้อง รัน ตอนปิด งาน"*). Every machine's `~/.claude/settings.json` allows exactly this command, so it runs without a prompt where a bare `rm` is blocked. It deletes only scratch folders (`~/worktrees/`, `/data/yuth/worktrees/`, a repo's `.worktrees/`, the session's `claude-<uid>` temp dir), refuses one a process is in or that holds uncommitted or unpushed work (a squash-merged PR's content on main counts as pushed), and prints the `cleanup:` line. Never widen the allow rule to `rm`; change the script's checks instead. **Never move anything to the Finder Trash**, which frees nothing and needs Full Disk Access to empty.
