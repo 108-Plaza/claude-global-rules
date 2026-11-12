@@ -15,6 +15,7 @@
 #     session dirs in /private/tmp or /tmp;
 #   - it is not a scratch root itself;
 #   - no running process has its working directory inside it;
+#   - if it is a real clone (.git is a directory): no linked worktree of it still exists on disk;
 #   - if it is a git worktree: nothing uncommitted, and no commit that is on no remote (unpushed work).
 # A git worktree is removed with `git worktree remove` so its parent repo forgets it; anything else with rm -rf.
 # Ends with the one `cleanup:` line the rules ask every report to carry.
@@ -59,6 +60,17 @@ content_on_default() {
   [ -n "$merged" ] && [ "$merged" = "$main_tree" ]
 }
 
+# linked_worktrees <clone> — a real clone (.git is a directory) holds the git dir of every worktree added from
+# it; deleting it orphans them all (2026-11-11: a main clone was taken for scratch and its open-PR worktree
+# lost its git dir). Prints the linked worktrees that still exist on disk, space-separated; stale entries
+# whose folder is gone do not count.
+linked_worktrees() {
+  git -C "$1" worktree list --porcelain 2>/dev/null | awk '
+    /^worktree / {n++; if (n > 1) print substr($0, 10)}' | while IFS= read -r w; do
+    [ -e "$w" ] && printf '%s ' "$w"
+  done | sed 's/ $//'
+}
+
 busy() { # <realpath> — prints the first process whose cwd is inside it
   lsof -a -d cwd -Fpcn 2>/dev/null | awk -v p="$1" '
     /^p/ {pid=substr($0,2)} /^c/ {cmd=substr($0,2)}
@@ -73,6 +85,9 @@ for arg in "$@"; do
 
   if [ -d "$real" ] && git -C "$real" rev-parse --is-inside-work-tree >/dev/null 2>&1 \
      && [ "$(git -C "$real" rev-parse --show-toplevel 2>/dev/null)" = "$real" ]; then
+    if [ -d "$real/.git" ] && linked=$(linked_worktrees "$real") && [ -n "$linked" ]; then
+      kept+=("$arg (clone with linked worktrees: $linked)"); continue
+    fi
     if [ -n "$(git -C "$real" status --porcelain --ignored=no 2>/dev/null)" ]; then
       kept+=("$arg (uncommitted changes)"); continue
     fi
