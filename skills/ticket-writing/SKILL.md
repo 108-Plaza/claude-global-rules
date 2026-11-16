@@ -236,3 +236,23 @@ the same admin screen needed by several apps
 Evidence 2026-10-06 `Payment-Platform`: credential storage and service were generic over the provider, but the HTTP layer was copied —
 16 handlers + 4 DTOs + 2 mappers for SCB and KBank, nothing for 2C2P or Beam; a third copy for Beam was started and stopped
 ⇒ design `docs/design/provider-credential-specs.md` (`ProviderCredentialSpec` trait + one registry + one form)
+
+## 🦀 Rust: let the compiler catch the mistake, not shorter code
+
+Owner, 2026-11-16: *"เราควรปรับปรุงไหม เพื่อ ให้ โค้ดสั้นลง"* · *"ความผิดพลาดจะได้น้อย ลง"* (should we shorten the code, so there are fewer mistakes).
+Shorter code is not the goal. The goal is a compiler error at the place a mistake would otherwise slip through.
+These rules apply to **new code and code a ticket already touches**. They are not a reason to sweep existing code: a sweep with no failure seen is over-design (owner 2026-11-15).
+
+| Write | Instead of | What the compiler then catches |
+|---|---|---|
+| `match` on our own enum with every variant named | a `_ =>` arm | a new variant forces every `match` to handle it |
+| an enum for a closed set of states | `bool` flags or string states | impossible combinations and typos |
+| newtypes for money and ids (`Satang(i64)`, `TenantId(Uuid)`) | bare `i64` / `Uuid` / `String` in a signature | arguments passed in the wrong order, units mixed up |
+| `#[must_use]` on functions whose result must be checked | a result the caller can drop silently | a forgotten check |
+
+- `_ =>` stays fine for foreign `#[non_exhaustive]` enums, integers and strings.
+- **Choosing enum vs `dyn` vs generic:** a closed set that only we extend ⇒ enum + `match`. An open set of variants (providers, banks, channels, drivers) ⇒ ♻️ above, `Arc<dyn Trait>` or a generic, because an enum would make every new variant edit one central file that every ticket then reserves.
+- **`#[async_trait]` stays on any trait used as `dyn`.** Native `async fn` and `-> impl Trait` in a trait (RPITIT, 1.75) make the trait not dyn compatible (E0038). Use them only on traits that are generic-only, and when the future must be `Send` write `-> impl Future<Output = T> + Send` (callers cannot add `Send` themselves: return type notation is still unstable as of rustc 1.99.1).
+- Trait upcasting (1.86) means `trait X: Any` replaces a hand-written `fn as_any(&self) -> &dyn Any`.
+
+Measured 2026-11-16 on `origin/main` of six Rust repos (pos108-core, 108-agent-queue, 108-platform-services, Media-Platform, Payment-Platform, park108): 66 of 78 `#[async_trait]` traits are used as `dyn`, there are 0 `fn as_any`, and there is 1 `-> Box<dyn Iterator`. Rewriting to newer syntax would save almost nothing.

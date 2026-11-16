@@ -108,6 +108,7 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
 | Really wired up, or just the pieces written? | mutation test on the wiring, not just on the pieces |
 | `git merge-base --is-ancestor origin/main <head>` | Green on an old base, merged, then main goes red |
 | Fixed at the **root cause**? | No `stopgap` + root-cause ticket = **FAIL** |
+| Rust: new code adds a `_ =>` on our own enum, a bare `i64`/`Uuid` for money or an id in a new signature? (skill `ticket-writing` § 🦀) | a new variant or a swapped argument compiles and ships · must fix, usually a reviewer small fix ≤30 lines · existing code the PR does not touch is out of scope |
 
 🔴 PRs claiming "swept every place" usually fix the places programmers read and forget the places on-site people read (README ```bash blocks) ⇒
 **always re-run the sweep command yourself** (incident park#204 → had to open park#213)
