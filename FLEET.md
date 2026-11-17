@@ -39,7 +39,7 @@ Re-measure: on each machine, `git -C ~/.claude/rules-repo log -1 --format=%h` an
 measured: as recorded in `CLAUDE.md` § 🎛 (last changed 2026-10-17). The table there is marked *what is intended, not what is running*.
 Re-measure: `tmux ls` (or `screen -ls` on Warut's MacBook) on each machine, and the pane's last line for the model: `tmux capture-pane -p -t <s> | tail -1`. Or read `model` per worker from `GET /v1/workers`.
 
-**Workers by model, measured 2026-10-21 ~01:05Z from `/v1/workers`:** **Gemini 3.8 Flash** (easy, `class:mechanical`) = `gemini/mini-1..5`, `gemini/warut-1`, `gemini/warut-4`. **Gemini 4 Argon** (hard, `class:logic`/`guarded`) = `gemini/studio-1..10`, `gemini/pool-1..6` (Dell), `gemini/warut-2/3/5`, `gemini/jam-1..5`. A session's model changes with `/model`; re-measure before relying on this line.
+**Workers by model — switched 2026-11-17 10:14 ICT (owner: *"ถ้าตัวไหนชนะ เปลี่ยน agy ทุกเครื่องเป็นตัวนั้นเลย"*):** every `~/.config/tq/agy-models` line on Studio, Dell, Mac mini and Warut now says `gemini-4-hydrogen-medium` (old files kept as `agy-models.bak-20261117`). Restarted onto Hydrogen and read back from the pane: Studio `agy-1,2,3,5,8,9,11,14` · Dell `gemini-1,2,3,5,6` · Mac mini `agy-1,2,3,5` · Warut `agy-1..4`. **Left on their old model because they were busy at the switch:** Studio `agy-4,10,13` · Dell `gemini-4` (holding the `rust-project-backend#1678` lease) · Mac mini `agy-4` · Warut `agy-5`. Each moves to Hydrogen on its next restart. **jam was unreachable** (ssh timeout) ⇒ its file still says Argon. Re-measure from `/v1/workers` before relying on this line.
 
 | Machine | Reach · sessions · worker id | Must know |
 |---|---|---|
