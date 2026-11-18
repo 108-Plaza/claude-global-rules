@@ -5,6 +5,8 @@
 #   3. git push whose refspec targets main|master     -> "Never push directly to main"
 #   4. secrets in staged changes                      -> override: prefix the command with GUARD_ALLOW_SECRET_FILES=1
 #   5. redundant `cd <cwd>` at the start of a command -> Bash Command Hygiene
+#   6. gh issue create / gh api POST .../issues when the repo has >= 20 open issues -> rule 🧺
+#      override: prefix the command with ISSUE_CAP_OK="<owner order | replaces #a #b>" (logged to ~/.claude/issue-cap.log)
 # Fail-open: any internal error allows the command (exit 0, no output).
 set -u
 set -f
@@ -36,6 +38,42 @@ if [[ $cmd =~ $re_cd_start ]]; then
   d=$(unquote "${BASH_REMATCH[1]}")
   if [ -d "$d" ] && [ "$(cd "$d" 2>/dev/null && pwd -P)" = "$(cd "$cwd" 2>/dev/null && pwd -P)" ]; then
     deny "cwd is already $cwd — drop the leading 'cd $d' and run the command directly (use git -C <path> or path arguments for other folders). Rule: Bash Command Hygiene."
+  fi
+fi
+
+# 6. issue cap: at most 20 open issues per repo (owner 2026-11-18, rule 🧺)
+re_issue_create='(^|[;&|(]|[[:space:]])gh[[:space:]]+issue[[:space:]]+create([[:space:]]|$)'
+re_api_issue='(^|[;&|(]|[[:space:]])gh[[:space:]]+api[[:space:]].*repos/([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)/issues([[:space:]"'"'"']|$)'
+re_repo_flag='(-R|--repo)[=[:space:]]+["'"'"']?([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)'
+re_title_field='(-f|-F|--field|--raw-field)[=[:space:]]+["'"'"']?title='
+re_post='(-X|--method)[=[:space:]]+POST'
+re_cap_ok='ISSUE_CAP_OK=("([^"]*)"|'"'"'([^'"'"']*)'"'"'|([^[:space:]"'"'"']+))'
+re_gh_url='github\.com[:/]([A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+)'
+cap_repo=""; is_issue=0
+if [[ $cmd =~ $re_issue_create ]]; then
+  is_issue=1
+  [[ $cmd =~ $re_repo_flag ]] && cap_repo=${BASH_REMATCH[2]}
+elif [[ $cmd =~ $re_api_issue ]]; then
+  api_repo=${BASH_REMATCH[2]}
+  if [[ $cmd =~ $re_title_field ]] || [[ $cmd =~ $re_post ]]; then is_issue=1; cap_repo=$api_repo; fi
+fi
+if [ $is_issue -eq 1 ]; then
+  if [ -z "$cap_repo" ]; then
+    idir=$cwd
+    if [[ $cmd =~ $re_cd_any ]]; then d=$(unquote "${BASH_REMATCH[2]}"); [ -d "$d" ] && idir=$d; fi
+    url=$(git -C "$idir" remote get-url origin 2>/dev/null)
+    [[ $url =~ $re_gh_url ]] && cap_repo=${BASH_REMATCH[1]%.git}
+  fi
+  cap_ok=""
+  [[ $cmd =~ $re_cap_ok ]] && cap_ok="${BASH_REMATCH[2]}${BASH_REMATCH[3]}${BASH_REMATCH[4]}"
+  if [ -n "$cap_ok" ]; then
+    printf '%s %s %s\n' "$(date -u +%FT%TZ)" "${cap_repo:-?}" "$cap_ok" >> "$HOME/.claude/issue-cap.log" 2>/dev/null
+  elif [ -n "$cap_repo" ]; then
+    if [ -n "${ISSUE_CAP_TEST_COUNT:-}" ]; then n=$ISSUE_CAP_TEST_COUNT
+    else n=$(gh api "search/issues?q=repo:${cap_repo}+is:issue+is:open&per_page=1" --jq .total_count 2>/dev/null); fi
+    if [[ $n =~ ^[0-9]+$ ]] && [ "$n" -ge 20 ]; then
+      deny "$cap_repo already has $n open issues; the cap is 20 (rule 🧺, owner 2026-11-18). Bring it under 20 first: close done/duplicate/superseded/not-planned issues with reasons, or fold related ones, and put found work as a comment on the closest open issue. Only an owner order, or a ticket that replaces several, may still be opened: prefix the command with ISSUE_CAP_OK=\"<owner order … | replaces #a #b>\" (it is logged)."
+    fi
   fi
 fi
 

@@ -49,6 +49,25 @@ t cd-elsewhere "$R" "cd /tmp && ls" allow
 t add-env "$R" 'git add .env' deny
 t add-env-example "$R" 'git add .env.example' allow
 t add-env-override "$R" 'GUARD_ALLOW_SECRET_FILES=1 git add .env' allow
+# 6. issue cap (count injected through ISSUE_CAP_TEST_COUNT; no network)
+mkdir -p "$T/.claude"
+ISSUE_CAP_TEST_COUNT=25 t cap-create-over "$R" 'gh issue create -R o/r --title t --body b' deny
+ISSUE_CAP_TEST_COUNT=25 t cap-create-repo-eq "$R" 'gh issue create --repo=o/r -t t -b b' deny
+ISSUE_CAP_TEST_COUNT=19 t cap-create-under "$R" 'gh issue create -R o/r --title t --body b' allow
+ISSUE_CAP_TEST_COUNT=20 t cap-create-at-20 "$R" 'gh issue create -R o/r --title t' deny
+HOME="$T" ISSUE_CAP_TEST_COUNT=25 t cap-override "$R" 'ISSUE_CAP_OK="replaces #1 #2" gh issue create -R o/r --title t' allow
+grep -q 'o/r replaces #1 #2' "$T/.claude/issue-cap.log" 2>/dev/null && echo "OK [cap-override-logged]" || { echo "FAIL [cap-override-logged]"; fail=1; }
+ISSUE_CAP_TEST_COUNT=25 t cap-empty-override "$R" 'ISSUE_CAP_OK= gh issue create -R o/r --title t' deny
+ISSUE_CAP_TEST_COUNT=25 t cap-api-post "$R" 'gh api repos/o/r/issues -f title=x -f body=y' deny
+ISSUE_CAP_TEST_COUNT=25 t cap-api-comment "$R" 'gh api repos/o/r/issues/5/comments -f body=y' allow
+ISSUE_CAP_TEST_COUNT=25 t cap-api-list "$R" 'gh api "repos/o/r/issues?state=open"' allow
+ISSUE_CAP_TEST_COUNT=25 t cap-issue-list "$R" 'gh issue list -R o/r' allow
+ISSUE_CAP_TEST_COUNT=25 t cap-issue-comment "$R" 'gh issue comment 5 -R o/r --body x' allow
+ISSUE_CAP_TEST_COUNT=25 t cap-no-repo-no-remote "$R" 'gh issue create --title t' allow
+git -C "$R" remote add origin git@github.com:o/r.git
+ISSUE_CAP_TEST_COUNT=25 t cap-repo-from-remote "$R" 'gh issue create --title t' deny
+git -C "$R" remote remove origin
+ISSUE_CAP_TEST_COUNT=junk t cap-count-unreadable "$R" 'gh issue create -R o/r --title t' allow
 echo "TQ_TOKEN=abcdefghijklmnop1234" > cfg.txt; git add cfg.txt
 t staged-token "$R" 'git commit -m x' deny
 t staged-token-override "$R" 'GUARD_ALLOW_SECRET_FILES=1 git commit -m x' allow
