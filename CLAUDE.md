@@ -376,6 +376,7 @@ Owner's order 2026-11-18 *"ตั้งกฎใหม่ ห้ามมี iss
   - fold small related tickets into one, and close the rest as duplicates of it;
   - finish work in flight rather than releasing more.
 - **While a repo is over 20**, a new issue is allowed only for an owner order, or for a ticket that replaces several, so the count goes down. Found work goes as a comment on the open ticket closest to it (📋 still applies, but this is where it lands).
+- **Enforced for Claude sessions** by `bin/pretooluse-guard.sh` rule 6. It refuses `gh issue create` (and `gh api` POST to `/issues`) when the repo has ≥ 20 open issues. The allowed exceptions pass with the prefix `ISSUE_CAP_OK="<owner order … | replaces #a #b>"`, and each use is logged to `~/.claude/issue-cap.log`. Sessions that don't run Claude hooks (Grok, Gemini) keep this rule by hand.
 - 🔴 **Never reach the number by hiding work.** Don't move issues to another repo, a doc, Discussions or a label. Don't close unresolved work without a reason. A question waiting on the owner stays open, and the controller brings it to the owner instead.
 - Measured 2026-11-18 ~10:4x ICT: `jh-api` 99, `108heros-flutter` 63, `108heros-web` 22, 558 across `108-Plaza`. Most repos start over the line, and each lane controller brings its own repos down.
 
