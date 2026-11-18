@@ -253,6 +253,16 @@ e.g. *"วัดเอง 2026-09-23T01:45Z: state=pr_open"* (measured myself at
 **Before every send, ask one question:** *will this sentence still be true if the ticket it cites is closed tomorrow?*
 — if not ⇒ **rewrite it, don't send yet**
 
+## 🧭 Every decision carries its reason, written where the next session reads it
+
+Owner's order 2026-11-18 *"ต้องมีเหตุผล"* · *"ไม่งั้นก็จะทำผิดอยู่แบบนี้"* · *"เรามีเหตุผล"* · *"แต่คุณไม่เคยทำงานแบบนี้แน่เลย"*
+Cause: one session spent an hour proposing, cancelling and re-proposing the same flow change, because what had been decided was recorded but **why** was not. Every turn re-derived the reason and got it wrong. The fix was a design-doc section stating the reasons (`bank-bot` PR 1051).
+
+- **Owner decides or rejects something ⇒ write one entry: the decision, the owner's words, the reason.** The reason must be checked against the code or the logs (`file:line`, a log time), not remembered. Write it in the repo's design doc (`docs/design/…`). Memory alone does not count, because sessions in other folders never read it.
+- **Before proposing a change to something already decided, read its reason first.** If the reason no longer holds, say what changed, with evidence. Never re-propose by restating the old idea.
+- **A request with no stated reason ⇒ state the reason you infer and check it against the code before building.** If the check fails, show the owner the evidence; don't build it on faith.
+- **When restating your understanding to the owner, include the why, not only the steps.** Steps without a reason are what get redone.
+
 ## 🌱 Fix the root cause, not the symptom
 
 Owner's order 2026-09-11 *"ให้แก้ที่ต้นเหตุของปัญหา อย่ามาแก้ที่ปลายทาง เพราะมันจะไม่จบ"*
