@@ -108,6 +108,7 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
 | Really wired up, or just the pieces written? | mutation test on the wiring, not just on the pieces |
 | `git merge-base --is-ancestor origin/main <head>` | Green on an old base, merged, then main goes red |
 | Fixed at the **root cause**? | No `stopgap` + root-cause ticket = **FAIL** |
+| **Reuse:** the PR calls an existing object, flow or function from a new place, or copies or trims an existing flow into a new one (skill `ticket-writing` § 🔍) | **FAIL** if there is no `Reuse:` section with the table, a row differs and it is still reused as it is, or the PR adds a flag, parameter or `if` to the reused object to make it fit. The new caller needs its own tests, which must go red when the wrong object is used. Check the table yourself against the code, especially start state, end state and side effects. Never take the PR's word for it |
 | Rust: new code adds a `_ =>` on our own enum, a bare `i64`/`Uuid` for money or an id in a new signature? (skill `ticket-writing` § 🦀) | a new variant or a swapped argument compiles and ships · must fix, usually a reviewer small fix ≤30 lines · existing code the PR does not touch is out of scope |
 
 🔴 PRs claiming "swept every place" usually fix the places programmers read and forget the places on-site people read (README ```bash blocks) ⇒

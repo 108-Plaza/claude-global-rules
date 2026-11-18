@@ -237,6 +237,51 @@ Evidence 2026-10-06 `Payment-Platform`: credential storage and service were gene
 16 handlers + 4 DTOs + 2 mappers for SCB and KBank, nothing for 2C2P or Beam; a third copy for Beam was started and stopped
 ⇒ design `docs/design/provider-credential-specs.md` (`ProviderCredentialSpec` trait + one registry + one form)
 
+## 🔍 Reuse only what keeps the same contract — "similar" is not "the same"
+
+Owner, 2026-11-18: *"ผมตรวจพบว่า ai ได้ reuse object แต่ตัดสินใจผิดพลาดไป reuse object ที่ มีพฤติกรรม คล้ายกัน"* ·
+*"ทำผิด มาตลอด เมื่อมีการเพิ่ม flow"* · *"transfer เราก็ทำถูก แต่ อย่าไป อิง ของเดิม"* · *"ใส่เป็นกฎใน ticket-writing กับ review-and-merge เลย"*
+
+♻️ above says *build one shared core*. This rule says *what may go into it*. Agents decide to reuse from what looks alike
+(name, field shape, most of the steps, tests pass) and never check what happens inside. The types match, so the compiler is silent.
+
+**The test for reuse:** two callers may share an object only if **both would have to change together, for the same reason**.
+If one could need a change the other must not get, they only look alike today. Sharing ties them together, so the next fix for one breaks the other.
+
+**Before reusing an object, a flow, or a function for new work, fill this table:**
+
+| Dimension | What the new work needs | What the candidate does |
+|---|---|---|
+| State it expects at the start (screen, session, lock, row status) | | |
+| State it leaves at the end | | |
+| Inputs and edge values (0, empty, negative, missing) | | |
+| Output, rounding, units | | |
+| Side effects (DB writes, events, outside calls, money moved) | | |
+| Errors: raised, swallowed, defaulted | | |
+| Idempotency and retry | | |
+| Permissions and tenant | | |
+| Who owns its rules, and why it would change | | |
+
+- **Every row matches ⇒ reuse.**
+- **Any row differs ⇒ do not reuse it as it is.** Either write a separate object, or move only the rows that are the same into ♻️'s core and put the differing rows behind a trait.
+- 🔴 **Never add a flag, a parameter or an `if` to the candidate so it fits the new caller.** That is the plainest sign the wrong object was picked. Every existing caller now runs through the new branch.
+- 🔴 **Adding a new flow ⇒ write it from what it needs, never by copying or trimming an existing flow.** Reuse the parts beneath it whose contract really is the same (recorded buttons, one screen-unlock step, a popups list). Flows differ in where they start and where they end, and a copy inherits both.
+- **Make the code say it:** when two objects look alike, put a doc comment on each saying what it is for **and what it is not for, and why** (`/// Not for transfers: ends with the phone locked`).
+  Name by meaning, not shape (`RefundAmount`, not `Amount`). Use newtypes (§ 🦀) so passing the wrong one does not compile.
+- **The new caller has its own tests** for the rows of the table that matter to it, and they must be able to go red. Tests of the reused object only prove it does what it always did, not that this is what the new caller needs.
+
+**The ticket author:**
+- When the area already has a similar object, the ticket says which way to go: *"reuse `X`: the table matches"* or *"do not use `X`, because <row>"*. Never leave it for the implementer to guess.
+- When the owner has rejected a reuse, write the decision and its reason in the design doc (🧭 in CLAUDE.md), so the next session does not propose it again.
+
+**The implementer:** a PR that reuses something in a new place carries a section `Reuse:`. It names what is reused and gives the table, or one line per row that could differ.
+
+Evidence 2026-11-18, bank-bot K BIZ:
+- Each time a K BIZ flow was added, the agent derived it from `bank-901/login`. First it proposed cutting the login's `recents → close_all` rows so K BIZ would stay open for the transfer. Then it proposed a login copy for login-then-transfer.
+- Both were wrong. The login job ends locked (`rig_program_build.rs`, `build_scan_jobs`, `lock_at_end: true`). A transfer never follows a login inside one order (bank-bot#728). Transfer rows 1–2 expect the home screen.
+- So the start and end states differ, the two rows of the table nobody filled in. The owner's ruling, with these three reasons, is `docs/design/kbiz-transfer-approval.md` §4d (bank-bot PR 1051).
+- What the two flows really share is a layer below the flows: the recorded buttons under `bank-901`, `bank-901/popups` and `main/unlock`.
+
 ## 🦀 Rust: let the compiler catch the mistake, not shorter code
 
 Owner, 2026-11-16: *"เราควรปรับปรุงไหม เพื่อ ให้ โค้ดสั้นลง"* · *"ความผิดพลาดจะได้น้อย ลง"* (should we shorten the code, so there are fewer mistakes).
