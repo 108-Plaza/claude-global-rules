@@ -363,6 +363,22 @@ Before reporting done, go through six items: (1) **the other half of the work** 
 
 ---
 
+## 🧺 At most 20 open issues per repo — every repo
+
+Owner's order 2026-11-18 *"ตั้งกฎใหม่ ห้ามมี issue ค้าง เกิน 20 รายการ"* · *"เป็นกฏกลาง"* · *"ใช้ทุกrepos"*
+
+- **Every repo keeps ≤ 20 open issues.** PRs are not counted. Count:
+  `gh api "search/issues?q=repo:<owner>/<repo>+is:issue+is:open&per_page=1" --jq .total_count`
+- **Over 20 ⇒ bring it down before opening anything new there.** The lane controller does this, or the session doing the work if the repo has no controller:
+  - close what is done, with the PR or commit (🔭);
+  - close duplicates and superseded tickets, each pointing at the one that stays;
+  - close what will not be done as `not planned`, with a reason that can be re-checked;
+  - fold small related tickets into one, and close the rest as duplicates of it;
+  - finish work in flight rather than releasing more.
+- **While a repo is over 20**, a new issue is allowed only for an owner order, or for a ticket that replaces several, so the count goes down. Found work goes as a comment on the open ticket closest to it (📋 still applies, but this is where it lands).
+- 🔴 **Never reach the number by hiding work.** Don't move issues to another repo, a doc, Discussions or a label. Don't close unresolved work without a reason. A question waiting on the owner stays open, and the controller brings it to the owner instead.
+- Measured 2026-11-18 ~10:4x ICT: `jh-api` 99, `108heros-flutter` 63, `108heros-web` 22, 558 across `108-Plaza`. Most repos start over the line, and each lane controller brings its own repos down.
+
 ## 📋 Found work = open a ticket · don't take it yourself · review after it closes
 
 Owner's order 2026-09-01 / 2026-09-03 — the default destination of a ticket is an implementer (not a Claude subagent and not Claude itself). Applies to every agent, without waiting to be told again.
