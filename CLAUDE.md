@@ -367,8 +367,9 @@ Before reporting done, go through six items: (1) **the other half of the work** 
 
 Owner's order 2026-11-18 *"ตั้งกฎใหม่ ห้ามมี issue ค้าง เกิน 20 รายการ"* · *"เป็นกฏกลาง"* · *"ใช้ทุกrepos"*
 
-- **Every repo keeps ≤ 20 open issues.** PRs are not counted. Count:
-  `gh api "search/issues?q=repo:<owner>/<repo>+is:issue+is:open&per_page=1" --jq .total_count`
+- **Every repo keeps ≤ 20 open issues.** PRs are not counted.
+- **Feature-branch function tickets are exempt** (owner 2026-11-18 *"Exempt function tickets"*). These are the short-lived tickets a sub-controller releases. Each one names its `feat/*` base in the body, as `Base and PR target: `feat/<x>`` or `Test branch: feat/<x>`, and it closes when merged into that branch. They do not count, and opening one is never blocked. The cap is on backlog, not on work a worker is running.
+- **Count:** `bin/pretooluse-guard.sh` rule 6 counts open issues minus the exempt function tickets. A quick upper bound is `gh api "search/issues?q=repo:<owner>/<repo>+is:issue+is:open&per_page=1" --jq .total_count`.
 - **Over 20 ⇒ bring it down before opening anything new there.** The lane controller does this, or the session doing the work if the repo has no controller:
   - close what is done, with the PR or commit (🔭);
   - close duplicates and superseded tickets, each pointing at the one that stays;

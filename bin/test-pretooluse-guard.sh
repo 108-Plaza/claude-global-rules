@@ -68,6 +68,12 @@ git -C "$R" remote add origin git@github.com:o/r.git
 ISSUE_CAP_TEST_COUNT=25 t cap-repo-from-remote "$R" 'gh issue create --title t' deny
 git -C "$R" remote remove origin
 ISSUE_CAP_TEST_COUNT=junk t cap-count-unreadable "$R" 'gh issue create -R o/r --title t' allow
+ISSUE_CAP_TEST_COUNT=25 t cap-fn-inline "$R" 'gh issue create -R o/r --title t --body "Repo: x. Base and PR target: **`feat/loyalty`** (never main)"' allow
+ISSUE_CAP_TEST_COUNT=25 t cap-fn-testbranch "$R" 'gh issue create -R o/r --title t --body "Test branch: feat/x"' allow
+printf 'Part of x.\nBase and PR target: `feat/parcel-fares`\n' > "$R/fn.md"; printf 'plain body\n' > "$R/plain.md"
+ISSUE_CAP_TEST_COUNT=25 t cap-fn-bodyfile "$R" "gh issue create -R o/r --title t --body-file $R/fn.md" allow
+ISSUE_CAP_TEST_COUNT=25 t cap-plain-bodyfile "$R" "gh issue create -R o/r --title t --body-file $R/plain.md" deny
+ISSUE_CAP_TEST_COUNT=25 t cap-main-target "$R" 'gh issue create -R o/r --title t --body "PR target: main"' deny
 echo "TQ_TOKEN=abcdefghijklmnop1234" > cfg.txt; git add cfg.txt
 t staged-token "$R" 'git commit -m x' deny
 t staged-token-override "$R" 'GUARD_ALLOW_SECRET_FILES=1 git commit -m x' allow

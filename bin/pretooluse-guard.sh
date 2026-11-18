@@ -66,13 +66,29 @@ if [ $is_issue -eq 1 ]; then
   fi
   cap_ok=""
   [[ $cmd =~ $re_cap_ok ]] && cap_ok="${BASH_REMATCH[2]}${BASH_REMATCH[3]}${BASH_REMATCH[4]}"
+  # A feature-branch function ticket is exempt (owner 2026-11-18 "Exempt function tickets"): its body names
+  # a feat/* base ("Base and PR target: `feat/x`" or "Test branch: feat/x"), as every sub-controller ticket does.
+  re_fn='([Bb]ase and PR target:[^|;&]*feat/|[Tt]est branch:[[:space:]]*feat/)'
+  re_body_file='(--body-file|-F)[=[:space:]]+["'"'"']?([^[:space:]"'"'"']+)'
+  is_fn=0
+  [[ $cmd =~ $re_fn ]] && is_fn=1
+  if [ $is_fn -eq 0 ] && [[ $cmd =~ $re_body_file ]]; then
+    bf=$(unquote "${BASH_REMATCH[2]}"); [[ $bf != /* ]] && bf="$cwd/$bf"
+    [ -f "$bf" ] && grep -qE '[Bb]ase and PR target:.*feat/|[Tt]est branch:[[:space:]]*feat/' "$bf" 2>/dev/null && is_fn=1
+  fi
+  [ $is_fn -eq 1 ] && [ -z "$cap_ok" ] && cap_ok="function ticket (exempt)"
   if [ -n "$cap_ok" ]; then
     printf '%s %s %s\n' "$(date -u +%FT%TZ)" "${cap_repo:-?}" "$cap_ok" >> "$HOME/.claude/issue-cap.log" 2>/dev/null
   elif [ -n "$cap_repo" ]; then
     if [ -n "${ISSUE_CAP_TEST_COUNT:-}" ]; then n=$ISSUE_CAP_TEST_COUNT
-    else n=$(gh api "search/issues?q=repo:${cap_repo}+is:issue+is:open&per_page=1" --jq .total_count 2>/dev/null); fi
+    else
+      # open issues, not PRs, minus exempt function tickets
+      n=$(gh api --paginate "repos/${cap_repo}/issues?state=open&per_page=100" \
+            --jq '[.[] | select(.pull_request | not) | select((.body // "") | test("(?i)base and pr target:[^\\n]*feat/|(^|\\n)test branch:[ \\t]*feat/") | not)] | length' 2>/dev/null \
+          | awk '{s+=$1} END {if (NR) print s}')
+    fi
     if [[ $n =~ ^[0-9]+$ ]] && [ "$n" -ge 20 ]; then
-      deny "$cap_repo already has $n open issues; the cap is 20 (rule 🧺, owner 2026-11-18). Bring it under 20 first: close done/duplicate/superseded/not-planned issues with reasons, or fold related ones, and put found work as a comment on the closest open issue. Only an owner order, or a ticket that replaces several, may still be opened: prefix the command with ISSUE_CAP_OK=\"<owner order … | replaces #a #b>\" (it is logged)."
+      deny "$cap_repo already has $n open issues (feature-branch function tickets not counted); the cap is 20 (rule 🧺, owner 2026-11-18). Bring it under 20 first: close done/duplicate/superseded/not-planned issues with reasons, or fold related ones, and put found work as a comment on the closest open issue. Only an owner order, or a ticket that replaces several, may still be opened: prefix the command with ISSUE_CAP_OK=\"<owner order … | replaces #a #b>\" (it is logged)."
     fi
   fi
 fi
