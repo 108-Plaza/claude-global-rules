@@ -127,7 +127,12 @@ gh api -X POST repos/108-Plaza/<repo>/actions/runs/<id>/cancel
   · in use at `108-agent-queue` (#831 · PR 832 `a544b54`) · `jh-api` (#815 `5ba573e`) · `pos108-core` (#2273 · PR 2274 `de8c8c2` · 2026-09-26)
   — in these repos, **org-side** PRs without the label ⇒ `cargo check + test` is red at the step `Wait for merge turn (ci:go)` **on purpose, not broken code** ·
   the check tests `github.repository` ⇒ PRs on the `yuthstyle88/*-dev` mirrors (outsiders can't add labels) get the full build/test as before ci:go (pos108-core #2277 · jh-api #946 · 108-agent-queue #893 · 2026-09-27 — all three ci:go repos covered) ·
-  other repos don't have it yet (measured 2026-09-26 `grep -c ci:go .github/workflows/ci.yml`: `park108` · `pos108-admin` · `pos108-store` · `pos108-terminal` = 0)
+  🔴 **Every repo, every heavy PR workflow** (owner 2026-11-21 *"ปรับการรัน ci เฉพาะ merge เข้า main พอ"* · *"เพราะมันรันมากไป"* · *"ปรับ ทุก repos"*):
+  a PR's build/test/lint/typecheck/e2e does real work **only at its merge turn (`ci:go`)**; every other PR push fails at `Wait for merge turn (ci:go)` in seconds ·
+  push to the default branch, dispatch, schedules and deploy workflows are unchanged · light gates (`issue-link`, `independent-review`, `hosted-runner-gate`, grep-only hygiene) stay ungated ·
+  a new repo or a new heavy workflow ships with the gate from its first commit; a heavy `pull_request` job without it = review **FAIL** ·
+  rolled out on 2026-11-21 to the org repos that lacked it, one PR per repo on branch `chore/ci-go-merge-turn` (measured that morning: only `108-agent-queue` · `jh-api` · `pos108-core` · `park108` had it; ~50 repos ran full CI on every push)
+  · **Why:** CI ran on every push of every PR on the same few self-hosted machines, and each push threw the previous run away; one run at the head that merges (strict repos are up to date by then) is the one that counts
   · **When its turn comes:** the lane controller/reviewer adds `ci:go` (one PR at a time) **before** push/update-branch
   ⇒ full run ⇒ verdict ⇒ merge ⇒ remove `ci:go` · FAIL ⇒ remove `ci:go` · the label must be in the payload when the event fires ⇒ adding it later and rerunning **does not see the label**
   · a PR that is not behind (update-branch unavailable) ⇒ the author pushes one empty commit after the label is added ·
