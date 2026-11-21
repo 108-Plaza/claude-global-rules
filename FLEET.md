@@ -119,7 +119,7 @@ Re-measure: the lane's notice issue (e.g. `xchange#564`) for the latest controll
 
 | Lane | Default implementer | Controller (Claude) handles only |
 |---|---|---|
-| **pos** | Claude + Gemini | all `pos108-*` |
+| **pos** | Claude + Gemini | all `pos108-*` · tq lane `pos` = `pos108-core` + `pos108-orders`, controller `claude/1791bc16` (session "POS 108 core"; owner 2026-11-21 *"ยืนยัน คุมเลน pos"*, pos108-core#2645 issuecomment-7059565430); sub `claude/d53580ab` for `feat/heros-delivery-bridge` (jh-api#2089) |
 | **heros** | first come, first served (ordered 2026-09-09) | `jh-api` · `108heros-web` · `108heros-flutter` · legacy 108jobs-line repos |
 | **park** | **Gemini** | `park108` · `esp32-io-node` (door board firmware for park108#813; owner 2026-10-01: *"Put it in the park lane"* (`9cc19f1`)) |
 | **sell** | first come, first served | `108-sell` (formerly `pos108-sell`; owner renamed it 2026-09-21: *"Because it sells every product we have"* (`c1e8151`)). **Its own lane, not pos's**, because the storefront sells every product, not just POS. Controller not yet assigned; the owner orders per round. |
