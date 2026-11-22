@@ -516,7 +516,7 @@ Claiming a ticket cannot prevent collisions because **different tickets can touc
 ## 🚀 Deploy lanes — personal ships staging · org ships prod
 
 → skill **`fleet-ci`** (deploy lanes, workflow copies to the mirror, the self-hosted rule). Headlines:
-- **personal `yuthstyle88/<repo>-dev` pushes `deploy/staging` only · org `108-Plaza/<repo>` pushes `release/prod` only** — never cross; workflows decide the lane by the pair (repository, branch) · **org has no staging**
+- **personal `yuthstyle88/<repo>-dev` pushes `deploy/staging` only · org `108-Plaza/<repo>` pushes `release/prod` only** — never cross; workflows decide the lane by the pair (repository, branch) · **org has no staging** — except `jh-api` and `pos108-core`/`-orders`/`-admin`, where the org owns `deploy/staging` (owner 2026-11-18 / 2026-11-22; skill `fleet-ci`)
 - 🔴 **`deploy` is ordered only by the owner** · the lane name `prod` does not mean there is real production (`STATE.md`)
 - 🔴 **Every job runs self-hosted** — never `ubuntu-latest`/`windows-latest`/`macos-latest`; the only exception is an OS the fleet has no machine for, marked `# hosted-ok: <why>` (`docs/CI_RUNNER_STANDARD.md` §1)
 

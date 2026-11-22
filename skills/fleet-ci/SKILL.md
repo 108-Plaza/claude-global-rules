@@ -197,6 +197,7 @@ Owner's order 2026-09-21: *"Have the personal-side git deploy staging, and adjus
 
 - 🔴 **Never push `release/prod` from the personal side and never push `deploy/staging` from the org side** — once lanes cross,
   nobody can say which commit the running thing came from
+- 🟡 **Exception — the org owns staging too in `jh-api` (owner 2026-11-18, `jh-api#1813`) and `pos108-core`/`pos108-orders`/`pos108-admin` (owner 2026-11-22 "Approve both", `pos108-core#2681`)**: their mirrors have Actions off, so `deploy/staging` there built nothing · the org's own `deploy/staging` → staging, the lane guard passes only the org, and staging deploys only on the owner's order (no auto-promotion) · every other repo keeps the rule below
 - 🔴 **org has no staging** — owner redefined 2026-09-25 *"The org deploys to prod; there is no staging"* (`2d1d59f`) ·
   do not rely on "never push" alone (measured 09-25: `deploy/staging` on the org side still used in 7 repos, most recently core the same day) ⇒
   workflows must decide the lane by the pair **(repository, branch)**, not by branch alone — one file for both sides
