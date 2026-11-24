@@ -14,7 +14,7 @@ description: >-
 Owner, 2026-11-25 (JH-API session): *"งานได้ reuse object ไหม"* · *"มันแค่แยก หน้า ที่ แต่มัน reuse ได้ เพราะ พฤติกรรม คล้าย ๆ กัน"* ·
 *"source code ต้องมีคุณภาพไม่ขยะ ไม่ซับซ้อน"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* ·
 *"แต่ผม อยากให้ เช่น UML"* · *"UML อาจไม่เหมือน กับเราก็ได้"* · *"หรืออาจเหมาะ เพราะ ใช้ AI"* · *"AI มีความสามารถ แล้วชอบงานที่มีโครงสร้าง มีแบบแผน"* ·
-*"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"* · *"เรามี หลายแบบดิ เช่น งาน Hotfix"* · *"jh-api คืองานใหญ่"* · *"แต่เรา ใช้ ai เลยไม่ใช่ปัญหา"* · *"อย่าคิดแบบใช้ คนทำงานดิ"* · *"หลักการ มันยังไม่อัพเดท"* · *"มันเลยเป็นเอกสารเก่า"*.
+*"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"* · *"เรามี หลายแบบดิ เช่น งาน Hotfix"* · *"jh-api คืองานใหญ่"* · *"แต่เรา ใช้ ai เลยไม่ใช่ปัญหา"* · *"อย่าคิดแบบใช้ คนทำงานดิ"* · *"หลักการ มันยังไม่อัพเดท"* · *"มันเลยเป็นเอกสารเก่า"* · *"ต้องคิดใหม่ทำใหม่"* · *"ai เก่งขึ้นทุกวัน"*.
 The owner gives direction and expects the designer to work out the rest (*"คิดก่อน"* · *"ผมแค่ เกริ่น"*).
 
 **Why this exists.** Code written without a design adds one more copy of something that already exists, and each copy is a refactor later.
@@ -201,10 +201,20 @@ Name it in the design and the PR. For a closed set, write it like this: `Seam: t
 - there is a wrapper that only forwards, or an abstraction with one implementation and no `Fake` or test need;
 - an error crosses a seam as a string or as `anyhow`.
 
-## 9. Keeping this skill honest
+## 9. A living skill: rethink it as AI improves
 
-When an agent's design goes wrong in a way this skill should have caught, add the case to this file (what happened, the commit) and fix the rule. Keep 2–3 past cases as checks:
-- the jh-api trip-lock fix: reuse the lock helper, no 15th copy;
-- Ride/Delivery: one core, an enum seam, no `dyn`.
+AI gets better every day (owner: *"ต้องคิดใหม่ทำใหม่"* · *"ai เก่งขึ้นทุกวัน"*), so a rule written for today's models can become a brake tomorrow.
+Every rule here is one of two kinds:
+- **About the code** (one core and one seam, the right shape, invalid states unrepresentable, the diagram matching the code, no copies). These hold whoever writes the code.
+- **About today's AI** (workers don't design, every seam is spelled out in the ticket, a Claude review on every PR, tickets cut to one function). These exist because today's worker models guess or drift when left to design.
 
-Before changing the skill, re-read it against them.
+**Re-check the second kind** when the fleet moves to a new model (the agy model, MAI, Claude), and at least once a month:
+1. Re-run the reference cases below with the new model and without the rule, and compare the result with the rule on.
+2. If the model now gets it right without the rule, loosen the rule. Record what was measured and the commit in this section.
+3. If it still fails, keep the rule and add the failure as a new reference case.
+
+Reference cases (a design that went wrong or nearly did, kept so each re-check has something to run):
+- **jh-api trip lock, 2026-11-25:** a refusal fix almost added a 15th inline `FOR UPDATE` copy and put a decision inside a DB function. Right answer: one lock helper, a pure rule, old copies migrated as a wave.
+- **Ride / Delivery:** two services with one trip flow, 77 branches in 37 files. Right answer: one core, an enum seam, no `dyn`.
+
+When a design goes wrong in a way this skill should have caught, add it here as a case and fix the rule in the same commit.
