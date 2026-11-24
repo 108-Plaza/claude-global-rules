@@ -50,6 +50,8 @@ What still limits us is review and merge (one design, one reviewer, CI turns), s
 
 Most design advice was written when people wrote the code, and part of it exists only to save scarce human hours
 (owner: *"หลักการ มันยังไม่อัพเดท"* · *"มันเลยเป็นเอกสารเก่า"*). Keep the part that is about the code itself; drop the part that was about the labour.
+Most software-engineering books and articles predate AI-written code (owner: *"หนังสือ การพัฒนาชอฟแวร์ ล่าหลัง จำนวนมาก บทความด้วย"*).
+So a book or an article is never a reason on its own: name the reason behind its advice, check whether that reason still holds when agents write the code, and prefer what was measured in this fleet.
 
 | Classic advice | Why it existed | What holds here |
 |---|---|---|
