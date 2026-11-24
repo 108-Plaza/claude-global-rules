@@ -21,6 +21,7 @@ Claude Code loads these as skills on demand; other agents (agy) do not, so read 
 | Holding a queue ticket (implementer) | `~/.claude/rules-repo/skills/tq-worker/SKILL.md` |
 | Reviewing a PR, verdict format, merging | `~/.claude/rules-repo/skills/review-and-merge/SKILL.md` |
 | Writing a ticket or a design doc | `~/.claude/rules-repo/skills/ticket-writing/SKILL.md` |
+| Designing or writing code: reuse, UML, design patterns (every implementer, before writing code) | `~/.claude/rules-repo/skills/software-design/SKILL.md` |
 | Workflows, CI queue, deploy lanes | `~/.claude/rules-repo/skills/fleet-ci/SKILL.md` |
 | Heavy builds, disk, cleanup | `~/.claude/rules-repo/skills/fleet-builds/SKILL.md` |
 | Lane controller (dispatch, monitoring) | `~/.claude/rules-repo/skills/queue-controller/SKILL.md` |

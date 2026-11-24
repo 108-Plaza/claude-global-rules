@@ -343,7 +343,8 @@ adding a variant = adding one file · safety logic lives in the core · a per-va
 
 ## 🧱 Design for reuse, with named patterns — before writing, and in every review
 
-→ skill **`software-design`** (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"skill การออกแบบไง"* · *"พวก design pattern มันต้องมี สิ"*). Load it **before** designing a class diagram, and before writing or reviewing code that adds a function, a type, a query or a variant check. Headlines:
+→ skill **`software-design`** (agents without Claude skills read `~/.claude/rules-repo/skills/software-design/SKILL.md`) (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"skill การออกแบบไง"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"*). Load it **before** designing a class diagram, and before writing or reviewing code that adds a function, a type, a query or a variant check. Headlines:
+- **Draw the design in UML** (Mermaid class diagram always; sequence, state, component when the change needs them), with each seam's pattern named.
 - **Survey and count first.** Never add copy N+1 of something that exists; reuse it, or add one helper and ticket the old copies.
 - **Right shape:** a closed set (`ServiceType`, a status) ⇒ enum + one table · an outside engine ⇒ trait + `Fake` · admin-added things ⇒ rows.
 - **Flows that behave alike share one core** with one seam for the differences (ride and delivery are one trip flow).

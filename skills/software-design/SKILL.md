@@ -1,7 +1,7 @@
 ---
 name: software-design
 description: >-
-  How to design code so it is reused, not copied: survey what exists, design the class diagram around one shared core and one
+  How to design code so it is reused, not copied: survey what exists, draw the design in UML (class, sequence, state, component diagrams in Mermaid), design the class diagram around one shared core and one
   seam per set of variants, pick the right shape (enum + one table for a closed set, a trait + Fake for an outside engine, rows
   for admin-added things), extract one helper instead of a new copy, and never abstract for a single case. Use when designing
   a class diagram or design doc, and before writing or reviewing code that adds a function, a type, a query, an `if`/`match`
@@ -11,7 +11,7 @@ description: >-
 # Software design: reuse, not copies
 
 Owner, 2026-11-25 (jh-api, JH-API session): *"งานได้ reuse object ไหม"* · *"มันแค่แยก หน้า ที่ แต่มัน reuse ได้ เพราะ พฤติกรรม คล้าย ๆ กัน"* ·
-*"source code ต้องมีคุณภาพไม่ขยะ ไม่ซับซ้อน"* · *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"skill การออกแบบไง"* · *"พวก design pattern มันต้องมี สิ"*
+*"source code ต้องมีคุณภาพไม่ขยะ ไม่ซับซ้อน"* · *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"skill การออกแบบไง"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"*
 
 **Why this exists:** code written without a survey adds the 15th copy of something, and every copy later costs a refactor.
 The owner had to point this out by hand. Measured that day, on jh-api `main` `3a0dc02`:
@@ -33,6 +33,37 @@ A design doc for code that has several variants, or that repeats something alrea
 5. **Migration of old copies**: which existing copies move onto the core or seam, split into tickets by file so they can run in parallel.
 
 A diagram that draws a second copy of an existing flow, or leaves `if variant ==` checks in the callers, is not finished.
+
+## 0a. Draw it in UML
+
+The design is drawn in **UML**, written as Mermaid inside the design doc (`docs/design/<area>.md`), so it renders on GitHub and diffs in review.
+Draw the diagrams the change needs; a class diagram is always required.
+
+| Diagram | Mermaid | Draw it when | It must show |
+|---|---|---|---|
+| **Class diagram** | `classDiagram` | always | every class, struct, trait and enum touched or added, with the fields and methods that cross tickets; **the file each lives in**; the seam and its pattern |
+| **Sequence diagram** | `sequenceDiagram` | a flow crosses layers or services (handler → rule → DB → push) | who calls whom in order, where the transaction starts and commits, what runs after commit |
+| **State diagram** | `stateDiagram-v2` | an entity has statuses | every state, every allowed transition, and who may make it |
+| **Component diagram** | `flowchart` with subgraphs | the change adds or moves a crate, service or dependency | the layers and the allowed dependency direction |
+
+UML notation for the patterns in §3a:
+
+| Meaning | Mermaid class-diagram notation |
+|---|---|
+| A trait (interface) | `class OfferSearch { <<trait>> +search(ctx) Offers }` |
+| An enum with its variants | `class ServiceType { <<enumeration>> Ride Delivery }` |
+| A pure rule module | `class wasted_trip_fee_rule { <<rule>> +refusable_at_pickup(service, arrived, status)$ bool }` |
+| Implements a trait (realisation) | `OfferSearch <|.. RideOfferSearch` |
+| Owns / is made of (composition) | `RideSession *-- RideDispatch` |
+| Holds a reference (aggregation or association) | `TripCore o-- ServicePolicy` |
+| Calls or depends on | `refuse_parcel_at_pickup ..> wasted_trip_fee_rule : asks` |
+| Static fn | suffix `$` on the method |
+| Where it lives | a note: `note for OfferSearch "crates/logistics/src/dispatch/offer_search.rs"` |
+
+Rules:
+- The diagram is the contract the tickets are cut from: names, signatures and files in it are what implementers write. Code that differs from it changes the diagram first (by PR).
+- Keep each diagram to what one reader can hold: split by area rather than drawing the whole system.
+- A design doc with no UML, or a class diagram without files and the seam's pattern, is not ready for review.
 
 ## 1. Survey before you write (every new function, type, query or variant check)
 
