@@ -14,7 +14,7 @@ description: >-
 Owner, 2026-11-25 (JH-API session): *"งานได้ reuse object ไหม"* · *"มันแค่แยก หน้า ที่ แต่มัน reuse ได้ เพราะ พฤติกรรม คล้าย ๆ กัน"* ·
 *"source code ต้องมีคุณภาพไม่ขยะ ไม่ซับซ้อน"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* ·
 *"แต่ผม อยากให้ เช่น UML"* · *"UML อาจไม่เหมือน กับเราก็ได้"* · *"หรืออาจเหมาะ เพราะ ใช้ AI"* · *"AI มีความสามารถ แล้วชอบงานที่มีโครงสร้าง มีแบบแผน"* ·
-*"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"* · *"เรามี หลายแบบดิ เช่น งาน Hotfix"* · *"jh-api คืองานใหญ่"* · *"แต่เรา ใช้ ai เลยไม่ใช่ปัญหา"*.
+*"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"* · *"เรามี หลายแบบดิ เช่น งาน Hotfix"* · *"jh-api คืองานใหญ่"* · *"แต่เรา ใช้ ai เลยไม่ใช่ปัญหา"* · *"อย่าคิดแบบใช้ คนทำงานดิ"*.
 The owner gives direction and expects the designer to work out the rest (*"คิดก่อน"* · *"ผมแค่ เกริ่น"*).
 
 **Why this exists.** Code written without a design adds one more copy of something that already exists, and each copy is a refactor later.
@@ -42,13 +42,17 @@ This skill builds on, and does not repeat, skill `ticket-writing` § 📐 (diagr
 The cost is not in typing the change; it is in designing it right and reviewing it, and a wrong design is copied just as fast.
 So spend the effort on the design and the review. Plan a big refactor as parallel waves split by file (skill `lane-controllers`), not as something to avoid.
 
+**Don't plan as if people did the work** (owner: *"อย่าคิดแบบใช้ คนทำงานดิ"*). "Later", "when someone has time" and "a follow-up for some day" are human-capacity habits.
+Here, cleaning up is a wave of parallel tickets that starts **now**: the old copies are migrated in the same round as the helper lands, not left as a backlog.
+What still limits us is review and merge (one design, one reviewer, CI turns), so work is still split into small reviewable PRs, and those PRs run at the same time.
+
 ## 1. Pick the process by work type
 
 The ticket's first line names its type, and the reviewer checks the row for that type.
 
 | Work type | Survey (§2) | UML (§3) | Seam and pattern (§4–5) | Special rule |
 |---|---|---|---|---|
-| **Hotfix** (something broken, urgent) | short: is there a helper to call? | no | none new | Smallest root-cause fix, plus a test that fails before it. **No refactor in a hotfix.** Count any copies you see and ticket them afterwards |
+| **Hotfix** (something broken, urgent) | short: is there a helper to call? | no | none new | Smallest root-cause fix, plus a test that fails before it. **The hotfix PR stays minimal** (fast review, fast merge). The cleanup is not deferred: right after it merges, Claude designs and dispatches the migration wave for every copy counted |
 | **Bug fix** | yes | only if it adds a type shared across tickets | use the existing seam; no new variant branch | One helper is allowed when the fix would otherwise add copy N+1, named in the ticket |
 | **Feature** | yes | class diagram, plus a sequence diagram if the flow crosses layers | yes | Design doc reviewed before tickets are released |
 | **New variant** (service, bank, vendor) | yes | update the existing diagram | must be an entry in the existing seam | If it needs edits across many files, the seam is missing: design the seam first |
@@ -105,7 +109,7 @@ classDiagram
 
 **The diagram must match the code.** Draw existing code from the code (read the files), never from memory. Code that has to differ changes the diagram first. Each Mermaid block must render: preview it on GitHub, or run `npx -y @mermaid-js/mermaid-cli -i doc.md -o /tmp/out.md`, before review.
 
-Keep each diagram to what one reader can hold; split by area.
+Split a large design into diagrams by area, so each ticket points at the part it builds and a reviewer checks one area at a time.
 
 ## 4. Pick the shape for each set of variants
 
@@ -149,17 +153,17 @@ Name it in the design and the PR. For a closed set, write it like this: `Seam: t
 - Application code uses concrete types. Generics and traits belong only at a real seam.
 - One pattern per seam. No layer whose only job is to forward. Nothing kept "in case".
 - A deliberately simple choice with a known limit carries a comment: `shortcut: <limit>, upgrade when <condition>`. Then nobody rediscovers it as a defect.
-- Delete dead code only inside the ticket's File scope and the lines the ticket changes. Copies elsewhere are counted and ticketed, never migrated inside an unrelated fix.
-- Follow-up tickets for old copies are one ticket split by file. In a repo at the 20-issue cap, put them as a comment on the lane's umbrella ticket.
+- One PR does one ticket: a worker deletes or changes code only inside its ticket's File scope, so every PR stays small to review and safe to merge in parallel.
+- **Old copies are migrated now, as a wave.** When a helper or seam lands, Claude cuts one ticket per file for every counted copy and releases them together (skill `lane-controllers`), in the same round. In a repo at the 20-issue cap the wave is one ticket with a per-file checklist, or feature-branch function tickets (exempt from the cap).
 - The bar is the owner's: *"ไม่ขยะ ไม่ซับซ้อน"* (not junk, not complicated).
 
 ## 7. Hand-off: the design doc, the ticket, the PR
 
-**Design doc:** the work type, the survey with commands (§2), the UML (§3), the variant table and shape (§4), each seam's pattern (§5), alternatives, errors and test seams (§6), the helpers and where they live, and the follow-up for old copies.
+**Design doc:** the work type, the survey with commands (§2), the UML (§3), the variant table and shape (§4), each seam's pattern (§5), alternatives, errors and test seams (§6), the helpers and where they live, and the migration wave for the old copies (tickets per file, released together).
 
 **Ticket:** the work type on the first line. It names the classes and files from the diagram (§ 📐), the seam and its pattern, the helpers to create and in which file, and the reuse decision (*"reuse `X`: the table matches"* or *"do not use `X`, because <row>"*, § 🔍). The dispatch order names this file.
 
-**PR body:** a `Reuse:` section in **one** form:
+**PR body:** a `Reuse:` section in **one** form (and when a helper was added, the migration wave's tickets):
 - something reused in a new place ⇒ the § 🔍 form: what is reused, plus its contract table or one line per row that could differ;
 - nothing reused ⇒ `Reuse: none — searched <terms> in <paths> @ <sha>`.
 
