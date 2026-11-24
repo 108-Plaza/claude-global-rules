@@ -341,6 +341,15 @@ setting `refreshInterval` without looking at how often the data changes · fixin
 → skill **`ticket-writing`** § ♻️. Headline (owner 2026-10-06 *"ทำเป็น กฏ ไว้ด้วย ว่า ถ้ามีงานประเภท นี้ให้ ใช้ trait dyn หรือ generic"*): the same job for several interchangeable things (payment providers, banks, channels, drivers, engines, backends) = **one shared core + one small trait implementation per variant** (`Arc<dyn Trait>` at runtime, generic at compile time) ·
 adding a variant = adding one file · safety logic lives in the core · a per-variant copy where a core was possible = review **FAIL** · not a licence to abstract a single case.
 
+## 🧱 Design for reuse, with named patterns — before writing, and in every review
+
+→ skill **`software-design`** (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"skill การออกแบบไง"* · *"พวก design pattern มันต้องมี สิ"*). Load it **before** designing a class diagram, and before writing or reviewing code that adds a function, a type, a query or a variant check. Headlines:
+- **Survey and count first.** Never add copy N+1 of something that exists; reuse it, or add one helper and ticket the old copies.
+- **Right shape:** a closed set (`ServiceType`, a status) ⇒ enum + one table · an outside engine ⇒ trait + `Fake` · admin-added things ⇒ rows.
+- **Flows that behave alike share one core** with one seam for the differences (ride and delivery are one trip flow).
+- **Name the design pattern of every seam** (Strategy, Registry, Template method, Policy, State machine, Repository, Unit of work, Observer, Facade) in the diagram and the PR.
+- **No pattern without a second user today**, no wrapper layers · the PR carries a `Reuse:` line · a new copy or a stray `if variant ==` = review **FAIL**.
+
 ## 🔭 Every finished task must analyse and propose follow-up work
 
 Owner's order 2026-09-13 — cause: `pos108-terminal#478` was closed COMPLETED with no PR/commit while the core half had merged;
@@ -394,6 +403,7 @@ Owner's order 2026-09-01 / 2026-09-03 — the default destination of a ticket is
 | Need | Skill |
 |---|---|
 | 📐 class diagram before code · 🧪 behaviour table + up-front failing tests · the 10-part ticket · 1a tight and clear · 🧱 `## File scope` = the fleet-wide file lock · entering the queue · 🌱 · ♻️ | **`ticket-writing`** |
+| Designing for reuse: survey, shared core + seam, right shape, named design patterns, the `Reuse:` line and its review checks | **`software-design`** |
 | 2. Review (who reviews, checklist, 🟢 reviewer's small fix ≤30 lines) · 3. Verdict format the gate parses | **`review-and-merge`** |
 | Taking a ticket (labels, take-ticket comment, collisions) | **`tq-worker`** |
 | Lanes and dispatch (lane rules; the lane table is in `FLEET.md` § Lanes and controllers) | **`queue-controller`** |
