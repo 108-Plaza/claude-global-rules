@@ -342,13 +342,14 @@ setting `refreshInterval` without looking at how often the data changes · fixin
 adding a variant = adding one file · safety logic lives in the core · a per-variant copy where a core was possible = review **FAIL** · not a licence to abstract a single case.
 🔴 This is for **interchangeable implementations** (vendors, engines). A **closed set** fixed by the domain (`ServiceType`, a status) is an **enum with one table**, not `dyn` — skill `software-design` § 3.
 
-## 🧱 Design before code: survey, UML, one core, named patterns — and review against it
+## 🧱 Design before code: Claude designs, workers build to it, review checks it
 
-→ skill **`software-design`** (agents without Claude skills read `~/.claude/rules-repo/skills/software-design/SKILL.md`) (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"*). Load it **before** designing a class diagram, and before writing or reviewing code that adds a function, a type, a query or a branch on a variant. Headlines:
-- **Survey and count first**; never add copy N+1 — reuse, or add one helper and ticket the old copies.
-- **Model in UML adapted to Rust** (Mermaid; class diagram always, with files) and keep it matching the code — it is the contract every AI implementer builds from.
-- **Right shape:** closed set ⇒ enum + one table · outside engine ⇒ trait + `Fake` · admin-added ⇒ rows. **Flows that behave alike share one core** with one seam (ride and delivery are one trip flow).
-- **Name each seam's design pattern** · no pattern without a second user today · no wrapper layers · reuse only what keeps the same contract (skill `ticket-writing` § 🔍) · the PR carries a `Reuse:` section · a new copy, a stray variant branch or a drifted diagram = review **FAIL**.
+→ skill **`software-design`** (agents without Claude skills read `~/.claude/rules-repo/skills/software-design/SKILL.md`) (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"*). Load it before designing, writing a ticket, or writing or reviewing code. Headlines:
+- **Claude designs; workers build exactly that** (ponytail style at the function level) and stop on the ticket when the design doesn't fit.
+- **Process by work type** — a hotfix is the smallest root-cause fix with no refactor; a feature or refactor gets a design doc first. Repo size is no reason to skip design or refactoring.
+- **Survey and count with the command and sha**; never add copy N+1. **UML in Mermaid, adapted to the language** (Rust, Dart, TS), matching the code.
+- **Shape:** closed set ⇒ enum + one table (never `dyn`) · outside engine ⇒ trait + `Fake` · admin-added ⇒ rows. **One core + one named seam** for flows that behave alike.
+- **Reuse only what keeps the same contract** (skill `ticket-writing` § 🔍) · one `Reuse:` section form · **two-stage review**: matches the design, then quality.
 
 ## 🔭 Every finished task must analyse and propose follow-up work
 

@@ -205,6 +205,8 @@ This rule does not ask you to go slower — many root causes are one-line fixes 
 
 ## ♻️ Several variants of one job = one shared core + a `dyn Trait` or generic per variant — never a copy per variant
 
+> 🔴 **Closed sets are enums, not `dyn`.** This section is about interchangeable implementations (vendors, engines). A closed set fixed by the domain (a service kind, a status) is an enum with one table — skill `software-design` § 4. Every ticket also carries its work type, seam, pattern and reuse decision — skill `software-design` § 7.
+
 Owner's order 2026-10-06 *"Make it a rule: for this kind of work, use a dyn trait or generics"* (`9d573e4`) ·
 *"It has to be reusable"* (`9d573e4`) · *"Not building new copies over and over"* (`9d573e4`) · *"Because the logic is much the same"* (`9d573e4`) ·
 *"Payments have many providers"* (`9d573e4`) · *"We use a trait, loaded dynamically"* (`9d573e4`) · *"There will be shared central logic"* (`9d573e4`)
