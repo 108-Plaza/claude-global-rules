@@ -26,6 +26,7 @@ The owner had to point this out by hand. Measured that day on jh-api `main` `3a0
 **Who does what** (owner: *"Claude เป็นแม่งาน"*, Claude is the foreman; *"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"*):
 - **Claude (the lane's controller or design author) owns the design.** It does the survey, draws the UML, picks each seam and its pattern, and writes them into the design doc before any ticket is released.
 - **Workers (Gemini, MAI, any implementer) build to the design.** They don't invent a seam, a pattern or a new copy. When the design doesn't fit the code, they comment on the ticket and stop (skill `ticket-writing` § 📐).
+  Workers write in the ponytail style (smallest complete change, reuse what exists, nothing unrequested; skill `queue-controller` § ponytail). Ponytail governs *how* they write inside the design; the design governs *what* the structure is. Where the two differ, the ticket's design wins.
 - **Claude reviews against it** (§6).
 
 Every designer, implementer and reviewer follows this skill, in every repo.
