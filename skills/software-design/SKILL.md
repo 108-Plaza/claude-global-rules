@@ -14,7 +14,7 @@ description: >-
 Owner, 2026-11-25 (JH-API session): *"งานได้ reuse object ไหม"* · *"มันแค่แยก หน้า ที่ แต่มัน reuse ได้ เพราะ พฤติกรรม คล้าย ๆ กัน"* ·
 *"source code ต้องมีคุณภาพไม่ขยะ ไม่ซับซ้อน"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* ·
 *"แต่ผม อยากให้ เช่น UML"* · *"UML อาจไม่เหมือน กับเราก็ได้"* · *"หรืออาจเหมาะ เพราะ ใช้ AI"* · *"AI มีความสามารถ แล้วชอบงานที่มีโครงสร้าง มีแบบแผน"* ·
-*"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"* · *"เรามี หลายแบบดิ เช่น งาน Hotfix"* · *"jh-api คืองานใหญ่"* · *"แต่เรา ใช้ ai เลยไม่ใช่ปัญหา"* · *"อย่าคิดแบบใช้ คนทำงานดิ"*.
+*"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"* · *"เรามี หลายแบบดิ เช่น งาน Hotfix"* · *"jh-api คืองานใหญ่"* · *"แต่เรา ใช้ ai เลยไม่ใช่ปัญหา"* · *"อย่าคิดแบบใช้ คนทำงานดิ"* · *"หลักการ มันยังไม่อัพเดท"* · *"มันเลยเป็นเอกสารเก่า"*.
 The owner gives direction and expects the designer to work out the rest (*"คิดก่อน"* · *"ผมแค่ เกริ่น"*).
 
 **Why this exists.** Code written without a design adds one more copy of something that already exists, and each copy is a refactor later.
@@ -45,6 +45,23 @@ So spend the effort on the design and the review. Plan a big refactor as paralle
 **Don't plan as if people did the work** (owner: *"อย่าคิดแบบใช้ คนทำงานดิ"*). "Later", "when someone has time" and "a follow-up for some day" are human-capacity habits.
 Here, cleaning up is a wave of parallel tickets that starts **now**: the old copies are migrated in the same round as the helper lands, not left as a backlog.
 What still limits us is review and merge (one design, one reviewer, CI turns), so work is still split into small reviewable PRs, and those PRs run at the same time.
+
+### Classic principles, re-read for AI workers
+
+Most design advice was written when people wrote the code, and part of it exists only to save scarce human hours
+(owner: *"หลักการ มันยังไม่อัพเดท"* · *"มันเลยเป็นเอกสารเก่า"*). Keep the part that is about the code itself; drop the part that was about the labour.
+
+| Classic advice | Why it existed | What holds here |
+|---|---|---|
+| "Refactor later, leave a TODO" | refactoring cost people days | **Migrate now** as a parallel wave of per-file tickets |
+| "Rule of three: don't extract until the third copy" | each extraction cost a person time | **Extract at the second copy.** The cost that remains is the extra concept a reader carries, so still no abstraction for a single case |
+| "Keep diagrams small and few; they rot" | people would not keep them in sync | **Diagram every design.** Agents redraw it from the code on every change, and review checks it matches |
+| "Test the important paths" | writing tests took people time | **One test per behaviour-table row**, each able to go red, plus the failure and edge cases |
+| "Big refactors are risky, avoid them" | people make slips across many files | **Do them**, split by file into small PRs that run in parallel; the compiler and the tests catch the slips |
+| "Write docs once the code settles" | writing docs took people time | **Write the design first.** It is what every agent reads before writing |
+| "Small PRs so reviewers don't tire" | human attention | **Still small PRs**, now because review and merge are the shared limit (one reviewer, CI turns, merge order), and a small PR is cheap to revert |
+| YAGNI | building unused things cost time | **Still holds**, because unused code is something every agent reads and must keep right |
+| Single responsibility, clear names, invalid states unrepresentable | about the code itself | **Unchanged.** AI agents need these more, not less: they have only the code and the design to go on |
 
 ## 1. Pick the process by work type
 
