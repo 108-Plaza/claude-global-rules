@@ -87,7 +87,7 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
   may add `reviewed` + merge yourself if PASS + CI green + merge-base passes) · **does not replace the 60-minute silence rule above** —
   only applies when the owner orders it directly like this, in that round; normally still wait 60 minutes as before
 
-**Design check (every PR that adds a function, type, query or variant branch):** apply skill `software-design` § 6 — a new copy of existing logic, a variant branch outside its seam, a decision outside the rule layer, the wrong shape, a drifted diagram, a single-user abstraction, or a missing `Reuse:` line = **FAIL** (owner 2026-11-25).
+**Design check (every PR that adds a function, type, query or variant branch):** apply skill `software-design` § 6 — a new copy of existing logic, a variant branch outside its seam, a decision outside the rule layer, the wrong shape, a drifted diagram, a single-user abstraction, a reuse whose contract table (skill `ticket-writing` § 🔍) has a differing row, or a missing `Reuse:` section = **FAIL** (owner 2026-11-25).
 
 **Steps:** read the issue before the diff (the criteria are the issue, not preference) · go through the acceptance criteria one by one with `file:line` ·
 **run verify yourself** in your own worktree · verdict `PASS` / `PASS+follow-up` / `FAIL` + list of required fixes ordered by importance, each with `file:line`

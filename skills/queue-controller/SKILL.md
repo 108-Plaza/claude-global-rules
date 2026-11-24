@@ -430,7 +430,7 @@ Owner's order 2026-09-25 *"Make a new rule: the agent controller sends work orde
     ```
   - 🔴 **Every implementer order (agy, MAI, Claude) also carries this line**, verbatim (owner 2026-11-25, skill `software-design`):
     ```
-    Before you write code, read ~/.claude/rules-repo/skills/software-design/SKILL.md: reuse what exists (count the copies first), build against the ticket's class diagram, keep per-variant differences in the named seam, and put a `Reuse:` line in the PR body.
+    Before you write code, read ~/.claude/rules-repo/skills/software-design/SKILL.md: reuse what exists (count the copies first), build against the ticket's class diagram, keep per-variant differences in the named seam, and put a `Reuse:` section (with its contract table) in the PR body.
     ```
   - The second sentence is required: ponytail's short-reply style must never drop a `> worker:` line, a behaviour-table row, a provided test or a queue transition.
   - **Also always-on in new sessions:** ponytail's `AGENTS.md` sits in each agy workspace: Studio, Mac mini and Warut `~/worktrees/AGENTS.md`; Dell `/data/yuth/worktrees/AGENTS.md`. The owner ordered it the same day in `claude/5cdd8d`'s session (*"Fix it so it runs"* (`ee7b381`) · *"Fix every one of them too"* (`ee7b381`)), after the "No restarts" choice above.

@@ -26,6 +26,7 @@ The owner had to point this out by hand. Measured that day on jh-api `main` `3a0
 **Who follows it:** every designer, every implementer (Claude, Gemini, MAI, Grok) and every reviewer, in every repo.
 Agents without Claude skills read this file at `~/.claude/rules-repo/skills/software-design/SKILL.md`.
 The repo's own architecture page (jh-api: `docs/design/architecture-rules.md`) says where each kind of code lives; this skill says how to design it. Where they differ on placement, the repo page wins.
+Related sections this skill builds on, not repeats: skill `ticket-writing` § 📐 (class diagram first), § ♻️ (one core per set of interchangeable implementations), § 🔍 (reuse only what keeps the same contract), § 🦀 (let the compiler catch mistakes).
 
 ## The process
 
@@ -112,13 +113,17 @@ Name the pattern in the diagram and in the PR, for example `Seam: Strategy — t
 
 When variants differ only in role (a ride carries a person, a delivery carries a parcel), there is **one core** and **one seam**.
 - List every difference in a table in the design, and mark each one as a **value**, a **yes/no**, or a **real algorithm**.
+  The rows come from the § 🔍 contract table (skill `ticket-writing`): what matches is the core, what differs is the seam.
 - Values and yes/no answers become methods on the seam that return constants (`has_bill_check()`, a config field, a copy key). They are not branches at call sites.
 - A real difference in algorithm (two ways to search for offers) is one function per variant behind the same seam, called from the core.
 - Adding a variant must be one entry in the seam, not an edit in every file that branches today.
 
 ## 5. Keep it simple
 
-- **Reuse what exists.** If a function already does it, call it; don't wrap it.
+- **Reuse what exists, when its contract is the same.** "Similar" is not "the same": before reusing an object or flow in a new place,
+  fill the contract table in skill `ticket-writing` § 🔍 (start state, end state, inputs, outputs, side effects, errors, retry, permissions, owner).
+  Every row matches ⇒ call it, don't wrap it. A row differs ⇒ the matching rows go in the core and the differing rows in the seam (§4);
+  never add a flag or an `if` to the old object to make it fit.
 - **A repeated piece with no shared function gets one helper**, placed where the repo's rules say and used in your new code.
   - Count the old copies and list them as a follow-up ticket, split by file.
   - Don't migrate them inside an unrelated fix, and never add copy N+1.
@@ -139,7 +144,7 @@ A doc missing the UML, the files, or the seam's pattern is not ready.
 
 **Tickets** cite the classes and files from the diagram (skill `ticket-writing` § 📐). **Every dispatch order names this skill's file**, so implementers without Claude skills read it.
 
-**PR body:** one line `Reuse: <reused> · <helper added> · <N old copies left, follow-up #…>`, with the survey numbers.
+**PR body:** a `Reuse:` section in the form skill `ticket-writing` § 🔍 defines (what is reused, with its contract table or one line per row that could differ), plus the survey numbers, any helper added, and the follow-up for old copies.
 
 **Reviewer: FAIL** when any of these hold, naming the `file:line`:
 - a new copy of logic that already exists;
@@ -148,4 +153,5 @@ A doc missing the UML, the files, or the seam's pattern is not ready.
 - the wrong shape (§3), or a seam whose pattern is unnamed or does not fit;
 - an element the PR adds or renames that is missing from the diagram, or sits in a different file;
 - an abstraction or wrapper with only one user;
-- no `Reuse:` line, or survey counts that re-running the search does not reproduce.
+- a reuse whose contract table has a differing row, or a flag/`if` added to an old object to make it fit (§ 🔍);
+- no `Reuse:` section, or survey counts that re-running the search does not reproduce.

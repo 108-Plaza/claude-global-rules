@@ -348,7 +348,7 @@ adding a variant = adding one file · safety logic lives in the core · a per-va
 - **Survey and count first**; never add copy N+1 — reuse, or add one helper and ticket the old copies.
 - **Model in UML adapted to Rust** (Mermaid; class diagram always, with files) and keep it matching the code — it is the contract every AI implementer builds from.
 - **Right shape:** closed set ⇒ enum + one table · outside engine ⇒ trait + `Fake` · admin-added ⇒ rows. **Flows that behave alike share one core** with one seam (ride and delivery are one trip flow).
-- **Name each seam's design pattern** · no pattern without a second user today · no wrapper layers · the PR carries a `Reuse:` line · a new copy, a stray variant branch or a drifted diagram = review **FAIL**.
+- **Name each seam's design pattern** · no pattern without a second user today · no wrapper layers · reuse only what keeps the same contract (skill `ticket-writing` § 🔍) · the PR carries a `Reuse:` section · a new copy, a stray variant branch or a drifted diagram = review **FAIL**.
 
 ## 🔭 Every finished task must analyse and propose follow-up work
 
