@@ -65,6 +65,21 @@ So a book or an article is never a reason on its own: name the reason behind its
 | YAGNI | building unused things cost time | **Still holds**, because unused code is something every agent reads and must keep right |
 | Single responsibility, clear names, invalid states unrepresentable | about the code itself | **Unchanged.** AI agents need these more, not less: they have only the code and the design to go on |
 
+### Language choice for a new service
+
+Asked 2026-11-25 (owner: *"ภาษา ที่เหมาะ สม กับ API"* · *"คัดมาด้วย"*). The question is which language catches an AI agent's mistakes before production, not which one a person writes fastest.
+
+| Use | For | Why |
+|---|---|---|
+| **Rust** (default for every API and backend service) | APIs, workers, edge/offline nodes | The compiler is free verification of AI-written code: null, type, race and unhandled-error mistakes fail to compile. Enums with data and exhaustive `match` are the seam this skill asks for; newtypes stop a wrong ID or amount. Runtime cost is low. All our backends already use it, with one toolchain and sqlx 0.9 |
+| TypeScript | a BFF or SSR that lives with a web front end | it shares types with the page; types vanish at runtime, so keep business rules in the Rust API |
+| Dart/Flutter | mobile and desktop apps | — |
+| Go | only a small tool that needs very fast builds | no data-carrying enums, and it has nil, so it catches fewer AI mistakes |
+| Elixir | only past ~1M concurrent connections per node | evaluated for live chat and not needed |
+| Python | only where the ML library lives in Python | slow and weakly typed |
+
+Rust's remaining cost is compile time, which lands on our real limits (CI turns, review). Fix that with small crates, tests that run only what a change touches, sccache and strong build machines, not by switching language.
+
 ## 1. Pick the process by work type
 
 The ticket's first line names its type, and the reviewer checks the row for that type.
