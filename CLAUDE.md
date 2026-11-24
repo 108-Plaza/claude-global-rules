@@ -340,16 +340,15 @@ setting `refreshInterval` without looking at how often the data changes · fixin
 
 → skill **`ticket-writing`** § ♻️. Headline (owner 2026-10-06 *"ทำเป็น กฏ ไว้ด้วย ว่า ถ้ามีงานประเภท นี้ให้ ใช้ trait dyn หรือ generic"*): the same job for several interchangeable things (payment providers, banks, channels, drivers, engines, backends) = **one shared core + one small trait implementation per variant** (`Arc<dyn Trait>` at runtime, generic at compile time) ·
 adding a variant = adding one file · safety logic lives in the core · a per-variant copy where a core was possible = review **FAIL** · not a licence to abstract a single case.
+🔴 This is for **interchangeable implementations** (vendors, engines). A **closed set** fixed by the domain (`ServiceType`, a status) is an **enum with one table**, not `dyn` — skill `software-design` § 3.
 
-## 🧱 Design for reuse, with named patterns — before writing, and in every review
+## 🧱 Design before code: survey, UML, one core, named patterns — and review against it
 
-→ skill **`software-design`** (agents without Claude skills read `~/.claude/rules-repo/skills/software-design/SKILL.md`) (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"skill การออกแบบไง"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"*). Load it **before** designing a class diagram, and before writing or reviewing code that adds a function, a type, a query or a variant check. Headlines:
-- **Draw the design in UML** (Mermaid class diagram always; sequence, state, component when the change needs them), with each seam's pattern named.
-- **Survey and count first.** Never add copy N+1 of something that exists; reuse it, or add one helper and ticket the old copies.
-- **Right shape:** a closed set (`ServiceType`, a status) ⇒ enum + one table · an outside engine ⇒ trait + `Fake` · admin-added things ⇒ rows.
-- **Flows that behave alike share one core** with one seam for the differences (ride and delivery are one trip flow).
-- **Name the design pattern of every seam** (Strategy, Registry, Template method, Policy, State machine, Repository, Unit of work, Observer, Facade) in the diagram and the PR.
-- **No pattern without a second user today**, no wrapper layers · the PR carries a `Reuse:` line · a new copy or a stray `if variant ==` = review **FAIL**.
+→ skill **`software-design`** (agents without Claude skills read `~/.claude/rules-repo/skills/software-design/SKILL.md`) (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"*). Load it **before** designing a class diagram, and before writing or reviewing code that adds a function, a type, a query or a branch on a variant. Headlines:
+- **Survey and count first**; never add copy N+1 — reuse, or add one helper and ticket the old copies.
+- **Model in UML adapted to Rust** (Mermaid; class diagram always, with files) and keep it matching the code — it is the contract every AI implementer builds from.
+- **Right shape:** closed set ⇒ enum + one table · outside engine ⇒ trait + `Fake` · admin-added ⇒ rows. **Flows that behave alike share one core** with one seam (ride and delivery are one trip flow).
+- **Name each seam's design pattern** · no pattern without a second user today · no wrapper layers · the PR carries a `Reuse:` line · a new copy, a stray variant branch or a drifted diagram = review **FAIL**.
 
 ## 🔭 Every finished task must analyse and propose follow-up work
 
