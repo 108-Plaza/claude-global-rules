@@ -23,7 +23,12 @@ The owner had to point this out by hand. Measured that day on jh-api `main` `3a0
 - 88 branches on `ServiceType` (Ride vs Delivery) in 37 files, though both services run the same trip flow;
 - a fix written that day would have added the 15th lock copy and put a decision inside a DB function.
 
-**Who follows it:** every designer, every implementer (Claude, Gemini, MAI, Grok) and every reviewer, in every repo.
+**Who does what** (owner: *"Claude เป็นแม่งาน"*, Claude is the foreman; *"เราต้องมี แบบแผน ไม่ง้้น worker จะเขียนไร้ หลักการ"*):
+- **Claude (the lane's controller or design author) owns the design.** It does the survey, draws the UML, picks each seam and its pattern, and writes them into the design doc before any ticket is released.
+- **Workers (Gemini, MAI, any implementer) build to the design.** They don't invent a seam, a pattern or a new copy. When the design doesn't fit the code, they comment on the ticket and stop (skill `ticket-writing` § 📐).
+- **Claude reviews against it** (§6).
+
+Every designer, implementer and reviewer follows this skill, in every repo.
 Agents without Claude skills read this file at `~/.claude/rules-repo/skills/software-design/SKILL.md`.
 The repo's own architecture page (jh-api: `docs/design/architecture-rules.md`) says where each kind of code lives; this skill says how to design it. Where they differ on placement, the repo page wins.
 Related sections this skill builds on, not repeats: skill `ticket-writing` § 📐 (class diagram first), § ♻️ (one core per set of interchangeable implementations), § 🔍 (reuse only what keeps the same contract), § 🦀 (let the compiler catch mistakes).
