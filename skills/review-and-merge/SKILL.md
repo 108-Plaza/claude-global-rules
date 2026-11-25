@@ -87,6 +87,8 @@ the old cron on Dell is backed up at `~/108mon/crontab.backup.20260915-tqtrain.t
   may add `reviewed` + merge yourself if PASS + CI green + merge-base passes) · **does not replace the 60-minute silence rule above** —
   only applies when the owner orders it directly like this, in that round; normally still wait 60 minutes as before
 
+**Security check (every PR that touches auth, money, files, input parsing or a wire):** name the **OWASP ASVS 5.0 level 2** requirements it meets and check the **OWASP API Security Top 10 (2023)** items it touches (owner S5, 2026-11-25, `INTERNATIONAL_STANDARDS.md`). A new house-only shape where a published standard applies = **FAIL**.
+
 **Design check (every PR):** review in the two stages of skill `software-design` § 8 — first that it matches the ticket's work type and design (diagram, `Reuse:` section in one of its two forms), then quality (no new copy, no variant branch outside its seam, no `dyn` over a closed set, decisions in the rule layer, named pattern, no forwarding wrapper). Any miss = **FAIL** (owner 2026-11-25).
 
 **Steps:** read the issue before the diff (the criteria are the issue, not preference) · go through the acceptance criteria one by one with `file:line` ·

@@ -336,6 +336,21 @@ setting `refreshInterval` without looking at how often the data changes · fixin
 
 → skill **`tq-worker`** § 🔁. Headline: the whole fleet shares GitHub REST quota ⇒ a loop waiting on ticket/PR state polls **`$TQ/v1/ticket/...` or `/v1/snapshot`, not `gh`**; GitHub only for CI results, comment bodies and file lists, at most every 5 min, and stop the loop when its condition is met.
 
+## 🌐 One standard, and it is the international one
+
+Owner 2026-11-25 *"สร้างทุกอย่างให้ เป็น มาตรฐานเดียว แล้ว เป็นมาตรฐาน สากล ระดับโลก"* · approved S1–S7 *"รับ S1–S7 ทั้งหมด"*.
+**Source of truth:** `108-Plaza/108-ting-ecosystem-docs` → `INTERNATIONAL_STANDARDS.md`. This section is only its headline.
+- **Every house standard names the international one it implements** and differs only where it says why. Never invent a house-only shape where a published standard settles it; a review that finds one = **FAIL**.
+- **Approved (S1–S7):**
+  - S1: errors are `{code, message, data}` mapped 1:1 onto RFC 9457.
+  - S2: W3C `traceparent`.
+  - S3: OpenTelemetry log field names, with `error.type` = `data.reason`. One token goes from screen to app to log.
+  - S4: OpenAPI 3.1 generated from writer code.
+  - S5: OWASP ASVS 5.0 L2 + API Top 10 in every review.
+  - S6: WCAG 2.2 AA for apps and web.
+  - S7: SLOs per lane (ISO/IEC 25010; SRE error budgets; DORA).
+- **"Easy to maintain" means AI and people working together:** an agent goes from a symptom to its cause by one token on its own, and a person's part is one decision or one approval.
+
 ## 🔌 Every wire between services follows one connection standard
 
 Owner's orders 2026-11-24 *"กำหนดมาตรฐานกลาง ในการ สื่อสาร เชื่อมต่อ"* · *"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"* · 2026-11-25 *"O2 ใส่กฎกลางเลย"*
