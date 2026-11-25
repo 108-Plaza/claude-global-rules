@@ -336,6 +336,18 @@ setting `refreshInterval` without looking at how often the data changes · fixin
 
 → skill **`tq-worker`** § 🔁. Headline: the whole fleet shares GitHub REST quota ⇒ a loop waiting on ticket/PR state polls **`$TQ/v1/ticket/...` or `/v1/snapshot`, not `gh`**; GitHub only for CI results, comment bodies and file lists, at most every 5 min, and stop the loop when its condition is met.
 
+## 🔌 Every wire between services follows one connection standard
+
+Owner's orders 2026-11-24 *"กำหนดมาตรฐานกลาง ในการ สื่อสาร เชื่อมต่อ"* · *"ให้ ใช้ มาตรฐานเดียวกันการเชื่อ มต่อและ สื่อสาร"* · 2026-11-25 *"O2 ใส่กฎกลางเลย"*
+**The standard is `108-Plaza/108-ting-ecosystem-docs` → `API_CONNECTION_STANDARD.md`, the source of truth.** This section is only its headline.
+- **One envelope** `{code, message, data}` for every HTTP answer. Every non-2xx answer carries `data.reason`, and programs branch on `code` + `data.reason` only.
+- **One channel per hop.** A relay passes the answer through and never reads or rebuilds it.
+- **The writer owns the shape.** It cites `file:line`, never a ticket comment.
+- **Contract fixtures** in the writer's `contracts/`. The reader's tests load a copy, and CI diffs the copy.
+- 🔴 **Client-facing APIs move too, one lane at a time**, with server and apps in the same release (owner 2026-11-25 *"O1 เอา B ทีละเลน"*). Field casing stays as the apps read it.
+- 🔴 **A breach is a review FAIL** (never PASS+follow-up) and a queue strike. A reviewer who passes a breach is in breach too.
+- **Why:** on 2026-11-24 the first live connection test failed at 168pay. A route had been built from a ticket comment instead of the writer's code, and it rebuilt bank-bot's answer. Five different envelopes were in use across the bank chain alone.
+
 ## ♻️ Several variants of one job = one shared core + a `dyn Trait` or generic per variant — never a copy per variant
 
 → skill **`ticket-writing`** § ♻️. Headline (owner 2026-10-06 *"ทำเป็น กฏ ไว้ด้วย ว่า ถ้ามีงานประเภท นี้ให้ ใช้ trait dyn หรือ generic"*): the same job for several interchangeable things (payment providers, banks, channels, drivers, engines, backends) = **one shared core + one small trait implementation per variant** (`Arc<dyn Trait>` at runtime, generic at compile time) ·
