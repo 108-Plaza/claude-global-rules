@@ -353,7 +353,7 @@ Owner's orders 2026-11-24 *"กำหนดมาตรฐานกลาง ใ
 
 → skill **`ticket-writing`** § ♻️. Headline (owner 2026-10-06 *"ทำเป็น กฏ ไว้ด้วย ว่า ถ้ามีงานประเภท นี้ให้ ใช้ trait dyn หรือ generic"*): the same job for several interchangeable things (payment providers, banks, channels, drivers, engines, backends) = **one shared core + one small trait implementation per variant** (`Arc<dyn Trait>` at runtime, generic at compile time) ·
 adding a variant = adding one file · safety logic lives in the core · a per-variant copy where a core was possible = review **FAIL** · not a licence to abstract a single case.
-🔴 This is for **interchangeable implementations** (vendors, engines). A **closed set** fixed by the domain (`ServiceType`, a status) is an **enum with one table**, not `dyn` — skill `software-design` § 3.
+🔴 This is for **interchangeable implementations** (vendors, engines). A **closed set** fixed by the domain (`ServiceType`, a status) is an **enum with one table**, not `dyn` — skill `software-design` § 4.
 
 ## 🧭 How Claude moves the work as foreman: think → plan → execute → verify
 
