@@ -342,6 +342,14 @@ setting `refreshInterval` without looking at how often the data changes · fixin
 adding a variant = adding one file · safety logic lives in the core · a per-variant copy where a core was possible = review **FAIL** · not a licence to abstract a single case.
 🔴 This is for **interchangeable implementations** (vendors, engines). A **closed set** fixed by the domain (`ServiceType`, a status) is an **enum with one table**, not `dyn` — skill `software-design` § 3.
 
+## 🧭 How Claude moves the work as foreman: think → plan → execute → verify
+
+→ skill **`foreman-workflow`** (owner 2026-11-25 *"superpowers+software-design"* · *"เอาจุดแข็งมาใข้งาน"*): the strongest parts of obra/superpowers, rewritten for this fleet. Load it before planning a feature or refactor, dispatching a wave, debugging a failure, or saying work is done.
+- **Plans workers can't misread:** a file map, then tasks with Files, Interfaces (consumes/produces) and test-first steps; self-review before release.
+- **Execution:** a fresh worker per task, a two-stage review after each, a whole-branch review before `feat/*` → main, and a ledger that survives compaction. Small ambiguities are settled as `Ruling: what — why — cost if wrong`; the fleet's stop-and-ask list still stops.
+- **Debugging in four phases**, with no fix before a root cause; three failed fixes ⇒ question the design and bring evidence to the owner.
+- **No claim without fresh evidence:** run the proving command, read the exit code, and check a worker's PR diff, not its report.
+
 ## 🧱 Design before code: Claude designs, workers build to it, review checks it
 
 → skill **`software-design`** (agents without Claude skills read `~/.claude/rules-repo/skills/software-design/SKILL.md`) (owner 2026-11-25 *"ควร เอา skill reuse object มาใช้"* · *"ไม่ง้ันผมก็ต้องมานั่งบอก เสีย refactor"* · *"พวก design pattern มันต้องมี สิ"* · *"แต่ผม อยากให้ เช่น UML"* · *"Claude เป็นแม่งาน"* · *"worker แค่ทำตาม ที่ Claude ออกแบบ"*). Load it before designing, writing a ticket, or writing or reviewing code. Headlines:
