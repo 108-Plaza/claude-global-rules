@@ -346,6 +346,7 @@ Owner's orders 2026-11-24 *"กำหนดมาตรฐานกลาง ใ
 - **Contract fixtures** in the writer's `contracts/`. The reader's tests load a copy, and CI diffs the copy.
 - 🔴 **Client-facing APIs move too, one lane at a time**, with server and apps in the same release (owner 2026-11-25 *"O1 เอา B ทีละเลน"*). Field casing stays as the apps read it.
 - 🔴 **A breach is a review FAIL** (never PASS+follow-up) and a queue strike. A reviewer who passes a breach is in breach too.
+  Not a breach: a transition PR that follows the standard's three-step order (§7) and keeps an old field beside the envelope, naming its step and the ticket that drops the old field.
 - **Why:** on 2026-11-24 the first live connection test failed at 168pay. A route had been built from a ticket comment instead of the writer's code, and it rebuilt bank-bot's answer. Five different envelopes were in use across the bank chain alone.
 
 ## ♻️ Several variants of one job = one shared core + a `dyn Trait` or generic per variant — never a copy per variant
