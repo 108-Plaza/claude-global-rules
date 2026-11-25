@@ -30,7 +30,7 @@ Evidence, jh-api `main` `3a0dc02` (re-run the command to check):
 - **Ticket authors** (Grok or Claude) copy the design's seam, pattern, helpers and reuse decision into each ticket (§7).
 - **Workers build exactly that.** They don't invent a seam, a pattern, a helper or a new copy. If the design doesn't fit the code, or a helper it needs is missing, they comment on the ticket and stop.
   - At the function level, every worker writes the ponytail way: reuse existing code, then the standard library, then an installed dependency, and only then new code; no wrappers, options or code "for later"; finish callers and tests.
-  - agy workers also load the ponytail skill itself (skill `queue-controller` § ponytail).
+  - agy and MAI workers also load the ponytail skill itself (agy as a plugin, MAI from `~/.copilot/skills/` on the Studio; skill `queue-controller`).
   - Where function-level habits and the ticket's design differ, the design wins.
 - **Claude reviews against the design** (§8).
 
