@@ -122,7 +122,13 @@ Owner's order 2026-10-19 *"สร้างกฏ ว่า ใครทำงา
 3. **Reviewers remove their own review worktree** as soon as the verdict is posted (PASS or FAIL). A re-review makes a new one; it is cheap.
 4. **Every dispatch order ends with:** *"When your PR is merged or closed, delete your worktree for it. Also delete any worktree of yours whose PR is already merged before you start the next ticket."*
 5. **On Dell**, removing the worktree of a PR you merged is allowed (`/data/yuth/worktrees/<slug>`). It belongs to that ticket, not to the shared machine. Everything else there stays "measure and report".
-6. **Backstop:** the fleet-sweep **worktree pass** removes worktrees that are idle and whose work is pushed or merged. It catches what a dead session left. It is not a reason to skip step 1.
+6. **Backstop: the fleet-sweep worktree pass** (since `108-Ting-Ecosystem` PR 287, 2026-11-26; owner *"ตัวกำจัดที่ต้นตอ"* · *"เพิ่ม ทุกเครื่องเลยนะ"*). It catches what a dead session or a forgetful merger left. It is not a reason to skip step 1.
+   - **Where:** every direct child of a worktree root: `~/worktrees`, any `.worktrees/` or `.claude/worktrees/` up to 3 levels under `~`, and `/data/yuth/worktrees`. Linked worktrees and scratch clones alike (owner *"มันเป็นปัญหาเดียวกัน"*).
+   - **Removes one only when all hold:** no process is inside it (lsof; lsof gives nothing ⇒ nothing is removed) · nothing outside `.git/` changed in 24 h · `git status` clean · every commit is on `origin`, or its PR is MERGED/CLOSED and that PR's head contains the local commit (OPEN ⇒ kept) · not locked (`git worktree lock`) · not on `FLEET_SWEEP_KEEP_WORKTREES`. A clone also needs no stash, no live linked worktree, and every local branch safe.
+   - **Not removed:** unmerged work, however old. Branch refs are never deleted.
+   - **Why a worktree is still on disk:** `grep 'worktree:' ~/Library/Logs/fleet-sweep.log` (Macs) or `~/.local/state/fleet-sweep.log` (Dell). Every kept folder logs `kept (<reason>)`.
+   - **Keep one deliberately:** `git worktree lock <path>`, or add it to `FLEET_SWEEP_KEEP_WORKTREES` (colon-separated; read at install, so reinstall with `--scheduled` after changing it). Turn the pass off with `FLEET_SWEEP_WORKTREES=0`.
+   - **Why it was needed:** step 1 alone did not hold. On 2026-11-26 Studio's `~/worktrees` had 913 folders again, and this line had promised a backstop that did not exist since 2026-10-19 (#246).
 
 **Reviewers specifically** (owner's order 2026-09-28 — measured that day: one review session's targets totalled ~260 GB on Studio · a single one 144 GB = `incremental` 84 + `deps` 60):
 - **base and head of the same PR use one worktree, one target** — `git checkout <base>` → test → `git checkout <head>` → test · never create separate `…-base` / `…-head` (previously 2–3 per PR)
@@ -130,7 +136,7 @@ Owner's order 2026-10-19 *"สร้างกฏ ว่า ใครทำงา
 - **big repos (`pos108-core` · `rust-project-backend` · `jh-api`) build on Lenovo** with `scripts/lenovo-run.sh` (🖥 Big builds)
 - review finished (verdict posted) ⇒ delete that PR's target immediately; don't wait for the sweeper
 
-**The automatic sweeper** (`108-Ting-Ecosystem/scripts/fleet-sweep.sh`) already runs on Mac Studio (LaunchAgent) and Lenovo (cron) every 6 hrs — deletes targets in which no file was modified within the time threshold and that no process has open ·
+**The automatic sweeper** (`108-Ting-Ecosystem/scripts/fleet-sweep.sh`) runs on every machine installed with `--scheduled` (MacBook, Mac Studio, Mac mini, Warut, Dell; measured 2026-11-26) at 07:00 and 13:00 ICT, pulling itself from `origin/main` each round — it removes finished worktrees (rule 6 above) and deletes targets in which no file was modified within the time threshold and that no process has open ·
 **a process left holding files open in a target = the sweeper never touches that target** ⇒ always shut down unused jobs/pg/redis (real incident 09-28: `find | head` hung 12 hrs holding a 144 GB target)
 - 🔴 **It also removes running test containers that carry no label** (since `108-Ting-Ecosystem` PR 226, 2026-10-14). It removes one only when all of these hold:
   no label and no compose project · restart policy none · image postgres/redis/mysql/mariadb/mongo/nginx/python · up ≥ 48 h · name not in `FLEET_SWEEP_KEEP_CONTAINERS`.
