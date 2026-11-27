@@ -307,3 +307,68 @@ These rules apply to **new code and code a ticket already touches**. They are no
 - `derive_more` is fine for the boilerplate the newtypes row creates (`Display`, `From`, `Deref` on a newtype). Derive only what a caller uses: a derived `From` or `Deref` reopens the very mix-ups the newtype was there to stop.
 
 Measured 2026-11-16 on `origin/main` of six Rust repos (pos108-core, 108-agent-queue, 108-platform-services, Media-Platform, Payment-Platform, park108): 66 of 78 `#[async_trait]` traits are used as `dyn`, there are 0 `fn as_any`, and there is 1 `-> Box<dyn Iterator`. Rewriting to newer syntax would save almost nothing.
+
+## 🧺 At most 20 open issues — full rule
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27 to cut the per-session load; the headline stays there._
+
+Owner's order 2026-11-18 *"ตั้งกฎใหม่ ห้ามมี issue ค้าง เกิน 20 รายการ"* · *"เป็นกฏกลาง"* · *"ใช้ทุกrepos"*
+
+- **Every repo keeps ≤ 20 open issues.** PRs are not counted.
+- **Feature-branch function tickets are exempt** (owner 2026-11-18 *"Exempt function tickets"*). These are the short-lived tickets a sub-controller releases. Each one names its `feat/*` base in the body, as `Base and PR target: `feat/<x>`` or `Test branch: feat/<x>`, and it closes when merged into that branch. They do not count, and opening one is never blocked. The cap is on backlog, not on work a worker is running.
+- **Count:** `bin/pretooluse-guard.sh` rule 6 counts open issues minus the exempt function tickets. A quick upper bound is `gh api "search/issues?q=repo:<owner>/<repo>+is:issue+is:open&per_page=1" --jq .total_count`.
+- **Over 20 ⇒ bring it down before opening anything new there.** The lane controller does this, or the session doing the work if the repo has no controller:
+  - close what is done, with the PR or commit (🔭);
+  - close duplicates and superseded tickets, each pointing at the one that stays;
+  - close what will not be done as `not planned`, with a reason that can be re-checked;
+  - fold small related tickets into one, and close the rest as duplicates of it;
+  - finish work in flight rather than releasing more.
+- **While a repo is over 20**, a new issue is allowed only for an owner order, or for a ticket that replaces several, so the count goes down. Found work goes as a comment on the open ticket closest to it (📋 still applies, but this is where it lands).
+- **Enforced for Claude sessions** by `bin/pretooluse-guard.sh` rule 6. It refuses `gh issue create` (and `gh api` POST to `/issues`) when the repo has ≥ 20 open issues. The allowed exceptions pass with the prefix `ISSUE_CAP_OK="<owner order … | replaces #a #b>"`, and each use is logged to `~/.claude/issue-cap.log`. Sessions that don't run Claude hooks (Grok, Gemini) keep this rule by hand.
+- 🔴 **Never reach the number by hiding work.** Don't move issues to another repo, a doc, Discussions or a label. Don't close unresolved work without a reason. A question waiting on the owner stays open, and the controller brings it to the owner instead.
+- Measured 2026-11-18 ~10:4x ICT: `jh-api` 99, `108heros-flutter` 63, `108heros-web` 22, 558 across `108-Plaza`. Most repos start over the line, and each lane controller brings its own repos down.
+
+## 📌 Make the fact the subject — full rule
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27 to cut the per-session load; the headline stays there._
+
+Owner's order 2026-09-23 · applies to **docs · tickets · PR bodies · comments · verdicts** of every kind
+
+**`"ticket #N is open"` is a time bomb** — true only on the day it was typed; nothing keeps it true
+**`"X has no answer yet (see #N)"` never expires** — the sentence stays right after the ticket closes
+
+| Never write | Write instead |
+|---|---|
+| "ticket #N is open to fix this" | "X has no answer yet · there was an attempt at #N" |
+| "⇒ opened ticket #N" (at the end of a section) | "#N closed `not planned` 2026-09-16, replaced by #753 — the problem remains" |
+| "waiting on #N" as a blocking reason | a reason that can be re-checked + a command that tells you whether it can be unblocked yet |
+| a bare ticket number (`ticket #942`) | ticket number + half a line on what it asks for |
+
+**Measured real cost (2026-09-23 · one session):** the sentence *"ใบ #938 เปิดไว้"* (the ticket is open) **expired in 40 minutes**
+while *"พิกัดครอปยังไม่มีวิธีหาที่เชื่อถือได้"* (there is still no reliable way to find the crop coordinates) in the same paragraph stayed true to the letter ·
+the same day, stale advice was put to the owner **4 times**, every time because someone read a status that was correct on the day it was written
+and believed it was still true (a tool that already existed · a ticket merged 9 days earlier · a ticket closed `NOT_PLANNED` with a successor ·
+a mechanism the owner had dropped 3 weeks earlier) — the source was `park108/docs/CAMERA_DAHUA_HFW2849.md`, which recorded ticket status
+⇒ two follow-up PRs had to be opened to fix it (`park108#940` · `#941`)
+
+🔴 **Negative statements must carry their scope** — *"ยังไม่มีใครวัด"* (nobody has measured it yet) · *"ไม่พบเทสต์"* (no test found) are true only as far as you swept
+⇒ write **what you swept, how many items, at which sha** · **"not seen" is different from "does not exist"** (same family as 🧾)
+
+**Exception:** when the status *is* the fact you want to record (queue report · measurement result) ⇒ **always attach the time/sha**
+e.g. *"วัดเอง 2026-09-23T01:45Z: state=pr_open"* (measured myself at that time) — not *"ใบนี้อยู่ pr_open"* (this ticket is in pr_open)
+
+**Before every send, ask one question:** *will this sentence still be true if the ticket it cites is closed tomorrow?*
+— if not ⇒ **rewrite it, don't send yet**
+
+## 🏷 Decided names — do not ask again
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27; the headline stays there._
+
+**Decided — do not ask again:**
+- Real repo names: **`108-Plaza/jh-api`** (mirror `yuthstyle88/jh-api-dev`) · `108heros-flutter` · `108heros-web` — the old names
+  `api-108jobs`/`api-108heros`/`108jobs-*` survive only via redirect **never use them in tickets/scripts/docs** · confirm with `gh api repos/<org>/<name> --jq .full_name`
+  · `108jobs-front`/`108jobs-mobile` (personal, stale since 2025-10) are not touched
+- image `ghcr.io/108-plaza/api-108jobs` is hardcoded in the workflow, not tied to `github.repository` ⇒ renaming the repo does not change the tag
+- **The `.108jobs.com` domain does not change** (other systems use its subdomains) except `auth.108heros.com`, which has already moved · moving more hosts must be additive:
+  new one answers in parallel → ship the app → wait for people to update → old one answers 410 (**shutting the old host the same day = apps in users' hands die instantly**)
+- Mobile app bundle id is `com.plaza108.heros` on both iOS/Android (the old one is still left on test devices as another icon with the same name)

@@ -225,3 +225,23 @@ and older workflows (measured 2026-09-21: org `pos108-core` has 13 files · `pos
 1. **Lane trigger** — `branches: [release/prod]` ⇒ `branches: [deploy/staging]` (the mirror has no prod lane)
 2. **`runs-on`** — make it `[self-hosted, Linux, X64]` per the standard (the mirror still has `[self-hosted, pos108-ci]` in several files
    — same pool but needlessly narrower)
+
+## 🚫 `[skip ci]` in a commit message — full rule
+
+_Moved verbatim from the global rules `CLAUDE.md` (Standard Task Lifecycle, step 9) on 2026-11-27._
+
+   - 🔴 **Never put `[skip ci]` anywhere in a commit message** (in the body counts too, not just the subject line) —
+     GitHub suppresses the whole workflow **before creating jobs** ⇒ required checks never report ⇒ `mergeStateStatus = BLOCKED`
+     permanently with no red check to look at ⇒ **step 11 becomes impossible** · measured 2026-09-23: 8 of 10 repos swept have
+     required checks on `main` (2–6 checks) · real incident at `park108#943` — `claude-global-rules#2`
+     ```bash
+     gh api repos/<slug>/branches/main/protection --jq '.required_status_checks.contexts'
+     ```
+     **Saving CI on doc-only PRs is the workflow's job, not the commit message's** — see skill `fleet-ci` § 📄 Doc-only changes
+     (done example: `park108/.github/workflows/ci.yml`)
+
+## ⚙️ Runners off by default — full rule
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27; the headline stays there._
+
+- 🔴 **Every runner is off by default** (owner 2026-10-18 *"ปิดหมด เลย ดีกว่า"*) — **the lane controller / pusher / merger switches on what its CI needs, on the machine that suits the job, before pushing or merging** — 🔴 **survey first: `108-Ting-Ecosystem/scripts/runners.sh open <job labels>`** picks the machine with the most room (load + free memory) and switches one runner on; no sudo · 🔴 **Dell at most 5 runners, the Studio 1; every other machine helps** (Dell 5: owner 2026-11-14 *"ยกเพดาน Dell เป็น 5"* · owner 2026-10-20 *"dell รับงาน ไม่ควรเกิน 2 งาน"* · *"คือให้ ทุกเครื่อง ทำงานช่วย กัน"* · Studio 1: *"Enforce it by keeping at most one Studio runner on (Studio max 1 in runners.sh). Other jobs spread to the other Macs."*) · `auto-on` is only a backstop, `auto-off` stops idle runners after 15 min · a check sitting `queued` with nothing on = switch its runner on, not broken code

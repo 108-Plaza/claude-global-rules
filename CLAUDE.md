@@ -230,33 +230,11 @@ Owner's order 2026-09-09 — in one day, three wrong identifications by three di
 
 ## 📌 Make the fact the subject; cite tickets as the *source*, not as the *status*
 
-Owner's order 2026-09-23 · applies to **docs · tickets · PR bodies · comments · verdicts** of every kind
-
-**`"ticket #N is open"` is a time bomb** — true only on the day it was typed; nothing keeps it true
-**`"X has no answer yet (see #N)"` never expires** — the sentence stays right after the ticket closes
-
-| Never write | Write instead |
-|---|---|
-| "ticket #N is open to fix this" | "X has no answer yet · there was an attempt at #N" |
-| "⇒ opened ticket #N" (at the end of a section) | "#N closed `not planned` 2026-09-16, replaced by #753 — the problem remains" |
-| "waiting on #N" as a blocking reason | a reason that can be re-checked + a command that tells you whether it can be unblocked yet |
-| a bare ticket number (`ticket #942`) | ticket number + half a line on what it asks for |
-
-**Measured real cost (2026-09-23 · one session):** the sentence *"ใบ #938 เปิดไว้"* (the ticket is open) **expired in 40 minutes**
-while *"พิกัดครอปยังไม่มีวิธีหาที่เชื่อถือได้"* (there is still no reliable way to find the crop coordinates) in the same paragraph stayed true to the letter ·
-the same day, stale advice was put to the owner **4 times**, every time because someone read a status that was correct on the day it was written
-and believed it was still true (a tool that already existed · a ticket merged 9 days earlier · a ticket closed `NOT_PLANNED` with a successor ·
-a mechanism the owner had dropped 3 weeks earlier) — the source was `park108/docs/CAMERA_DAHUA_HFW2849.md`, which recorded ticket status
-⇒ two follow-up PRs had to be opened to fix it (`park108#940` · `#941`)
-
-🔴 **Negative statements must carry their scope** — *"ยังไม่มีใครวัด"* (nobody has measured it yet) · *"ไม่พบเทสต์"* (no test found) are true only as far as you swept
-⇒ write **what you swept, how many items, at which sha** · **"not seen" is different from "does not exist"** (same family as 🧾)
-
-**Exception:** when the status *is* the fact you want to record (queue report · measurement result) ⇒ **always attach the time/sha**
-e.g. *"วัดเอง 2026-09-23T01:45Z: state=pr_open"* (measured myself at that time) — not *"ใบนี้อยู่ pr_open"* (this ticket is in pr_open)
-
-**Before every send, ask one question:** *will this sentence still be true if the ticket it cites is closed tomorrow?*
-— if not ⇒ **rewrite it, don't send yet**
+Owner's order 2026-09-23 · docs · tickets · PR bodies · comments · verdicts · → skill **`ticket-writing`** § 📌 (the rewrite table and the measured cost).
+- **`"ticket #N is open"` expires; `"X has no answer yet (see #N)"` never does.** Never use "waiting on #N" as a blocking reason — give a re-checkable reason and the command that tells whether it is unblocked. A ticket number always gets half a line on what it asks for.
+- 🔴 **Negative statements carry their scope** — what you swept, how many items, at which sha · "not seen" ≠ "does not exist".
+- When the status *is* the fact (queue report, measurement) ⇒ attach the time/sha.
+- **Before every send:** will this sentence still be true if the ticket it cites is closed tomorrow? If not, rewrite it.
 
 ## 🧭 Every decision carries its reason, written where the next session reads it
 
@@ -270,57 +248,17 @@ Cause: one session spent an hour proposing, cancelling and re-proposing the same
 
 ## 🌱 Fix the root cause, not the symptom
 
-Owner's order 2026-09-11 *"ให้แก้ที่ต้นเหตุของปัญหา อย่ามาแก้ที่ปลายทาง เพราะมันจะไม่จบ"*
-**Symptom site** = where the symptom is *seen* · **root cause** = where the wrong thing is *created* · fix the symptom site and the symptom goes away this round, but the creator keeps running
-
-Examples already dispatched: the `pos108-core` bridge collided for a month; the root cause was the queue watching the `-dev` mirror (removed one line from `config.toml`) ·
-workers got `empty` 400 times while tickets sat `ready`; the root cause was the lane gate (aq#227) · three tickets went red at `any_types`; the root cause was the ticket not warning about the ratchet gate
-
-**Before fixing, answer three questions:**
-1. **Where is the wrong thing created** — trace to the point that *writes/sends/decides* the wrong value, not the point that *reads/displays/checks* it · write the causal chain into the ticket/PR
-2. **After fixing here, can the symptom come back?** (elsewhere · new data rows · the next PR · the next cron run) — yes = still the symptom site
-3. **Does this root cause have other symptom sites?** — fixing the root cause closes every site at once
-
-**Signs you are fixing the symptom site:** fixing the same thing a second time · fixing one item at a time (row/ticket/PR/machine/label) · making the **reader** tolerate bad values
-(fallback · default · `unwrap_or` · filtering out) instead of fixing the **writer** · raising a ceiling/threshold · adding retry/sleep/timeout · special cases ·
-`#[ignore]`/skip · cleaning bad data by hand while the creator still runs · editing generated files / the `*-dev` mirror / `kubectl set image` ·
-closing a ticket with an explanation and nothing that prevents recurrence
-
-**Root cause out of your hands** (another repo/lane · BLOCK · Data Risk · waiting on the owner) ⇒ a **stopgap** is allowed if all three hold:
-(1) the PR/commit contains the word `stopgap` + what the root cause is (2) **open a ticket at the root cause before merging**, linked both ways
-(3) the symptom ticket must not be closed as "fixed" — close it as a duplicate pointing to the root-cause ticket, or wait for the root-cause ticket to merge · fixing the symptom site silently = hiding the root cause
-
-**Bad data:** fix the creator first, then clean up (cleanup/backfill is still Data Risk and must be asked)
-
-**By role:** ticket author ⇒ "fix the root cause" = **open a ticket at the root cause, not do it yourself** · the *evidence* part has the causal chain · the *fix* part points at the root cause ·
-never send a symptom-fixing ticket worded to look like a fix · if you can't trace it, write *"ยังไม่รู้ต้นเหตุ — ใบนี้คือการสืบ"* (root cause unknown — this ticket is the investigation) ·
-implementer ⇒ if the ticket orders a symptom-site fix, write that on the ticket and go `blocked` + reason; don't fix it silently and don't expand beyond the ticket's file scope
-· reviewer ⇒ a symptom-site fix without `stopgap` + a root-cause ticket = **FAIL**
-
-This rule does not ask you to go slower — many root causes are one-line fixes · tracing is paid once, symptom fixes are paid every round
+Owner's order 2026-09-11 *"ให้แก้ที่ต้นเหตุของปัญหา อย่ามาแก้ที่ปลายทาง เพราะมันจะไม่จบ"* · → skill **`ticket-writing`** § 🌱 (dispatched examples, the full list of signs, stopgap rules by role).
+- **Symptom site** = where the symptom is *seen*; **root cause** = where the wrong thing is *created*. Before fixing, answer: (1) where is the wrong value written, sent or decided (2) after this fix, can the symptom come back (3) does this root cause have other symptom sites.
+- **Signs you are at the symptom site:** fixing the same thing twice · one item at a time · making the reader tolerate bad values (fallback, default, filter) · raising a threshold · retry/sleep/timeout · skip/`#[ignore]` · cleaning data by hand while the creator still runs · editing generated files or the `-dev` mirror · closing a ticket with nothing that prevents recurrence.
+- **Root cause out of your hands ⇒ a stopgap only if** the PR says `stopgap` and names the root cause, a root-cause ticket is opened before merging (linked both ways), and the symptom ticket is not closed as fixed.
+- **Bad data:** fix the creator first, then clean up (still Data Risk — ask) · ticket author ⇒ open the ticket at the root cause · never word a symptom-fixing ticket to look like a fix; can't trace it ⇒ write *"ยังไม่รู้ต้นเหตุ — ใบนี้คือการสืบ"* · implementer ordered to fix a symptom ⇒ `blocked` + reason (don't fix it silently, don't widen the file scope) · reviewer: a symptom fix without `stopgap` + a root-cause ticket = **FAIL**.
 
 ## 🧩 Two pieces of work conflict = propose a root-cause fix, not just a queue order that avoids it
 
-Owner's order 2026-09-17 · conflicts come in three kinds, all of them symptoms:
-
-| Kind | What it looks like | Root-cause question to ask |
-|---|---|---|
-| File collision | two tickets reserve the same path | why is that file the meeting point of all work |
-| Opposite orders | ticket A says write the value, ticket B says don't, on the same field | who owns the rules for that field, and where are they written |
-| Unknowing duplicates | several tickets ask for the same thing in different words | tickets were split by symptom, not by what has to change |
-
-🔴 `blocked by #N` is a **stopgap** — it's allowed (better than a coin flip on who goes first) but must always come with a root-cause proposal
-(**written on the ticket, or escalated to the owner if beyond your reach**) · before ordering, ask:
-1. **Should these be one ticket?** — changing the same thing from different angles ⇒ merge them (except a ticket whose PR is already written — let it land first, then continue)
-2. **Opposite orders: where is the dividing line?** ⇒ write the line into both tickets · no line where both can coexist ⇒ the owner decides; the implementer must not choose
-3. **Which file is reserved most often?** — one file appearing in more than half of the waiting tickets = an architecture problem; propose splitting the file (adding workers doesn't help)
-(redis-cli prints field and value on separate lines when writing to a pipe · COUNT must be large because most events are `claim:empty`)
-```bash
-ssh Dell-server 'redis-cli -p 6381 XREVRANGE tq:events + - COUNT 3000' \
-  | awk '/^blocked_by$/{getline b} /^conflict_paths$/{getline p; print b, p}' | sort | uniq -c | sort -rn
-```
-Evidence 2026-09-17: `src/store.rs` was in 7/10 waiting tickets of `108-agent-queue` · `#570`/`#593` gave opposite orders on `pr_head`
-(resolved with a dividing line: `pr_open` = refresh · parked tickets = pin) · `#595`/`#618`/`#620` asked for the same thing
+Owner's order 2026-09-17 · → skill **`queue-controller`** § 🧩 (the three kinds, the redis command that counts reserved files, evidence).
+- File collisions, opposite orders and unknowing duplicates are symptoms · 🔴 `blocked by #N` is a **stopgap** — allowed, but always with a root-cause proposal written on the ticket (or escalated to the owner).
+- Ask: (1) **should these be one ticket?** (except one whose PR is already written — let it land first) (2) **opposite orders: where is the dividing line?** — write it into both tickets; no line ⇒ the owner decides, never the implementer (3) **which file is reserved most often?** — one file in more than half the waiting tickets = split the file; more workers don't help.
 
 ## 🔁 Polled endpoints send only what changed
 
@@ -417,21 +355,11 @@ Before reporting done, go through six items: (1) **the other half of the work** 
 
 ## 🧺 At most 20 open issues per repo — every repo
 
-Owner's order 2026-11-18 *"ตั้งกฎใหม่ ห้ามมี issue ค้าง เกิน 20 รายการ"* · *"เป็นกฏกลาง"* · *"ใช้ทุกrepos"*
-
-- **Every repo keeps ≤ 20 open issues.** PRs are not counted.
-- **Feature-branch function tickets are exempt** (owner 2026-11-18 *"Exempt function tickets"*). These are the short-lived tickets a sub-controller releases. Each one names its `feat/*` base in the body, as `Base and PR target: `feat/<x>`` or `Test branch: feat/<x>`, and it closes when merged into that branch. They do not count, and opening one is never blocked. The cap is on backlog, not on work a worker is running.
-- **Count:** `bin/pretooluse-guard.sh` rule 6 counts open issues minus the exempt function tickets. A quick upper bound is `gh api "search/issues?q=repo:<owner>/<repo>+is:issue+is:open&per_page=1" --jq .total_count`.
-- **Over 20 ⇒ bring it down before opening anything new there.** The lane controller does this, or the session doing the work if the repo has no controller:
-  - close what is done, with the PR or commit (🔭);
-  - close duplicates and superseded tickets, each pointing at the one that stays;
-  - close what will not be done as `not planned`, with a reason that can be re-checked;
-  - fold small related tickets into one, and close the rest as duplicates of it;
-  - finish work in flight rather than releasing more.
-- **While a repo is over 20**, a new issue is allowed only for an owner order, or for a ticket that replaces several, so the count goes down. Found work goes as a comment on the open ticket closest to it (📋 still applies, but this is where it lands).
-- **Enforced for Claude sessions** by `bin/pretooluse-guard.sh` rule 6. It refuses `gh issue create` (and `gh api` POST to `/issues`) when the repo has ≥ 20 open issues. The allowed exceptions pass with the prefix `ISSUE_CAP_OK="<owner order … | replaces #a #b>"`, and each use is logged to `~/.claude/issue-cap.log`. Sessions that don't run Claude hooks (Grok, Gemini) keep this rule by hand.
-- 🔴 **Never reach the number by hiding work.** Don't move issues to another repo, a doc, Discussions or a label. Don't close unresolved work without a reason. A question waiting on the owner stays open, and the controller brings it to the owner instead.
-- Measured 2026-11-18 ~10:4x ICT: `jh-api` 99, `108heros-flutter` 63, `108heros-web` 22, 558 across `108-Plaza`. Most repos start over the line, and each lane controller brings its own repos down.
+Owner's order 2026-11-18 *"ตั้งกฎใหม่ ห้ามมี issue ค้าง เกิน 20 รายการ"* · *"ใช้ทุกrepos"* · → skill **`ticket-writing`** § 🧺 (how to count, how to bring a repo down, the measured start).
+- **Every repo keeps ≤ 20 open issues** (PRs don't count). **Exempt:** feature-branch function tickets that name their `feat/*` base in the body (owner *"Exempt function tickets"*); opening one is never blocked.
+- **Over 20 ⇒ the lane controller (or the working session, if no controller) brings it down before opening anything new there** — close done work with its PR, duplicates, `not planned` with a re-checkable reason; fold small related tickets. While over, a new issue only for an owner order or one that replaces several; found work goes as a comment on the closest open ticket.
+- Enforced for Claude by `bin/pretooluse-guard.sh` rule 6; exceptions pass with `ISSUE_CAP_OK="<owner order … | replaces #a #b>"` (logged to `~/.claude/issue-cap.log`). Grok and Gemini keep it by hand.
+- 🔴 **Never reach the number by hiding work** — no moving issues to another repo, doc, Discussions or label; no closing unresolved work without a reason; owner questions stay open.
 
 ## 📋 Found work = open a ticket · don't take it yourself · review after it closes
 
@@ -469,56 +397,11 @@ Owner's order 2026-09-01 / 2026-09-03 — the default destination of a ticket is
 
 ### 🤖 Jev (TypeSafe System One) — who calls it, how, and what leaves the org
 
-Owner's order 2026-09-21 *"ต้องสร้างกฏการเรียกใช้ jev ให้ทุกเครื่องทราบด้วย"* ·
-*"ใครเป็นคนเรียกให้ ต้องเข้าใจการเรียกด้วย"*
-
-**What Jev is:** TypeSafe's typed decision model — send `state` (text) + `questions`
-and get `choice`/`score` + `confidence` + `probabilities` back · **not a chat, not a general LLM**
-it answers only with options we define
-
-| Item | Rule |
-|---|---|
-| **Exactly one caller** | **The `tq` queue on Dell** (`src/jev.rs` in `108-agent-queue`) · 🔴 **agents must never call Jev themselves** — whether by direct curl, a script, or wiring it into another tool · want it to decide something more ⇒ **open a ticket in `108-agent-queue`** |
-| **Endpoint** | `https://api.typesafe.ai/v1/systemone` **only** · 🔴 never point at a reseller (e.g. `jev-ai.pro`), whose own policy says it stores prompts ⇒ that would hand internal data to a third party with no contract with us |
-| **Key** | `~/.config/tq/jev.env` (600) on Dell · set with `bash scripts/set-jev-key.sh` · enabled via the drop-in `~/.config/systemd/user/tq.service.d/jev.conf` · **no key = fully off, behaviour exactly as before** |
-| **Who may set the key** | 🔴 **the owner only** — setting the key is not configuration, it is **the decision to send data outside the organisation** |
-
-**What actually leaves:** the ticket's `title` + `body` (truncated at 4000 bytes) — tickets in this fleet normally contain
-`file:line` of internal code · machine names · real run output · shop names, and **the repos are private**
-⇒ **sending once is publishing; it cannot be deleted afterwards** · never send anything else, especially personally identifying data
-
-#### Calling rules to understand before touching code that calls it
-
-1. 🔴 **Ask once per ticket** — once answered, the answer **must be recorded where the question is set** (the `class:` label on
-   GitHub) · recording it elsewhere (Redis) does not count, because the next sync round always re-reads labels from GitHub
-   ⇒ it asks forever · **record it even when the answer is "unchanged"**, not only when the answer changes something
-   (measured for real 2026-09-21: not recorded ⇒ one ticket 11 times in 40 minutes · 3 tickets ≈ **4,300 requests/day**
-   re-sending private ticket bodies, ~1.9M input tokens/day, without getting a single new answer)
-2. 🔴 **No answer ⇒ never record it as decided** — a temporary failure must not become a permanent value
-   nobody intended · differs from item 1 in that *got an answer* and *could not call* must be kept separate in code
-3. 🔴 **Escalate only** — accept only proposals **stricter** than the current value · the model can never make the queue looser,
-   however confident it is
-4. 🔴 **Humans always beat the model** — a ticket a human already labelled `class:` **is not asked** and is not overwritten ·
-   disagree with what the model decided ⇒ edit the label on the ticket, done
-5. **fail-open** — timeout · wrong key · malformed answer · confidence below threshold ⇒ use the current value
-   **never fail the sync round** · default threshold `TQ_JEV_MIN_CONFIDENCE=0.80`
-6. **Log every answer, not only when it changes something** — logging only the cases we agree with
-   is biased measurement and cannot tell where it is low-confidence
-
-#### 🔴 No training · no few-shot · no memory
-
-Checked TypeSafe's own docs 2026-09-21 (`docs.typesafe.ai/llms.txt`): **there is no fine-tuning
-or training section at all**, and they write themselves *"each question is evaluated independently"*
-⇒ **it cannot remember previous tickets, and we cannot teach it**
-
-The real levers are two: **the `state` we send** and **the `criteria` of each option** ·
-frequent wrong / low-confidence answers ⇒ fix those two; **never conclude "it needs training first"** because there is nothing to train
-
-#### Tests that touch this path
-
-🔴 **Never use `sync_issues_with`** — it builds `GhIssueStateClient::default()` internally ⇒ the test would
-run `gh issue edit --add-label` against **real tickets on GitHub** · inject a fake `IssueStateClient` via
-`sync_issues_with_client` instead · and inject a fake `curl` via `TQ_CURL` so no real network calls are made
+→ skill **`tq-worker`** § 🤖 Jev (calling rules, what actually leaves, no training, tests). Headlines (owner 2026-09-21):
+- 🔴 **Exactly one caller: the `tq` queue on Dell** (`src/jev.rs` in `108-agent-queue`). Agents never call Jev themselves (curl, script or tool); want it to decide more ⇒ a ticket in `108-agent-queue`.
+- 🔴 **Endpoint `https://api.typesafe.ai/v1/systemone` only**, never a reseller · 🔴 **only the owner sets the key** — setting it is the decision to send private ticket bodies outside the org (sending once is publishing; it cannot be deleted) · 🔴 **only the ticket `title` + `body` (≤4000 bytes) is sent — never anything else, especially personally identifying data**.
+- Code on that path: ask once per ticket and record the answer on the GitHub `class:` label · no answer ≠ decided · escalate only · humans beat the model · fail-open · log every answer · it has no training or memory — the levers are `state` and `criteria`.
+- 🔴 **Tests there never use `sync_issues_with`** (it edits real GitHub labels) — inject fakes via `sync_issues_with_client` and `TQ_CURL`.
 
 ### Non-compliance = three warnings, then removal from the queue (ordered 2026-09-05)
 
@@ -538,14 +421,8 @@ folders are all 108heros · finding `108jobs` = a leftover to fix **unless it is
 | **Names of running objects** | DB `db_108jobs_v2` · Deployment `jobs-api` · container `108jobs-postgres` · image `ghcr.io/108-plaza/api-108jobs` · zone `db.108jobs.com` | Deploy can't find them |
 | **Names outside the repo** | runner `yuths-Mac-Studio-108jobs` · profile `108jobs AppStore Profile` | Comments describe things that don't exist |
 
-**Decided — do not ask again:**
-- Real repo names: **`108-Plaza/jh-api`** (mirror `yuthstyle88/jh-api-dev`) · `108heros-flutter` · `108heros-web` — the old names
-  `api-108jobs`/`api-108heros`/`108jobs-*` survive only via redirect **never use them in tickets/scripts/docs** · confirm with `gh api repos/<org>/<name> --jq .full_name`
-  · `108jobs-front`/`108jobs-mobile` (personal, stale since 2025-10) are not touched
-- image `ghcr.io/108-plaza/api-108jobs` is hardcoded in the workflow, not tied to `github.repository` ⇒ renaming the repo does not change the tag
-- **The `.108jobs.com` domain does not change** (other systems use its subdomains) except `auth.108heros.com`, which has already moved · moving more hosts must be additive:
-  new one answers in parallel → ship the app → wait for people to update → old one answers 410 (**shutting the old host the same day = apps in users' hands die instantly**)
-- Mobile app bundle id is `com.plaza108.heros` on both iOS/Android (the old one is still left on test devices as another icon with the same name)
+**Decided — do not ask again** (repo names and redirects, the image tag, the `.108jobs.com` domain and additive host moves, the bundle id): skill `ticket-writing` § 🏷 Decided names. Real repo names: **`108-Plaza/jh-api`** · `108heros-flutter` · `108heros-web` — never the old `api-108jobs`/`108jobs-*` names in tickets, scripts or docs.
+🔴 **The `.108jobs.com` domain does not change**; moving a host is additive — new host answers in parallel → ship the app → wait for people to update → old host answers 410 (**shutting the old host the same day = apps in users' hands die instantly**).
 
 ## 🔢 Every app must be able to say which version it is
 
@@ -576,30 +453,23 @@ Claiming a ticket cannot prevent collisions because **different tickets can touc
 ## ⚙️ CI runner
 
 → skill **`fleet-ci`** (runners-off procedure, `runners.sh`, placement vs capability labels, collapsing queued runs, `ci:go`, doc-only fast path). Runner pools: `FLEET.md` § CI runners. Headlines:
-- 🔴 **Every runner is off by default** (owner 2026-10-18 *"ปิดหมด เลย ดีกว่า"*) — **the lane controller / pusher / merger switches on what its CI needs, on the machine that suits the job, before pushing or merging** — 🔴 **survey first: `108-Ting-Ecosystem/scripts/runners.sh open <job labels>`** picks the machine with the most room (load + free memory) and switches one runner on; no sudo · 🔴 **Dell at most 5 runners, the Studio 1; every other machine helps** (Dell 5: owner 2026-11-14 *"ยกเพดาน Dell เป็น 5"* · owner 2026-10-20 *"dell รับงาน ไม่ควรเกิน 2 งาน"* · *"คือให้ ทุกเครื่อง ทำงานช่วย กัน"* · Studio 1: *"Enforce it by keeping at most one Studio runner on (Studio max 1 in runners.sh). Other jobs spread to the other Macs."*) · `auto-on` is only a backstop, `auto-off` stops idle runners after 15 min · a check sitting `queued` with nothing on = switch its runner on, not broken code
+- 🔴 **Every runner is off by default** (owner 2026-10-18 *"ปิดหมด เลย ดีกว่า"*) — the lane controller / pusher / merger switches on what its CI needs, on the machine that suits the job, **before** pushing or merging, via **`108-Ting-Ecosystem/scripts/runners.sh open <job labels>`** (picks the machine with the most room; no sudo) · 🔴 **Dell at most 5 runners, the Studio 1; every other machine helps** · a check sitting `queued` with nothing on = switch its runner on, not broken code
 - 🔴 **`runs-on` names the OS + a capability label only** (`k3s-node`, `mac-studio`) — never a placement pin (`pos108-ci`, `light`, `fast-mac`, machine names) · 🔴 **never touch runner labels** (owner only)
 - 🔴 **PR CI runs only at the merge turn, in every repo** (owner 2026-11-21 *"ปรับการรัน ci เฉพาะ merge เข้า main พอ"* · *"ปรับ ทุก repos"*) — heavy PR jobs fail in seconds at `Wait for merge turn (ci:go)` until the PR carries `ci:go`; add it to one PR, then update-branch or close+reopen · details: skill `fleet-ci` § ci:go
 - **More than 3 runs queued in a repo ⇒ cancel down to the latest per line** (never `in_progress`, deploy/release, or owner-triggered runs)
 - 🔴 **Doc-only changes run no build/test** — required checks still report green through a fast path, never `paths-ignore` on a required workflow
 - Faster CI is not permission to push guess-fixes — local verify must still be green first
-- 🔴 **Tests run only what a change can affect, and every test runner takes a filter** (owner 2026-10-20 *"ใส่ไว้ในกฏกลาง เพื่อเป็น มาตรฐานการเทส ต่อไป"*) — a crate nothing touched runs no tests (changed packages + their dependents; unknown ⇒ full suite) · `-p <pkg>` and a test-name filter work locally and as `workflow_dispatch` inputs · a re-run runs only what failed · the full suite still runs nightly and on feature-branch → main · details: skill `fleet-ci` § 🎯
+- 🔴 **Tests run only what a change can affect, and every test runner takes a filter** (owner 2026-10-20) — changed packages + their dependents (unknown ⇒ full suite) · the full suite still runs nightly and on feature-branch → main · details: skill `fleet-ci` § 🎯
 
 ## 🖥 Builds, disks and cleanup
 
-→ skill **`fleet-builds`** (machine choice, `zsh -lc`, Lenovo `lenovo-run.sh`, park108 on the Mac mini, pinned Rust toolchain, sweeping `target/`, Dell `/data`, cleanup). Build machines: `FLEET.md` § Build machines. Headlines:
+→ skill **`fleet-builds`** (machine choice, `zsh -lc`, Lenovo `lenovo-run.sh`, park108 on the Mac mini, pinned Rust toolchain, sweeping `target/`, Dell `/data`; the full cleanup rule is § 🧹). Build machines: `FLEET.md` § Build machines. Headlines:
 - **Choose the machine by measurement** (`uptime`, `df -h`) · 🔴 **Dell is never a session's own build/test machine** — it is the only Linux CI box · a full build a session truly needs runs on the **Mac Studio**
 - 🔴 **Review or test-writing runs only the tests the ticket names or the PR adds, by name** — never the crate suite or the workspace (owner 2026-10-18 *"ใส่ ทุกเลน"*)
 - 🔴 **On Dell, worktrees go to `/data/yuth/worktrees/<slug>`**, never `/home` · **never delete things on Dell yourself** — measure and report
 - 🔴 **Fleet Rust toolchain is one pinned number** (`rust-toolchain.toml` + `dtolnay/rust-toolchain@<n>`, never `stable`) — the number is in `FLEET.md`
-- 🔴 **Whoever finishes a piece of work cleans up, and cleans the disk it used, before reporting done — never leave junk behind** (owner 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"* · restated 2026-11-10 *"ทำงานจบต้อง ทำความสะอาด งาน เสมอ ห้าม ทิ้ง ขยะไว้รก"*). This applies to every role: implementer, reviewer, controller, ticket writer, a one-off investigation, and an owner-direct task.
-  - "Finished" = your last action on it: `pr_open` (keep only the worktree, for rework), verdict posted, ticket returned or blocked, investigation reported, PR merged or closed.
-  - Remove what **you** created on **every machine you used**: `target/` and build output · test containers and their volumes (`docker run --rm --label fleet.worker=<kind>/<id>`, never `--restart`) · scratch clones and copies · downloaded artifacts · temp dirs.
-  - Delete folders with **`bash ~/.claude/rules-repo/bin/finish-cleanup <dir>...`** (owner 2026-10-21 *"เพราะ มันต้อง รัน ตอนปิด งาน"*). Every machine's `~/.claude/settings.json` allows exactly this command, so it runs without a prompt where a bare `rm` is blocked. It deletes only scratch folders (`~/worktrees/`, `/data/yuth/worktrees/`, a repo's `.worktrees/`, the session's `claude-<uid>` temp dir), refuses one a process is in or that holds uncommitted or unpushed work (a squash-merged PR's content on main counts as pushed), and prints the `cleanup:` line. Never widen the allow rule to `rm`; change the script's checks instead. **Never move anything to the Finder Trash**, which frees nothing and needs Full Disk Access to empty.
-  - Never create folders directly under `~` (`~/review-*`, `~/wt*`, `~/tmp-*`). Work in `~/worktrees/<slug>` or the repo's `.worktrees/`, so a sweeper can find it.
-  - **The report states it:** one line `cleanup: removed <what> on <machine>; kept <what> because <why>`. No line = not done.
-  - Reviewers use one worktree per PR and `CARGO_INCREMENTAL=0`.
-  - **Why:** 2026-10-19 Mac Studio reached 100% (9 GB free of 1.8 TB). Measured that day: `~/worktrees` held 420 GB and `target/` folders in leftover worktrees held ~520 GB. Clearing old worktrees brought free space to 512 GB. Details: skill `fleet-builds` § 🧹
-- 🔴 **Whoever merges or closes a PR removes its worktrees in the same turn** (owner 2026-10-19 *"ใครทำงาน merge แล้วต้อง ทำความสะอาด worktree ด้วย"*). That covers the merger's own machine and, where reachable, the worker's machine. Leave a folder only if a process is in it or it holds unpushed work, and say so on the PR. Reviewers delete their review worktree once the verdict is posted. Every dispatch order ends with "delete your worktree once your PR is merged or closed". Why the old rule failed: the worker must keep its worktree at `pr_open` (rework), the merge happens later in another session, and no step owned cleanup ⇒ Studio hit 100% on 2026-10-19 with ~520 GB in leftover worktrees. Details: skill `fleet-builds` § 🧹 Merged or closed
+- 🔴 **Whoever finishes a piece of work cleans up what it created, on every machine it used, before reporting done** — every role. "Finished" = your last action on it; at `pr_open` keep only the worktree (for rework); reviewers delete their review worktree once the verdict is posted; test containers run `--rm --label fleet.worker=<kind>/<id>`, never `--restart` (owner 2026-10-19 · 2026-11-10 *"ทำงานจบต้อง ทำความสะอาด งาน เสมอ ห้าม ทิ้ง ขยะไว้รก"*). Delete folders only with **`bash ~/.claude/rules-repo/bin/finish-cleanup <dir>...`** (never a bare `rm`, never the Finder Trash); never create folders directly under `~` (use `~/worktrees/<slug>` or the repo's `.worktrees/`). **The report carries one line** `cleanup: removed <what> on <machine>; kept <what> because <why>` — no line = not done.
+- 🔴 **Whoever merges or closes a PR removes its worktrees in the same turn** (owner 2026-10-19 *"ใครทำงาน merge แล้วต้อง ทำความสะอาด worktree ด้วย"*), on its own machine and, where reachable, the worker's; leave a folder only if a process is in it or it holds unpushed work, and say so on the PR. Every dispatch order ends with "delete your worktree once your PR is merged or closed". Why: 2026-10-19 Studio hit 100% with ~520 GB in leftover worktrees.
 
 # Autonomous Execution Policy
 
@@ -619,15 +489,7 @@ doc-only or low-risk work with a clear scope: carry it through to an open PR, th
 8. **Commit** only the task's files · conventional message
 9. **Push + draft PR** — squash WIP before ready · body summarises what/why + how to verify ·
    group related findings in the same crate into one PR, as far as review can handle
-   - 🔴 **Never put `[skip ci]` anywhere in a commit message** (in the body counts too, not just the subject line) —
-     GitHub suppresses the whole workflow **before creating jobs** ⇒ required checks never report ⇒ `mergeStateStatus = BLOCKED`
-     permanently with no red check to look at ⇒ **step 11 becomes impossible** · measured 2026-09-23: 8 of 10 repos swept have
-     required checks on `main` (2–6 checks) · real incident at `park108#943` — `claude-global-rules#2`
-     ```bash
-     gh api repos/<slug>/branches/main/protection --jq '.required_status_checks.contexts'
-     ```
-     **Saving CI on doc-only PRs is the workflow's job, not the commit message's** — see skill `fleet-ci` § 📄 Doc-only changes
-     (done example: `park108/.github/workflows/ci.yml`)
+   - 🔴 **Never put `[skip ci]` anywhere in a commit message** (the body counts too) — GitHub then creates no jobs, required checks never report, and the PR stays `BLOCKED` with nothing red to fix (`park108#943`). Saving CI on doc-only PRs is the workflow's job: skill `fleet-ci` § 📄 Doc-only changes
 10. **Ready → CI** only once green locally · CI red due to env differences ⇒ reproduce + fix locally before pushing again
 11. **Merge** per 🟢 merge (verdict PASS from another session + checks green + CLEAN) · exception cases need approval
 12. **Close context** — `.ai_context`/`HANDOFF.md` records the outcome, clears expired Next steps
@@ -670,20 +532,11 @@ Frontend depends on backend ⇒ check the real contract/DTO/API client/permissio
 - Really need to work in another folder ⇒ open a new session with that cwd
 
 ## Merged Branch Auto-Cleanup
-**Merged = delete immediately, both local and remote, without asking** (not a destructive op)
-- Our repos (`108-Plaza/*` · `yuthstyle88/*`) have `delete_branch_on_merge` enabled · new repo: `gh api -X PATCH repos/<slug> -F delete_branch_on_merge=true` ·
-  `fetch.prune true` is set globally
-- local: after every merge · the scripts live in rules-repo ⇒ present on every machine via autopull (previously in `~/bin` on Mac Studio only · measured 2026-10-04)
-  - `~/.claude/rules-repo/bin/git-gone [--dry-run]` — **the main one** · catches squash merges (head of a merged PR at the same sha) · unsure whether deletable ⇒ prints `REVIEW`, doesn't delete
-  - `~/.claude/rules-repo/bin/git-cleanup-merged.sh [--remote] [--dry-run] [REPO ...]` — also deletes on remote / across repos · checks only ancestry + `git cherry` per commit ⇒ **multi-commit squashes are not caught** (they stay behind; nothing is wrongly deleted)
-- **Delete only what is proven to lose no commit:** tip is an ancestor of `origin/<default>` or `git cherry` leaves no `+` ·
-  still has unique commits ⇒ never delete; report to the user
-- **Never delete:** `main` `master` `develop` `dev` `gh-pages` `release/*` `deploy/*` (`deploy/staging` = trigger build) `auto/*` `backup/*` `archive/*` ·
-  branches checked out in any worktree · branches with an open PR
-- **Conditional:** `prod` `production` `staging` `sync/*` — deletable if no workflow references them (`git grep -n -A3 'branches:' origin/main -- .github/workflows`)
-- Skip: archived repos (`Notification-Platform` · `Loyalty-Platform`) · other people's upstreams · beware redirect aliases — canonicalize with `gh api repos/<slug> -q .full_name` before counting/deleting
-  · measured aliases: `108-Plaza/api-108jobs`→`jh-api` · `yuthstyle88/fast-work-new`→`jh-api-dev` ·
-  `yuthstyle88/108jobs-clean`→`108jobs-web-dev` · `yuthstyle88/108jobs-flutter`→`108heros-flutter-dev`
+
+**Merged = delete immediately, both local and remote, without asking** (not a destructive op) · → skill **`fleet-builds`** § Merged branches (scripts, conditional branches, aliases, archived repos).
+- Use `~/.claude/rules-repo/bin/git-gone [--dry-run]` (catches squash merges; unsure ⇒ prints `REVIEW`) · **delete only what provably loses no commit**; unique commits ⇒ never delete, report.
+- **Never delete:** `main` `master` `develop` `dev` `gh-pages` `release/*` `deploy/*` `auto/*` `backup/*` `archive/*` · branches checked out in any worktree · branches with an open PR · `prod`/`production`/`staging`/`sync/*` only if no workflow references them.
+- **Skip:** archived repos (`Notification-Platform` · `Loyalty-Platform`) · other people's upstreams · redirect aliases — canonicalize with `gh api repos/<slug> -q .full_name` before counting or deleting.
 
 # Context Handoff / Continuity
 

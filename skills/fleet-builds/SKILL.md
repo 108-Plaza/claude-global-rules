@@ -147,3 +147,41 @@ Measured 2026-09-27: Studio had 118 containers (5 actually running · the rest n
 440 volumes, 63 GB dead · Dell had 991 images (57.7 GB unused) + 206 dead volumes (41 GB) — the owner ordered all of it deleted the same day
 
 ---
+
+## 🖥 Builds, disks and cleanup — full rule
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27 to cut the per-session load; the headline stays there._
+
+→ skill **`fleet-builds`** (machine choice, `zsh -lc`, Lenovo `lenovo-run.sh`, park108 on the Mac mini, pinned Rust toolchain, sweeping `target/`, Dell `/data`, cleanup). Build machines: `FLEET.md` § Build machines. Headlines:
+- **Choose the machine by measurement** (`uptime`, `df -h`) · 🔴 **Dell is never a session's own build/test machine** — it is the only Linux CI box · a full build a session truly needs runs on the **Mac Studio**
+- 🔴 **Review or test-writing runs only the tests the ticket names or the PR adds, by name** — never the crate suite or the workspace (owner 2026-10-18 *"ใส่ ทุกเลน"*)
+- 🔴 **On Dell, worktrees go to `/data/yuth/worktrees/<slug>`**, never `/home` · **never delete things on Dell yourself** — measure and report
+- 🔴 **Fleet Rust toolchain is one pinned number** (`rust-toolchain.toml` + `dtolnay/rust-toolchain@<n>`, never `stable`) — the number is in `FLEET.md`
+- 🔴 **Whoever finishes a piece of work cleans up, and cleans the disk it used, before reporting done — never leave junk behind** (owner 2026-10-19 *"ใคร ทำงาน เสร็จต้องทำความสะอาดฮาร์ทดิส"* · restated 2026-11-10 *"ทำงานจบต้อง ทำความสะอาด งาน เสมอ ห้าม ทิ้ง ขยะไว้รก"*). This applies to every role: implementer, reviewer, controller, ticket writer, a one-off investigation, and an owner-direct task.
+  - "Finished" = your last action on it: `pr_open` (keep only the worktree, for rework), verdict posted, ticket returned or blocked, investigation reported, PR merged or closed.
+  - Remove what **you** created on **every machine you used**: `target/` and build output · test containers and their volumes (`docker run --rm --label fleet.worker=<kind>/<id>`, never `--restart`) · scratch clones and copies · downloaded artifacts · temp dirs.
+  - Delete folders with **`bash ~/.claude/rules-repo/bin/finish-cleanup <dir>...`** (owner 2026-10-21 *"เพราะ มันต้อง รัน ตอนปิด งาน"*). Every machine's `~/.claude/settings.json` allows exactly this command, so it runs without a prompt where a bare `rm` is blocked. It deletes only scratch folders (`~/worktrees/`, `/data/yuth/worktrees/`, a repo's `.worktrees/`, the session's `claude-<uid>` temp dir), refuses one a process is in or that holds uncommitted or unpushed work (a squash-merged PR's content on main counts as pushed), and prints the `cleanup:` line. Never widen the allow rule to `rm`; change the script's checks instead. **Never move anything to the Finder Trash**, which frees nothing and needs Full Disk Access to empty.
+  - Never create folders directly under `~` (`~/review-*`, `~/wt*`, `~/tmp-*`). Work in `~/worktrees/<slug>` or the repo's `.worktrees/`, so a sweeper can find it.
+  - **The report states it:** one line `cleanup: removed <what> on <machine>; kept <what> because <why>`. No line = not done.
+  - Reviewers use one worktree per PR and `CARGO_INCREMENTAL=0`.
+  - **Why:** 2026-10-19 Mac Studio reached 100% (9 GB free of 1.8 TB). Measured that day: `~/worktrees` held 420 GB and `target/` folders in leftover worktrees held ~520 GB. Clearing old worktrees brought free space to 512 GB. Details: skill `fleet-builds` § 🧹
+- 🔴 **Whoever merges or closes a PR removes its worktrees in the same turn** (owner 2026-10-19 *"ใครทำงาน merge แล้วต้อง ทำความสะอาด worktree ด้วย"*). That covers the merger's own machine and, where reachable, the worker's machine. Leave a folder only if a process is in it or it holds unpushed work, and say so on the PR. Reviewers delete their review worktree once the verdict is posted. Every dispatch order ends with "delete your worktree once your PR is merged or closed". Why the old rule failed: the worker must keep its worktree at `pr_open` (rework), the merge happens later in another session, and no step owned cleanup ⇒ Studio hit 100% on 2026-10-19 with ~520 GB in leftover worktrees. Details: skill `fleet-builds` § 🧹 Merged or closed
+
+## Merged branches
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27 to cut the per-session load; the headline stays there._
+
+**Merged = delete immediately, both local and remote, without asking** (not a destructive op)
+- Our repos (`108-Plaza/*` · `yuthstyle88/*`) have `delete_branch_on_merge` enabled · new repo: `gh api -X PATCH repos/<slug> -F delete_branch_on_merge=true` ·
+  `fetch.prune true` is set globally
+- local: after every merge · the scripts live in rules-repo ⇒ present on every machine via autopull (previously in `~/bin` on Mac Studio only · measured 2026-10-04)
+  - `~/.claude/rules-repo/bin/git-gone [--dry-run]` — **the main one** · catches squash merges (head of a merged PR at the same sha) · unsure whether deletable ⇒ prints `REVIEW`, doesn't delete
+  - `~/.claude/rules-repo/bin/git-cleanup-merged.sh [--remote] [--dry-run] [REPO ...]` — also deletes on remote / across repos · checks only ancestry + `git cherry` per commit ⇒ **multi-commit squashes are not caught** (they stay behind; nothing is wrongly deleted)
+- **Delete only what is proven to lose no commit:** tip is an ancestor of `origin/<default>` or `git cherry` leaves no `+` ·
+  still has unique commits ⇒ never delete; report to the user
+- **Never delete:** `main` `master` `develop` `dev` `gh-pages` `release/*` `deploy/*` (`deploy/staging` = trigger build) `auto/*` `backup/*` `archive/*` ·
+  branches checked out in any worktree · branches with an open PR
+- **Conditional:** `prod` `production` `staging` `sync/*` — deletable if no workflow references them (`git grep -n -A3 'branches:' origin/main -- .github/workflows`)
+- Skip: archived repos (`Notification-Platform` · `Loyalty-Platform`) · other people's upstreams · beware redirect aliases — canonicalize with `gh api repos/<slug> -q .full_name` before counting/deleting
+  · measured aliases: `108-Plaza/api-108jobs`→`jh-api` · `yuthstyle88/fast-work-new`→`jh-api-dev` ·
+  `yuthstyle88/108jobs-clean`→`108jobs-web-dev` · `yuthstyle88/108jobs-flutter`→`108heros-flutter-dev`

@@ -112,3 +112,58 @@ not heartbeating until the lease drops and then pushing anyway · a new ticket w
 Counted per worker kind/session · the first reviewer to see it does the counting · always record it on the ticket (GitHub is the record)
 
 ---
+
+## 🤖 Jev
+
+_Moved verbatim from the global rules `CLAUDE.md` on 2026-11-27 to cut the per-session load; the headline stays there._
+
+Owner's order 2026-09-21 *"ต้องสร้างกฏการเรียกใช้ jev ให้ทุกเครื่องทราบด้วย"* ·
+*"ใครเป็นคนเรียกให้ ต้องเข้าใจการเรียกด้วย"*
+
+**What Jev is:** TypeSafe's typed decision model — send `state` (text) + `questions`
+and get `choice`/`score` + `confidence` + `probabilities` back · **not a chat, not a general LLM**
+it answers only with options we define
+
+| Item | Rule |
+|---|---|
+| **Exactly one caller** | **The `tq` queue on Dell** (`src/jev.rs` in `108-agent-queue`) · 🔴 **agents must never call Jev themselves** — whether by direct curl, a script, or wiring it into another tool · want it to decide something more ⇒ **open a ticket in `108-agent-queue`** |
+| **Endpoint** | `https://api.typesafe.ai/v1/systemone` **only** · 🔴 never point at a reseller (e.g. `jev-ai.pro`), whose own policy says it stores prompts ⇒ that would hand internal data to a third party with no contract with us |
+| **Key** | `~/.config/tq/jev.env` (600) on Dell · set with `bash scripts/set-jev-key.sh` · enabled via the drop-in `~/.config/systemd/user/tq.service.d/jev.conf` · **no key = fully off, behaviour exactly as before** |
+| **Who may set the key** | 🔴 **the owner only** — setting the key is not configuration, it is **the decision to send data outside the organisation** |
+
+**What actually leaves:** the ticket's `title` + `body` (truncated at 4000 bytes) — tickets in this fleet normally contain
+`file:line` of internal code · machine names · real run output · shop names, and **the repos are private**
+⇒ **sending once is publishing; it cannot be deleted afterwards** · never send anything else, especially personally identifying data
+
+#### Calling rules to understand before touching code that calls it
+
+1. 🔴 **Ask once per ticket** — once answered, the answer **must be recorded where the question is set** (the `class:` label on
+   GitHub) · recording it elsewhere (Redis) does not count, because the next sync round always re-reads labels from GitHub
+   ⇒ it asks forever · **record it even when the answer is "unchanged"**, not only when the answer changes something
+   (measured for real 2026-09-21: not recorded ⇒ one ticket 11 times in 40 minutes · 3 tickets ≈ **4,300 requests/day**
+   re-sending private ticket bodies, ~1.9M input tokens/day, without getting a single new answer)
+2. 🔴 **No answer ⇒ never record it as decided** — a temporary failure must not become a permanent value
+   nobody intended · differs from item 1 in that *got an answer* and *could not call* must be kept separate in code
+3. 🔴 **Escalate only** — accept only proposals **stricter** than the current value · the model can never make the queue looser,
+   however confident it is
+4. 🔴 **Humans always beat the model** — a ticket a human already labelled `class:` **is not asked** and is not overwritten ·
+   disagree with what the model decided ⇒ edit the label on the ticket, done
+5. **fail-open** — timeout · wrong key · malformed answer · confidence below threshold ⇒ use the current value
+   **never fail the sync round** · default threshold `TQ_JEV_MIN_CONFIDENCE=0.80`
+6. **Log every answer, not only when it changes something** — logging only the cases we agree with
+   is biased measurement and cannot tell where it is low-confidence
+
+#### 🔴 No training · no few-shot · no memory
+
+Checked TypeSafe's own docs 2026-09-21 (`docs.typesafe.ai/llms.txt`): **there is no fine-tuning
+or training section at all**, and they write themselves *"each question is evaluated independently"*
+⇒ **it cannot remember previous tickets, and we cannot teach it**
+
+The real levers are two: **the `state` we send** and **the `criteria` of each option** ·
+frequent wrong / low-confidence answers ⇒ fix those two; **never conclude "it needs training first"** because there is nothing to train
+
+#### Tests that touch this path
+
+🔴 **Never use `sync_issues_with`** — it builds `GhIssueStateClient::default()` internally ⇒ the test would
+run `gh issue edit --add-label` against **real tickets on GitHub** · inject a fake `IssueStateClient` via
+`sync_issues_with_client` instead · and inject a fake `curl` via `TQ_CURL` so no real network calls are made
