@@ -399,6 +399,27 @@ Owner's order 2026-10-17 *"State in the rules that the controller changes hands 
   - in 90 minutes, four takeover messages came from out-of-quota sessions, each contradicting the owner's latest answer in the controller's session;
   - one session killed another's watcher without telling it.
 
+## 💸 A controller session stays short and checks in batches
+
+Owner 2026-11-27 *"หา ทาง ลดการ กินโควต้า แต่ไม่กระทบงานที่่ทำ"* · *"ทำตามที่เสนอ เลย"*.
+Every step a session takes (each tool call, each wake-up) re-reads the whole conversation so far.
+So what a step costs grows with how long the session already is, not with how hard the step is.
+
+- **Measured 2026-11-27 (MacBook logs, 7 days, `usage.py`):**
+  - 77% of weighted cost was re-reading context.
+  - Four controller sessions, open 73–82 h, used 60% of the week. They made 3.6k–6.8k calls each, at 290–450k context per call.
+  - Calls made above 400k context were 48% of all cost. A fresh session starts at ~50k.
+  - In one bank session, checking state cost more than the work itself: 678 notification reads, 567 ssh pane reads and 559 `gh` calls.
+- **Cap the context.** Every machine's `~/.claude/settings.json` sets `env.CLAUDE_CODE_AUTO_COMPACT_WINDOW = "300000"`. Sessions then compact at ~300k instead of near 1M.
+  - Before a compaction, or every ~24 h, keep the lane state where a compaction cannot lose it: the umbrella ticket or `.ai_context`. Record tickets in flight, watchers, and open rulings.
+  - A compaction must never be the only copy of a ruling.
+- **One check, one call.** A survey round is one script that reads every pane, the snapshot and the open PRs, and prints only what changed since the last round. Never one tool call per pane or per PR.
+  - Keep the previous round's output in a file and diff against it (§ 5 Monitor).
+- **Wake only on change.** Leave the waiting to a watcher (`Monitor` with an until-condition, or a diff monitor). Don't call `ReadNotifications`, `read_terminal` or `gh` to "see if anything happened".
+  - A wake-up that finds nothing new ends with no reply beyond one line.
+- **Hand bulk reading to a cheap subagent.** Reading many panes, logs or PR lists goes to a `sonnet`/`haiku` subagent that returns a short answer. The decision stays with the controller.
+  - Review stays on Opus 5.5 medium (§ 🧮).
+
 ## 📨 The controller loops dispatching · workers do not loop pulling the queue
 
 Owner's order 2026-09-25 *"Make a new rule: the agent controller sends work orders directly, so workers do not loop pulling from the queue"* (`5d73b5b`) ·

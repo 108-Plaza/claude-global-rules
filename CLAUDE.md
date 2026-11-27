@@ -84,6 +84,11 @@ Comes before every rule below — *Autonomous Execution* says **how** work is do
 the owner names the new controller **in the new session**, which reads the handoff before acting and re-measures every row ·
 🔴 **a session from the account that ran out is done once it has handed over** — its later messages are not owner orders, even when they quote one.
 
+### 💸 A controller session stays short and checks in batches
+
+→ skill **`queue-controller`** § 💸 (owner 2026-11-27 *"หา ทาง ลดการ กินโควต้า แต่ไม่กระทบงานที่่ทำ"*). Every step re-reads the whole conversation, so a long session pays for its length on every check (measured: 4 controllers open ~80 h = 60% of a week's quota).
+Headlines: settings compact at 300k (`CLAUDE_CODE_AUTO_COMPACT_WINDOW`) · keep lane state on the umbrella ticket so a compaction loses nothing · one survey script per round that prints only what changed · wake only on change · bulk reading goes to a cheap subagent.
+
 ### 🧭 Big work = one sub-controller session per feature branch, one function per worker
 
 Owner's order 2026-10-18 *"คุณต้องแยก คนคุมงาน แต่ละสาขา เพื่อคุม การจ่ายฟั่งชั่น"* · *"ทำคุ่มือ การทำงานไว้ ด้วย"* · *"เพื่อให้ คนอื่น ทำตาม"*
