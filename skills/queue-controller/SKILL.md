@@ -417,8 +417,9 @@ So what a step costs grows with how long the session already is, not with how ha
   - Keep the previous round's output in a file and diff against it (§ 5 Monitor).
 - **Wake only on change.** Leave the waiting to a watcher (`Monitor` with an until-condition, or a diff monitor). Don't call `ReadNotifications`, `read_terminal` or `gh` to "see if anything happened".
   - A wake-up that finds nothing new ends with no reply beyond one line.
-- **Hand bulk reading to a cheap subagent.** Reading many panes, logs or PR lists goes to a `sonnet`/`haiku` subagent that returns a short answer. The decision stays with the controller.
+- **Hand bulk reading and drafting to a `sonnet` subagent.** Reading many panes, logs, PR lists or code for a survey, and drafting a ticket or doc, go to a `model: "sonnet"` subagent that returns a short answer. The decision, and the check of every draft, stay with the controller.
   - Review stays on Opus 5.5 medium (§ 🧮).
+  - **Measured 2026-11-28** (same `usage.py`, 11-26 vs 11-27 ICT): after the 300k cap, cost per call fell ~40% (44k → 26k weighted), but the day's total fell only 8% (360 → 332), because Opus subagents tripled (35 → 107) — 59 survey, ticket-draft and review subagents in the bank controller alone, at 100–260 calls each. This section said "cheap subagent" while § 🧮 said every `Agent` is `opus`, and sessions followed § 🧮.
 
 ## 📨 The controller loops dispatching · workers do not loop pulling the queue
 
@@ -613,11 +614,11 @@ Evidence: `park108#664`/`#735` traced the root cause fully ⇒ answered in ~4 mi
 - After asking, say what you will do while waiting (can proceed = proceed, and write which path you took · cannot = say where it stops and who is blocked)
 - **Never re-ask something already answered**
 
-## 🧮 All work runs on Opus 5.5 — review work also uses effort `medium`
+## 🧮 Sessions and reviews run on Opus 5.5 medium · survey and draft subagents run on Sonnet
 
 Owner's order 2026-09-24 *"Switch every session's model to Opus 5.5"* (`c477ad5`) then *"Change rule 🧮 to cover all work"* (`c477ad5`) —
 extending the same morning's order *"Change rule 🧮 so reviews use Opus 5.5 medium"* (`c1e9fa9`) (which replaced the 2026-09-18 rule that put reviews on Sonnet)
-⇒ **every session, every task runs on Opus 5.5 (`claude-opus-5-5`)**, not only review work
+⇒ **every session runs on Opus 5.5 (`claude-opus-5-5`)**, not only review sessions · spawned subagents follow the table below (survey and draft subagents on Sonnet since 2026-11-28)
 
 - 🔴 **A session cannot change its own model with a tool** — `set_session_model` rejects `self`
   (*"a session must not silently re-price its own turns"*) ⇒ **only the owner can choose it, from the app's model menu** ·
@@ -626,7 +627,15 @@ extending the same morning's order *"Change rule 🧮 so reviews use Opus 5.5 me
   and sees only the app's sessions on **that machine** — sessions on other fleet machines are not listed ⇒ sweeping one machine is not sweeping the fleet
 - **Newly opened sessions** still start on the app's default model · **no tool sets this default**, and `/config` is a terminal
   dialog that cannot open in the Code tab ⇒ it can only be changed in the owner's model menu
-- Spawned `Agent` ⇒ `model: "opus"` · `Workflow` ⇒ `agent(..., {model: 'opus'})`
+- Spawned `Agent` / `Workflow` `agent(...)` — **pick the model by the job** (owner 2026-11-28 *"ทำทั้ง A และ B"*, approving "subagents that survey code or draft tickets use Sonnet; review stays Opus medium"):
+
+  | Job | Model |
+  |---|---|
+  | Review that issues or informs a `Verdict:` · writing or fixing code · a ruling, a root-cause call, anything the session acts on unchecked | `model: "opus"` |
+  | Read-only survey (code, logs, panes, PR lists, ticket lists) returning a short answer · a draft (ticket, doc, comment) the session reads and checks before posting | `model: "sonnet"` |
+
+  **Why:** on 2026-11-27 Opus subagents tripled to a third of the day's cost and erased the 300k-cap saving (§ 💸 Measured 2026-11-28). A survey's answer and a draft are both checked by the Opus session before anything acts on them, so a cheaper reader there loses no safety; a verdict or code change is not re-checked, so it stays on Opus.
+  Unsure which row ⇒ `opus`.
   ⚠️ `Agent` takes only the model family name, **not effort** — effort comes from the session or the agent's frontmatter
   ⇒ to run an agent at a given effort, spawn it from a session already set to that effort
 

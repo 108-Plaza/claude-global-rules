@@ -87,7 +87,7 @@ the owner names the new controller **in the new session**, which reads the hando
 ### 💸 A controller session stays short and checks in batches
 
 → skill **`queue-controller`** § 💸 (owner 2026-11-27 *"หา ทาง ลดการ กินโควต้า แต่ไม่กระทบงานที่่ทำ"*). Every step re-reads the whole conversation, so a long session pays for its length on every check (measured: 4 controllers open ~80 h = 60% of a week's quota).
-Headlines: settings compact at 300k (`CLAUDE_CODE_AUTO_COMPACT_WINDOW`) · keep lane state on the umbrella ticket so a compaction loses nothing · one survey script per round that prints only what changed · wake only on change · bulk reading goes to a cheap subagent.
+Headlines: settings compact at 300k (`CLAUDE_CODE_AUTO_COMPACT_WINDOW`) · keep lane state on the umbrella ticket so a compaction loses nothing · one survey script per round that prints only what changed · wake only on change · bulk reading and drafting go to a `sonnet` subagent (§ 🧮).
 
 ### 🧭 Big work = one sub-controller session per feature branch, one function per worker
 
@@ -142,10 +142,11 @@ not sure whose work it is ⇒ treat it as Gemini's ordinary work and ask
 **`reviewed` is a label, not a merge button** — nothing merges automatically; run `gh pr merge` yourself.
 **Labels are English, one org-wide set** from `108-agent-queue/scripts/create-labels.sh`; never `gh label create` by hand.
 
-## 🧮 All work runs on Opus 5.5 — review work also uses effort `medium`
+## 🧮 Sessions and reviews run on Opus 5.5 medium · survey and draft subagents run on Sonnet
 
-→ skill **`queue-controller`** § 🧮. Headlines: every session and every task runs on **Opus 5.5 (`claude-opus-5-5`)** · **all review work at effort `medium`**, never high/xhigh/max unless the owner orders it that round, and never review agents in swarms ·
-a session cannot change its own model — if yours is not Opus 5.5, **tell the owner** · spawned `Agent` ⇒ `model: "opus"`.
+→ skill **`queue-controller`** § 🧮. Headlines: every session runs on **Opus 5.5 (`claude-opus-5-5`)** · **all review work at effort `medium`**, never high/xhigh/max unless the owner orders it that round, and never review agents in swarms ·
+a session cannot change its own model — if yours is not Opus 5.5, **tell the owner** ·
+spawned `Agent`: **review, code-writing and deciding ⇒ `model: "opus"`** · **read-only surveys (code, logs, panes, PR lists) and drafts the session checks before use (tickets, docs) ⇒ `model: "sonnet"`** (owner 2026-11-28 *"ทำทั้ง A และ B"*; on 11-27 Opus subagents tripled to a third of the day's cost).
 
 ## 🔔 Anything for the owner to decide = always send a notification
 
