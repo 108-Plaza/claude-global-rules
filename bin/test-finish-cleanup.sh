@@ -108,5 +108,12 @@ out=$( (cd "$T" && bash "$FC" --allow-secret wt-bank/.secret.key wt-bank) 2>&1);
 check throwaway-key-allowed 0 "$rc"
 absent throwaway-key-allowed "$T/wt-bank"
 
+# 11. The scan cannot run (bin/ignored-secrets missing next to the script) ⇒ keep, never delete unscanned.
+mkwt wt-noscan; mkdir -p "$T/alone" && cp "$FC" "$T/alone/finish-cleanup"
+out=$(bash "$T/alone/finish-cleanup" "$T/wt-noscan" 2>&1); rc=$?
+check scan-missing-kept 1 "$rc"
+present scan-missing-kept "$T/wt-noscan/esp32s3-rs/src/main.rs"
+case "$out" in *"secret scan failed"*) ;; *) echo "FAIL [scan-missing-kept] no reason: $out"; fail=1 ;; esac
+
 [ "$fail" = 0 ] && echo "all pass" || echo "FAILED"
 exit "$fail"
