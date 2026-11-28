@@ -4,6 +4,7 @@
 #
 #   bash ~/.claude/rules-repo/bin/finish-cleanup <path>...            # remove each path if it is safe to
 #   bash ~/.claude/rules-repo/bin/finish-cleanup --dry-run <path>...  # say what would happen, delete nothing
+#   bash ~/.claude/rules-repo/bin/finish-cleanup --allow-secret <file> <path>...  # see the secret check below
 #
 # Every machine that carries the rules allows exactly this command in ~/.claude/settings.json, so an AI
 # session can clean up at the end of its work without a prompt (owner 2026-10-21). Never widen that rule
@@ -16,14 +17,36 @@
 #   - it is not a scratch root itself;
 #   - no running process has its working directory inside it;
 #   - if it is a real clone (.git is a directory): no linked worktree of it still exists on disk;
-#   - if it is a git worktree: nothing uncommitted, and no commit that is on no remote (unpushed work).
+#   - if it is a git worktree: nothing uncommitted, and no commit that is on no remote (unpushed work);
+#   - if it is a git worktree: no gitignored file that looks like a secret (esp32s3-rs/src/config.rs,
+#     .secret.key, .env, .env.*, *.pem, *.key, credentials*). `git status` never shows ignored files, so a
+#     worktree whose only copy of a secret is gitignored looked clean and was deleted whole (2026-11-28: the
+#     only flashed ScreenLink board config, esp32s3-rs/src/config.rs, was lost with ~/worktrees/sl-flash-main).
+#     Cache dirs (target/, node_modules/, .next/, build/, …) are not searched. A file named with
+#     --allow-secret <file> (repeatable; absolute or relative to the current dir) no longer blocks removal:
+#     pass it only for a throwaway secret (e.g. bank-bot's test .secret.key from /dev/urandom) or after
+#     checking that a byte-identical copy exists outside the worktree (`cmp <file> ~/.config/<project>/…`).
 # A git worktree is removed with `git worktree remove` so its parent repo forgets it; anything else with rm -rf.
 # Ends with the one `cleanup:` line the rules ask every report to carry.
 set -uo pipefail
 
-DRY=0
-[ "${1:-}" = "--dry-run" ] && { DRY=1; shift; }
-[ "$#" -gt 0 ] || { echo "usage: $0 [--dry-run] <path>..." >&2; exit 2; }
+DRY=0 allowed=()
+usage() { echo "usage: $0 [--dry-run] [--allow-secret <file>]... <path>..." >&2; exit 2; }
+abs() { # <path> — absolute, physical dir part; the file itself need not exist
+  local d; d=$(cd "$(dirname "$1")" 2>/dev/null && pwd -P) || d=$(dirname "$1")
+  printf '%s/%s' "$d" "$(basename "$1")"
+}
+while [ "$#" -gt 0 ]; do
+  case "$1" in
+    --dry-run) DRY=1; shift ;;
+    --allow-secret) [ "$#" -ge 2 ] || usage; allowed+=("$(abs "$2")"); shift 2 ;;
+    --allow-secret=*) allowed+=("$(abs "${1#--allow-secret=}")"); shift ;;
+    --) shift; break ;;
+    -*) usage ;;
+    *) break ;;
+  esac
+done
+[ "$#" -gt 0 ] || usage
 
 ROOTS=("$HOME/worktrees" "/data/yuth/worktrees" "/private/tmp/claude-$(id -u)" "/tmp/claude-$(id -u)")
 removed=() kept=()
@@ -71,6 +94,36 @@ linked_worktrees() {
   done | sed 's/ $//'
 }
 
+# ignored_secrets <worktree> — gitignored files that look like secrets, one worktree-relative path per line,
+# minus the ones named with --allow-secret. `--directory` stops git at an ignored folder; cache folders are
+# skipped by name and every other ignored folder is searched with find (caches inside it pruned).
+CACHE_NAMES=(target node_modules .next build dist out .dart_tool .gradle .venv venv __pycache__ .pytest_cache
+  .mypy_cache .ruff_cache .turbo .cache .parcel-cache coverage Pods DerivedData .build .direnv .terraform)
+is_cache() { local n; for n in "${CACHE_NAMES[@]}"; do [ "$1" = "$n" ] && return 0; done; return 1; }
+is_secret() { # <relative path>
+  case "/$1" in */esp32s3-rs/src/config.rs) return 0 ;; esac
+  case "${1##*/}" in .secret.key|.env|.env.*|*.pem|*.key|credentials*) return 0 ;; esac
+  return 1
+}
+ignored_secrets() {
+  local w="$1" e f a ok prune=()
+  for e in "${CACHE_NAMES[@]}"; do prune+=(-o -name "$e"); done
+  git -C "$w" ls-files -z --others --ignored --exclude-standard --directory 2>/dev/null |
+  while IFS= read -r -d '' e; do
+    case "$e" in
+      */) is_cache "$(basename "$e")" && continue
+          find "$w/${e%/}" \( -false "${prune[@]}" \) -prune -o -type f -print 2>/dev/null |
+            while IFS= read -r f; do printf '%s\n' "${f#"$w"/}"; done ;;
+      *) [ -f "$w/$e" ] && [ ! -L "$w/$e" ] && printf '%s\n' "$e" ;;
+    esac
+  done | while IFS= read -r f; do
+    is_secret "$f" || continue
+    ok=0
+    for a in "${allowed[@]+"${allowed[@]}"}"; do [ "$a" = "$w/$f" ] && ok=1; done
+    [ "$ok" = 1 ] || printf '%s\n' "$f"
+  done
+}
+
 busy() { # <realpath> — prints the first process whose cwd is inside it
   lsof -a -d cwd -Fpcn 2>/dev/null | awk -v p="$1" '
     /^p/ {pid=substr($0,2)} /^c/ {cmd=substr($0,2)}
@@ -90,6 +143,12 @@ for arg in "$@"; do
     fi
     if [ -n "$(git -C "$real" status --porcelain --ignored=no 2>/dev/null)" ]; then
       kept+=("$arg (uncommitted changes)"); continue
+    fi
+    if secrets=$(ignored_secrets "$real") && [ -n "$secrets" ]; then
+      first=$(printf '%s\n' "$secrets" | head -1); n=$(printf '%s\n' "$secrets" | wc -l | tr -d ' ')
+      more=""; [ "$n" -gt 1 ] && more=" (+$((n - 1)) more)"
+      echo "kept $arg: holds ignored secret $first$more; move it to ~/.config/<project>/ or pass --allow-secret $real/$first after checking a copy exists outside" >&2
+      kept+=("$arg (holds ignored secret: $first$more)"); continue
     fi
     if [ -n "$(git -C "$real" rev-list -n1 HEAD --not --remotes 2>/dev/null)" ] && ! head_on_origin "$real" && ! content_on_default "$real"; then
       kept+=("$arg (commits on no remote)"); continue

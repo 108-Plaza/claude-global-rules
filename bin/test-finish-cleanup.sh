@@ -59,5 +59,54 @@ out=$(bash "$FC" "$T/main" 2>&1); rc=$?
 check clone-with-only-stale-entry 0 "$rc"
 absent clone-with-only-stale-entry "$T/main"
 
+# --- gitignored secrets (2026-11-28: the only ScreenLink board config was deleted with its worktree) ---
+g clone -q "$T/origin.git" "$T/c2" 2>/dev/null
+printf 'target/\nesp32s3-rs/src/config.rs\n.secret.key\nsecrets/\n' > "$T/c2/.gitignore"
+mkdir -p "$T/c2/esp32s3-rs/src" && echo 'fn main() {}' > "$T/c2/esp32s3-rs/src/main.rs"
+g -C "$T/c2" add -A && g -C "$T/c2" commit -qm ignore && g -C "$T/c2" push -q origin HEAD:main
+mkwt() { # name — a clean linked worktree of c2 on a fresh branch at origin/main
+  g -C "$T/c2" worktree add -q -b "feat/$1" "$T/$1" origin/main 2>/dev/null
+  mkdir -p "$T/$1/target/debug" && echo junk > "$T/$1/target/debug/build.key"  # a cache: never searched
+}
+mkwt wt-secret; echo 'pub const WIFI_PASS: &str = "x";' > "$T/wt-secret/esp32s3-rs/src/config.rs"
+mkwt wt-cache
+mkwt wt-nested; mkdir -p "$T/wt-nested/secrets" && echo K=v > "$T/wt-nested/secrets/.env"
+mkwt wt-bank; head -c 32 /dev/urandom > "$T/wt-bank/.secret.key"
+
+# 5. An ignored esp32s3-rs/src/config.rs keeps the worktree, and the reason names it.
+out=$(bash "$FC" "$T/wt-secret" 2>&1); rc=$?
+check ignored-secret-kept 1 "$rc"
+present ignored-secret-kept "$T/wt-secret/esp32s3-rs/src/config.rs"
+case "$out" in *"kept $T/wt-secret: holds ignored secret esp32s3-rs/src/config.rs"*"--allow-secret"*) ;; *) echo "FAIL [ignored-secret-kept] no reason: $out"; fail=1 ;; esac
+
+# 6. --dry-run reports the same refusal and deletes nothing.
+out=$(bash "$FC" --dry-run "$T/wt-secret" 2>&1); rc=$?
+check dry-run-ignored-secret 1 "$rc"
+present dry-run-ignored-secret "$T/wt-secret/esp32s3-rs/src/config.rs"
+case "$out" in *"holds ignored secret: esp32s3-rs/src/config.rs"*) ;; *) echo "FAIL [dry-run-ignored-secret] not reported: $out"; fail=1 ;; esac
+
+# 7. Only ignored caches (target/, even holding a *.key) ⇒ removed.
+out=$(bash "$FC" "$T/wt-cache" 2>&1); rc=$?
+check only-target-removed 0 "$rc"
+absent only-target-removed "$T/wt-cache"
+
+# 8. A secret inside an ignored non-cache folder is found too.
+out=$(bash "$FC" "$T/wt-nested" 2>&1); rc=$?
+check secret-in-ignored-folder-kept 1 "$rc"
+present secret-in-ignored-folder-kept "$T/wt-nested/secrets/.env"
+
+# 9. --allow-secret <file> removes it (after the caller checked a copy exists outside).
+cp "$T/wt-secret/esp32s3-rs/src/config.rs" "$T/config.rs.copy"
+out=$(bash "$FC" --allow-secret "$T/wt-secret/esp32s3-rs/src/config.rs" "$T/wt-secret" 2>&1); rc=$?
+check allow-secret-removed 0 "$rc"
+absent allow-secret-removed "$T/wt-secret"
+
+# 10. A throwaway bank-bot .secret.key: kept by default, removed with --allow-secret (relative path works).
+out=$(bash "$FC" "$T/wt-bank" 2>&1); rc=$?
+check throwaway-key-kept-by-default 1 "$rc"
+out=$( (cd "$T" && bash "$FC" --allow-secret wt-bank/.secret.key wt-bank) 2>&1); rc=$?
+check throwaway-key-allowed 0 "$rc"
+absent throwaway-key-allowed "$T/wt-bank"
+
 [ "$fail" = 0 ] && echo "all pass" || echo "FAILED"
 exit "$fail"
